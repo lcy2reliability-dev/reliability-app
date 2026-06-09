@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reliability App</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
+        .header { background: #1a1a2e; color: white; padding: 16px 20px; text-align: center; }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .header p { font-size: 12px; opacity: 0.7; margin-top: 4px; }
+        .tabs { display: flex; background: #16213e; overflow-x: auto; }
+        .tab { padding: 12px 16px; color: #94a3b8; cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .tab:hover { color: #e2e8f0; background: rgba(255,255,255,0.05); }
+        .tab.active { color: #60a5fa; border-bottom-color: #60a5fa; }
+        .content { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .card h2 { font-size: 18px; color: #1a1a2e; margin-bottom: 16px; }
+        .card h3 { font-size: 15px; color: #374151; margin: 16px 0 8px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 500; color: #4b5563; margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,0.15); }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-secondary { background: #e5e7eb; color: #374151; }
+        .btn-secondary:hover { background: #d1d5db; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-add { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; margin-top: 8px; }
+        .btn-add:hover { background: #059669; }
+        .btn-remove { background: #ef4444; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; margin-left: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+        th { background: #f8fafc; text-align: left; padding: 10px 12px; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #475569; cursor: pointer; user-select: none; }
+        th:hover { background: #e2e8f0; }
+        th .sort-arrow { font-size: 10px; margin-left: 4px; opacity: 0.5; }
+        td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+        tr:hover { background: #f8fafc; }
+        .file-upload { border: 2px dashed #d1d5db; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .file-upload:hover { border-color: #60a5fa; background: #f0f9ff; }
+        .file-upload input { display: none; }
+        .img-preview { width: 100%; height: 250px; object-fit: contain; background: #f8fafc; border-radius: 8px; margin-top: 12px; border: 1px solid #e2e8f0; padding: 4px; cursor: pointer; }
+        .img-preview:hover { border-color: #60a5fa; }
+        .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; font-size: 14px; z-index: 10000; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #10b981; }
+        .toast.error { background: #ef4444; }
+        .loading { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 9998; align-items: center; justify-content: center; }
+        .loading.active { display: flex; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; }
+        .modal h3 { margin-bottom: 12px; }
+        .modal p { font-size: 14px; color: #6b7280; margin-bottom: 16px; }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .setup-banner { background: #fff3cd; color: #856404; padding: 14px 20px; text-align: center; font-size: 13px; border-bottom: 1px solid #ffc107; }
+        .setup-banner a { color: #533f03; font-weight: 600; }
+        .waypoint-row { display: flex; align-items: center; margin-bottom: 8px; }
+        .waypoint-row input { flex: 1; }
+        .thermal-item-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; padding: 8px 12px; background: #f8fafc; border-radius: 6px; }
+        .thermal-item-row span { flex: 1; font-size: 14px; font-weight: 500; }
+        .thermal-item-row input { width: 100px; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        .history-entry { padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; }
+        .history-entry .timestamp { font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+        .reading-chip { display: inline-block; padding: 2px 8px; background: #e0f2fe; border-radius: 4px; font-size: 12px; margin: 2px 4px 2px 0; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #9ca3af; font-size: 14px; }
+        .search-result-section { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+        .search-result-section:last-child { border-bottom: none; }
+        .search-result-section h3 { font-size: 14px; color: #2563eb; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chart-container { position: relative; height: 300px; margin-top: 16px; }
+        .filter-input { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; margin-bottom: 8px; }
+        .filter-input:focus { outline: none; border-color: #60a5fa; }
+        
+        .notes-display { font-size: 12px; color: #6b7280; font-style: italic; margin-top: 2px; }
+        @media (max-width: 640px) {
+            .tabs { justify-content: flex-start; }
+            .tab { padding: 10px 12px; font-size: 12px; }
+            .content { padding: 12px; }
+            .card { padding: 16px; }
+            .thermal-item-row { flex-direction: column; align-items: stretch; }
+            .thermal-item-row input { width: 100%; }
+        }
+    
+        .search-link { color:#2563eb; text-decoration:none; cursor:pointer; font-weight:600; }
+        .search-link:hover { text-decoration:underline; }
+        .detail-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#f0f2f5; z-index:9997; overflow-y:auto; }
+        .detail-overlay.active { display:block; }
+        .detail-header { background:#1a1a2e; color:white; padding:16px 20px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:1; }
+        .detail-header button { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:white; padding:8px 14px; border-radius:6px; font-size:13px; cursor:pointer; }
+        .detail-header h2 { font-size:18px; font-weight:600; flex:1; }
+        .detail-content { max-width:900px; margin:0 auto; padding:20px; }
+        .detail-field { margin-bottom:14px; }
+        .detail-field label { font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:2px; }
+        .detail-field .value { font-size:15px; color:#1a1a2e; font-weight:500; }
+    </style>
+</head>
+<body>
+    <div class="header" style="position:relative;">
+        <h1>Reliability App</h1>
+        
+        <button onclick="clearForm()" style="position:absolute;top:12px;right:16px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;" title="Clear all fields">✕ Clear</button>
+        <button onclick="downloadAllData()" style="position:absolute;top:12px;right:90px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;" title="Download full database backup">⬇ Backup</button>
+    </div>
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('search')">Search</div>
+        <div class="tab" onclick="switchTab('equipment')">Add Equipment</div>
+        <div class="tab" onclick="switchTab('parts')">Add Parts</div>
+        <div class="tab" onclick="switchTab('routes')">Add CBM Routes</div>
+        <div class="tab" onclick="switchTab('thermal')">Thermal Readings</div>
+    </div>
+    <div id="setup-banner" class="setup-banner" style="display:none;">
+        <strong>Firebase not configured.</strong> Add your Firebase config to enable data storage.
+        <a href="https://console.firebase.google.com/" target="_blank">Open Firebase Console</a>
+    </div>
+    <div class="content">
+        <!-- SEARCH -->
+        <div id="sec-search" class="section active">
+            <div class="card">
+                <h2>Search</h2>
+                <div class="form-group">
+                    <label>Search</label>
+                    <input type="text" id="search-conveyor" placeholder="Search by conveyor, APN, store location, route, description..." onkeyup="if(event.key==='Enter')searchAll()">
+                </div>
+                <button class="btn btn-primary" onclick="searchAll()">Search</button>
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                    <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-equipment" checked> Equipment</label>
+                    <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-parts" checked> Parts</label>
+                    <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-routes" checked> CBM Routes</label>
+                </div>
+            </div>
+            <div id="search-results"></div>
+        </div>
+        <!-- EQUIPMENT -->
+        <div id="sec-equipment" class="section">
+            <div class="card">
+                <h2>Add Equipment</h2>
+                <div class="form-group">
+                    <label>Conveyor Number</label>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="text" id="eq-conveyor" placeholder="e.g. 180000" style="flex:1;">
+                        <button class="btn btn-secondary btn-sm" onclick="startQRScan()" title="Scan QR Code">Scan</button>
+                    </div>
+                    <div id="qr-scanner-container" style="display:none;margin-top:8px;">
+                        <video id="qr-video" style="width:100%;max-width:300px;border-radius:8px;border:2px solid #d1d5db;"></video>
+                        <button class="btn btn-secondary btn-sm" onclick="stopQRScan()" style="margin-top:4px;">Close Scanner</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Conveyor Type</label>
+                    <select id="eq-type">
+                        <option value="">Select type...</option>
+                        <option>Nitta</option><option>Transnorm</option><option>Transport conveyor</option>
+                        <option>V-Belt</option><option>Intralox</option><option>SL2</option>
+                        <option>Manual Induct Belt 1</option><option>Manual Induct Belt 2-4</option><option>Manual Induct Finger Belts</option>
+                        <option>ECC</option>
+                        <option>SC3</option><option>Ambaflex Spiral</option><option>Gappers</option>
+                        <option>Fives</option><option>SWD</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <input type="text" id="eq-notes" placeholder="e.g. High Level, Access equipment required">
+                </div>
+                <div class="form-group">
+                    <label>SCADA Screenshot</label>
+                    <div class="file-upload" onclick="document.getElementById('eq-file').click()" ondragover="event.preventDefault();this.style.borderColor='#60a5fa';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='#d1d5db';this.style.background='';" ondrop="event.preventDefault();this.style.borderColor='#d1d5db';this.style.background='';document.getElementById('eq-file').files=event.dataTransfer.files;previewImage(document.getElementById('eq-file'),'eq-preview');">
+                    <input type="file" id="eq-file" accept="image/*" onchange="previewImage(this,'eq-preview')">
+                    <p>⬇ Drag & drop, paste (Ctrl+V), or click to browse</p>
+                </div>
+                    <img id="eq-preview" class="img-preview" style="display:none;">
+                </div>
+                <button class="btn btn-primary" onclick="saveEquipment()">Save Equipment</button>
+            </div>
+            <div class="card">
+                <h2>Bulk Import Equipment</h2>
+                <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Upload CSV/Excel with columns: <code>ConveyorNumber, Type, Notes</code> (Notes optional). Existing equipment with images won't be overwritten.</p>
+                <button class="btn btn-secondary btn-sm" onclick="downloadEqTemplate()" style="margin-bottom:12px;">Download Template</button>
+                <div class="file-upload" onclick="document.getElementById('eq-bulk-file').click()" ondragover="event.preventDefault();this.style.borderColor='#60a5fa';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='#d1d5db';this.style.background='';" ondrop="event.preventDefault();this.style.borderColor='#d1d5db';this.style.background='';var f=event.dataTransfer.files[0];if(f){document.getElementById('eq-bulk-file').files=event.dataTransfer.files;previewEqImport(document.getElementById('eq-bulk-file'));}">
+                    <input type="file" id="eq-bulk-file" accept=".csv,.xlsx,.xls" onchange="previewEqImport(this)">
+                    <p>⬇ Drag & drop file here, or click to browse</p>
+                </div>
+                <div id="eq-import-preview" style="display:none;margin-top:12px;"></div>
+                <div id="eq-import-notes-section" style="display:none;margin-top:12px;">
+                    <div class="form-group">
+                        <label>Add notes to all imported items (optional)</label>
+                        <input type="text" id="eq-import-notes" placeholder="e.g. High Level, Access equipment required">
+                    </div>
+                </div>
+                <div id="eq-import-btn" style="display:none;margin-top:12px;">
+                    <button class="btn btn-primary" onclick="importEquipment()">Import Equipment</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Saved Equipment</h2>
+                <input type="text" class="filter-input" id="eq-filter" placeholder="Filter equipment..." oninput="filterTable('equipment-table','eq-filter')">
+                <div id="equipment-list"><div class="empty-state">No equipment saved yet</div></div>
+            </div>
+        </div>
+        <!-- PARTS -->
+        <div id="sec-parts" class="section">
+            <div class="card">
+                <h2>Add Part</h2>
+                <div class="form-group">
+                    <label>Conveyor Number</label>
+                    <input type="text" id="part-conveyor" placeholder="e.g. 180000">
+                </div>
+                <div class="form-group">
+                    <label>APN (Asset Part Number)</label>
+                    <input type="text" id="part-apn" placeholder="Enter APN">
+                </div>
+                <div class="form-group">
+                    <label>Part Type</label>
+                    <select id="part-type">
+                        <option value="">Select type...</option>
+                        <option>Drive roller</option><option>End roller</option><option>Tension roller</option>
+                        <option>Snubber roller</option><option>Bearing</option><option>Motor gearbox</option>
+                        <option>Pulley A</option><option>Pulley B</option><option>Pulley C</option><option>Pulley D</option>
+                        <option>Pulley E</option><option>Pulley F</option><option>Pulley G</option><option>Pulley H</option>
+                        <option>Idle roller</option><option>Belt</option><option>Blank</option><option>Other</option>
+                    
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Store Location</label>
+                    <input type="text" id="part-location" placeholder="e.g. C05-C-28">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <input type="text" id="part-notes" placeholder="e.g. Repairable">
+                </div>
+                <button class="btn btn-primary" onclick="savePart()">Save Part</button>
+            </div>
+            <div class="card">
+                <h2>Saved Parts</h2>
+                <input type="text" class="filter-input" id="parts-filter" placeholder="Filter parts..." oninput="filterTable('parts-table','parts-filter')">
+                <div id="parts-list"><div class="empty-state">No parts saved yet</div></div>
+            </div>
+        </div>
+        <!-- CBM ROUTES -->
+        <div id="sec-routes" class="section">
+            <div class="card">
+                <h2>Add CBM Route</h2>
+                <div class="form-group">
+                    <label>Route Number</label>
+                    <input type="text" id="route-number" placeholder="e.g. 42 (Ultrasound) or 542 (Thermal)">
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="route-type"><option value="">Select type...</option><option>Ultrasound</option><option>Thermal</option><option>Other</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Equipment Description <span style="color:#ef4444;">*</span></label>
+                    <input type="text" id="route-notes" placeholder="e.g. CBM, ULTS.SHP.DISCHARGE & RCRC">
+                </div>
+                <div class="form-group">
+                    <label>Starting Point (Conveyor Number)</label>
+                    <input type="text" id="route-start" placeholder="e.g. 180000" onblur="loadRouteImage('route-start-img', this.value)">
+                    <img id="route-start-img" class="img-preview" style="display:none;">
+                </div>
+                <div class="form-group">
+                    <label>Waypoints</label>
+                    <div id="waypoints-container"></div>
+                    <button class="btn-add" onclick="addWaypoint()">+ Add Waypoint</button>
+                </div>
+                <div class="form-group">
+                    <label>End Point (Conveyor Number)</label>
+                    <input type="text" id="route-end" placeholder="e.g. 180050" onblur="loadRouteImage('route-end-img', this.value)">
+                    <img id="route-end-img" class="img-preview" style="display:none;">
+                </div>
+
+                <div style="border-top:2px solid #e5e7eb;margin:24px 0 16px;padding-top:16px;text-align:center;">
+                    <p style="font-size:14px;font-weight:600;color:#6b7280;margin:0;">— OR Import from APM Checklist —</p>
+                    <p style="font-size:12px;color:#9ca3af;margin:4px 0 0;">Upload <strong>ONE</strong> APM Checklist (.xlsx or CSV) to auto-fill route details</p>
+                </div>
+                <div class="file-upload" id="route-drop-zone" onclick="document.getElementById('route-csv-file').click()" ondragover="event.preventDefault();this.style.borderColor='#60a5fa';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='#d1d5db';this.style.background='';" ondrop="event.preventDefault();this.style.borderColor='#d1d5db';this.style.background='';var f=event.dataTransfer.files[0];if(f){document.getElementById('route-csv-file').files=event.dataTransfer.files;previewImport(document.getElementById('route-csv-file'));}">
+                    <input type="file" id="route-csv-file" accept=".csv,.xlsx,.xls" onchange="previewImport(this)">
+                    <p>⬇ Drag & drop APM Checklist here, or click to browse</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="downloadRouteTemplate()" style="margin-top:8px;">Download CSV Template</button>
+                <div id="csv-preview" style="display:none;margin-top:12px;"></div>
+
+                <div style="border-top:1px solid #e5e7eb;margin:24px 0 16px;padding-top:16px;">
+                    <div class="form-group">
+                        <label>Route Location Screenshot (optional)</label>
+                        <div class="file-upload" onclick="document.getElementById('route-img-file').click()" ondragover="event.preventDefault();this.style.borderColor='#60a5fa';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='#d1d5db';this.style.background='';" ondrop="event.preventDefault();this.style.borderColor='#d1d5db';this.style.background='';document.getElementById('route-img-file').files=event.dataTransfer.files;previewImage(document.getElementById('route-img-file'),'route-img-preview');" style="padding:12px;">
+                        <input type="file" id="route-img-file" accept="image/*" onchange="previewImage(this,'route-img-preview')">
+                        <p>⬇ Drag & drop, paste (Ctrl+V), or click to browse</p>
+                    </div>
+                        <img id="route-img-preview" class="img-preview" style="display:none;">
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:12px;margin-top:16px;">
+                    <button class="btn btn-primary" onclick="saveRoute()">Save Route</button>
+                    <button class="btn btn-primary" id="csv-import-btn" style="display:none;" onclick="importRoutes()">Import Route from Checklist</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Saved Routes</h2>
+                <input type="text" class="filter-input" id="routes-filter" placeholder="Filter routes..." oninput="filterTable('routes-table','routes-filter')">
+                <div id="routes-list"><div class="empty-state">No routes saved yet</div></div>
+            </div>
+        </div>
+        <!-- THERMAL -->
+        <div id="sec-thermal" class="section">
+            <div class="card">
+                <h2>Thermal Readings</h2>
+                <div class="form-group">
+                    <label>Route Number</label>
+                    <input type="text" id="thermal-route" placeholder="Enter route number">
+                </div>
+                <div class="form-group">
+                    <label>Login ID</label>
+                    <input type="text" id="thermal-name" placeholder="Your Login ID">
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="loadThermalRoute()" style="margin-bottom:16px;">Load Route</button>
+                <button class="btn btn-secondary btn-sm" onclick="printBlankSheet()" style="margin-bottom:16px;margin-left:8px;">Print Blank Sheet</button>
+                <div id="thermal-items"></div>
+                <div id="thermal-save-btn" style="display:none;margin-top:12px;">
+                    <button class="btn btn-primary" onclick="saveThermalReadings()">Save Readings</button>
+                </div>
+            </div>
+            <div class="card" id="thermal-history-card" style="display:none;">
+                <h2>Historical Readings</h2>
+                <button class="btn btn-secondary btn-sm" onclick="exportThermalExcel()" style="margin-bottom:12px;">Export to Excel</button>
+                <button class="btn btn-secondary btn-sm" onclick="printThermalReadings()" style="margin-bottom:12px;margin-left:8px;">Print</button>
+                <div id="thermal-history"></div>
+                <div class="form-group" style="margin-top:16px;">
+                    <label>View trend for:</label>
+                    <select id="chart-component" onchange="renderChart()"><option value="">Select component...</option></select>
+                </div>
+                <div class="chart-container"><canvas id="thermal-chart"></canvas></div>
+            </div>
+        </div>
+    </div>
+        <div class="detail-overlay" id="detail-overlay">
+        <div class="detail-header">
+            <button onclick="closeDetail()">&larr; Back to results</button>
+            <h2 id="detail-title">Details</h2>
+        </div>
+        <div class="detail-content" id="detail-content"></div>
+    </div>
+    <div class="loading" id="loading"><div class="spinner"></div></div>
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <h3 id="modal-title">Confirm</h3>
+            <p id="modal-message">Are you sure?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-danger" id="modal-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script>
+    const FIREBASE_CONFIG = {
+        apiKey: "AIzaSyBp_08Y4noEmCsGi9JZu7nKnhqYuyV1ha4",
+        authDomain: "lcy2reliability-3dafa.firebaseapp.com",
+        databaseURL: "https://lcy2reliability-3dafa-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "lcy2reliability-3dafa",
+        storageBucket: "lcy2reliability-3dafa.firebasestorage.app",
+        messagingSenderId: "8491056500",
+        appId: "1:8491056500:web:c0bbe396b8d48540498021"
+    };
+
+    let db = null, firebaseReady = false;
+    try {
+        if (FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY") {
+            firebase.initializeApp(FIREBASE_CONFIG);
+            db = firebase.database();
+            firebaseReady = true;
+            migratePartsData();
+        }
+    } catch(e) { console.warn('Firebase init failed:', e.message); }
+    if (!firebaseReady) {
+        document.addEventListener('DOMContentLoaded', () => { document.getElementById('setup-banner').style.display = 'block'; });
+    }
+
+    function clearForm() {
+        // Clear all inputs, selects, and textareas in the currently active section
+        const activeSection = document.querySelector('.section.active');
+        if (!activeSection) return;
+        activeSection.querySelectorAll('input[type="text"], input[type="number"], input[type="file"], textarea').forEach(el => { el.value = ''; });
+        activeSection.querySelectorAll('select').forEach(el => { el.selectedIndex = 0; });
+        // Hide any image previews
+        activeSection.querySelectorAll('.img-preview').forEach(el => { el.style.display = 'none'; el.src = ''; });
+        // Clear dynamic waypoints/motors
+        const wpContainer = activeSection.querySelector('#waypoints-container');
+        if (wpContainer) wpContainer.innerHTML = '';
+        // Clear thermal dynamic content
+        const thermalItems = activeSection.querySelector('#thermal-items');
+        if (thermalItems) thermalItems.innerHTML = '';
+        
+        const thermalSaveBtn = activeSection.querySelector('#thermal-save-btn');
+        if (thermalSaveBtn) thermalSaveBtn.style.display = 'none';
+        const thermalHistory = activeSection.querySelector('#thermal-history-card');
+        if (thermalHistory) thermalHistory.style.display = 'none';
+        // Clear search results
+        const searchResults = activeSection.querySelector('#search-results');
+        if (searchResults) searchResults.innerHTML = '';
+        // Hide any preview sections
+        activeSection.querySelectorAll('[id$="-preview"]').forEach(el => { if(el.tagName!=='IMG') el.style.display = 'none'; });
+        // silent clear
+    }
+
+    
+        function checkFirebase() { if (!firebaseReady) { showToast('Firebase not configured.', 'error'); return false; } return true; }
+
+    // Click image to view full size
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('img-preview') && e.target.src) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:20px;';
+            const img = document.createElement('img');
+            img.src = e.target.src;
+            img.style.cssText = 'max-width:95%;max-height:95%;border-radius:8px;';
+            overlay.appendChild(img);
+            overlay.onclick = () => overlay.remove();
+            document.body.appendChild(overlay);
+        }
+    });
+
+    // UTILITIES
+    function showToast(msg, type='success') { const t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+type+' show'; setTimeout(()=>t.className='toast',3000); }
+    function showLoading() { document.getElementById('loading').classList.add('active'); }
+    function hideLoading() { document.getElementById('loading').classList.remove('active'); }
+    function showModal(title, message) {
+        return new Promise(resolve => {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('modal-confirm').onclick = () => { closeModal(); resolve(true); };
+            document.querySelector('.modal .btn-secondary').onclick = () => { closeModal(); resolve(false); };
+        });
+    }
+    function closeModal() { document.getElementById('modal').classList.remove('active'); }
+    function sanitizeKey(str) { return str.replace(/[.#$\/\[\]]/g, '_').trim(); }
+    function fileToBase64(file) { return new Promise((resolve, reject) => {
+        const reader=new FileReader();
+        reader.onload=()=>{
+            const img=new Image();
+            img.onload=()=>{
+                const MAX_WIDTH=1200;
+                let w=img.width, h=img.height;
+                if(w>MAX_WIDTH){ h=Math.round(h*(MAX_WIDTH/w)); w=MAX_WIDTH; }
+                const canvas=document.createElement('canvas');
+                canvas.width=w; canvas.height=h;
+                const ctx=canvas.getContext('2d');
+                ctx.drawImage(img,0,0,w,h);
+                resolve(canvas.toDataURL('image/jpeg',0.85));
+            };
+            img.onerror=reject;
+            img.src=reader.result;
+        };
+        reader.onerror=reject;
+        reader.readAsDataURL(file);
+    }); }
+    function previewImage(input, imgId) { const file=input.files[0]; if(file){const r=new FileReader();r.onload=e=>{const img=document.getElementById(imgId);img.src=e.target.result;img.style.display='block';};r.readAsDataURL(file);} }
+    function switchTab(tab) { clearForm(); document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); event.currentTarget.classList.add('active'); document.getElementById('sec-'+tab).classList.add('active'); }
+
+    // SORT & FILTER
+    function filterTable(tableId, filterId) {
+        const q = document.getElementById(filterId).value.toLowerCase();
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+    }
+    let sortState = {};
+    function sortTable(tableId, colIdx) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        const key = tableId + '-' + colIdx;
+        sortState[key] = !sortState[key];
+        const asc = sortState[key];
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((a,b) => {
+            const aText = (a.cells[colIdx]?.textContent || '').trim().toLowerCase();
+            const bText = (b.cells[colIdx]?.textContent || '').trim().toLowerCase();
+            const aNum = parseFloat(aText), bNum = parseFloat(bText);
+            if (!isNaN(aNum) && !isNaN(bNum)) return asc ? aNum-bNum : bNum-aNum;
+            return asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
+        });
+        rows.forEach(r => tbody.appendChild(r));
+    }
+
+    // SEARCH
+    
+    // ONE-TIME MIGRATION: Convert parts from old format (one entry per conveyor) to new (keyed by APN with conveyors array)
+    async function migratePartsData() {
+        if (!db) return;
+        try {
+            const snap = await db.ref('parts').once('value');
+            const allParts = snap.val();
+            if (!allParts) return;
+            // Check if migration needed - if any entry has conveyorNumber but no conveyors array
+            const entries = Object.entries(allParts);
+            const needsMigration = entries.some(function(e) { return e[1].conveyorNumber && !e[1].conveyors; });
+            if (!needsMigration) return;
+            console.log('Migrating parts to APN-keyed format...');
+            // Group by APN
+            const apnMap = {};
+            entries.forEach(function(entry) {
+                var key = entry[0], p = entry[1];
+                var apn = (p.apn || '').trim();
+                if (!apn) return;
+                var apnKey = sanitizeKey(apn);
+                if (!apnMap[apnKey]) {
+                    apnMap[apnKey] = { apn: apn, partType: p.partType || '', location: p.location || '', notes: p.notes || '', conveyors: [], createdAt: p.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
+                }
+                var conv = p.conveyorNumber || '';
+                if (conv && apnMap[apnKey].conveyors.indexOf(conv) < 0) {
+                    apnMap[apnKey].conveyors.push(conv);
+                }
+                // Keep the most detailed notes/location
+                if (p.notes && p.notes.length > (apnMap[apnKey].notes||'').length) apnMap[apnKey].notes = p.notes;
+                if (p.location && p.location.length > (apnMap[apnKey].location||'').length) apnMap[apnKey].location = p.location;
+            });
+            // Delete all old entries and write new ones
+            await db.ref('parts').remove();
+            var updates = {};
+            Object.entries(apnMap).forEach(function(entry) {
+                updates[entry[0]] = entry[1];
+            });
+            await db.ref('parts').set(updates);
+            console.log('Migration complete: ' + Object.keys(updates).length + ' unique parts from ' + entries.length + ' entries');
+        } catch(e) { console.error('Migration error:', e); }
+    }
+
+    async function searchAll() {
+        const query = document.getElementById('search-conveyor').value.trim();
+        if (!query) { showToast('Enter a search term', 'error'); return; }
+        if (!checkFirebase()) return;
+        showLoading();
+        const queryLower = query.toLowerCase();
+        const isDigits = /^\d+$/.test(query);
+        const showEquipment = document.getElementById('filter-equipment').checked;
+        const showParts = document.getElementById('filter-parts').checked;
+        const showRoutes = document.getElementById('filter-routes').checked;
+        const container = document.getElementById('search-results');
+        try {
+            const [eqSnap, partsSnap, routesSnap] = await Promise.all([
+                showEquipment ? db.ref('equipment').once('value') : Promise.resolve({val:function(){return null;}}),
+                showParts ? db.ref('parts').once('value') : Promise.resolve({val:function(){return null;}}),
+                showRoutes ? db.ref('routes').once('value') : Promise.resolve({val:function(){return null;}})
+            ]);
+            const allEquipment = eqSnap.val() || {};
+            const allParts = partsSnap.val() || {};
+            const allRoutes = routesSnap.val() || {};
+            let html = '<div class="card"><h2>Results for: ' + query + '</h2>';
+            let hasResults = false;
+
+            // --- EQUIPMENT: min 6 chars to search ---
+            if (showEquipment) {
+                if (query.length >= 6) {
+                    var queryWords = queryLower.split(/\s+/).filter(function(w){return w.length>0;});
+                    var eqResults = [];
+                    Object.entries(allEquipment).forEach(function(entry) {
+                        var key = entry[0], eq = entry[1];
+                        var combined = [eq.conveyorNumber, eq.type, eq.notes].filter(Boolean).join(' ').toLowerCase();
+                        var cn = (eq.conveyorNumber || '').toLowerCase();
+                        var score = 0;
+                        if (cn === queryLower) score = 100;
+                        else if (cn.startsWith(queryLower)) score = 80;
+                        else if (queryWords.every(function(w){return combined.includes(w);})) score = 50;
+                        if (score) eqResults.push({key:key,data:eq,score:score});
+                    });
+                    eqResults.sort(function(a,b){return b.score-a.score;});
+                    if (eqResults.length > 0) {
+                        hasResults = true;
+                        var showing = eqResults.slice(0,10);
+                        var hidden = eqResults.length - showing.length;
+                        html += '<div class="search-result-section"><h3>Equipment (' + eqResults.length + ' results)</h3>';
+                        showing.forEach(function(item) {
+                            var eq = item.data;
+                            html += '<div style="padding:8px 0;border-bottom:1px solid #f1f5f9;">';
+                            html += '<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27' + item.key + '\x27);return false;">' + eq.conveyorNumber + '</a>';
+                            html += ' | Type: ' + (eq.type || 'N/A');
+                            if (eq.notes) html += ' | <span class="notes-display">' + eq.notes + '</span>';
+                            html += '</div>';
+                        });
+                        if (hidden > 0) {
+                            eqResults.slice(10).forEach(function(item) {
+                                var eq = item.data;
+                                html += '<div class="hidden-result" style="display:none;padding:8px 0;border-bottom:1px solid #f1f5f9;">';
+                                html += '<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27' + item.key + '\x27);return false;">' + eq.conveyorNumber + '</a>';
+                                html += ' | Type: ' + (eq.type || 'N/A');
+                                if (eq.notes) html += ' | <span class="notes-display">' + eq.notes + '</span>';
+                                html += '</div>';
+                            });
+                            html += '<p style="font-size:12px;color:#6b7280;margin-top:8px;cursor:pointer;" onclick="this.parentElement.querySelectorAll(\x27.hidden-result\x27).forEach(function(el){el.style.display=\x27block\x27;});this.style.display=\x27none\x27;">+ ' + hidden + ' more (tap to show)</p>';
+                        }
+                        html += '</div>';
+                    }
+                } else {
+                    html += '<p style="font-size:12px;color:#6b7280;font-style:italic;">Equipment: need 6+ characters to search</p>';
+                }
+            }
+
+            // --- PARTS: min 5 chars if digits, any length if text ---
+            if (showParts) {
+                var partsMinMet = isDigits ? query.length >= 5 : true;
+                if (partsMinMet) {
+                    var queryWords = queryLower.split(/\s+/).filter(function(w){return w.length>0;});
+                    var partResults = [];
+                    Object.entries(allParts).forEach(function(entry) {
+                        var key = entry[0], p = entry[1];
+                        var conveyorsStr = p.conveyors ? p.conveyors.join(' ') : (p.conveyorNumber || '');
+                        var combined = [conveyorsStr, p.apn, p.location, p.partType, p.notes].filter(Boolean).join(' ').toLowerCase();
+                        var apn = (p.apn || '').toLowerCase();
+                        var score = 0;
+                        if (apn === queryLower) score = 100;
+                        else if (apn.startsWith(queryLower)) score = 80;
+                        else if (queryWords.every(function(w){return combined.includes(w);})) score = 50;
+                        if (score) partResults.push({key:key,data:p,score:score});
+                    });
+                    partResults.sort(function(a,b){return b.score-a.score;});
+                    if (partResults.length > 0) {
+                        hasResults = true;
+                        var showingP = partResults.slice(0,10);
+                        var hiddenP = partResults.length - showingP.length;
+                        html += '<div class="search-result-section"><h3>Parts (' + partResults.length + ' results)</h3>';
+                        html += '<table><thead><tr><th>APN</th><th>Type</th><th>Location</th><th>Conveyors</th></tr></thead><tbody>';
+                        showingP.forEach(function(item) {
+                            var p = item.data;
+                            var convList = p.conveyors ? p.conveyors.join(', ') : (p.conveyorNumber || '');
+                            html += '<tr><td><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27' + item.key + '\x27);return false;">' + p.apn + '</a></td><td>' + (p.partType || '\u2014') + '</td><td>' + (p.location || '\u2014') + '</td><td>' + convList + '</td></tr>';
+                        });
+                        if (hiddenP > 0) {
+                            partResults.slice(10).forEach(function(item) {
+                                var p = item.data;
+                                var convList = p.conveyors ? p.conveyors.join(', ') : (p.conveyorNumber || '');
+                                html += '<tr class="hidden-result" style="display:none;"><td><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27' + item.key + '\x27);return false;">' + p.apn + '</a></td><td>' + (p.partType || '\u2014') + '</td><td>' + (p.location || '\u2014') + '</td><td>' + convList + '</td></tr>';
+                            });
+                            html += '</tbody></table>';
+                            html += '<p style="font-size:12px;color:#6b7280;margin-top:8px;cursor:pointer;" onclick="this.parentElement.querySelectorAll(\x27.hidden-result\x27).forEach(function(el){el.style.display=\x27table-row\x27;});this.style.display=\x27none\x27;">+ ' + hiddenP + ' more (tap to show)</p>';
+                        } else {
+                            html += '</tbody></table>';
+                        }
+                        html += '</div>';
+                    }
+                } else {
+                    html += '<p style="font-size:12px;color:#6b7280;font-style:italic;">Parts: need 5+ digits to search numerically</p>';
+                }
+            }
+
+            // --- ROUTES: search ONLY route number, ranked by relevance ---
+            if (showRoutes) {
+                var routeResults = [];
+                Object.entries(allRoutes).forEach(function(entry) {
+                    var key = entry[0], r = entry[1];
+                    var rn = r.routeNumber ? r.routeNumber.toString() : '';
+                    var rnLower = rn.toLowerCase();
+                    var score = 0;
+                    // Exact match
+                    if (rnLower === queryLower) score = 100;
+                    // Route number ends with query (e.g. "7" matches "07", "17", "27")
+                    else if (rnLower.endsWith(queryLower)) score = 90;
+                    // Route number starts with query (e.g. "17" matches "170", "171")
+                    else if (rnLower.startsWith(queryLower)) score = 80;
+                    // Route number contains query anywhere
+                    else if (rnLower.includes(queryLower)) score = 60;
+                    if (score) routeResults.push({key:key,data:r,score:score});
+                });
+                // Sort by score desc, then by route number ascending for same score
+                routeResults.sort(function(a,b){
+                    if (b.score !== a.score) return b.score - a.score;
+                    var aNum = parseInt(a.data.routeNumber) || 0;
+                    var bNum = parseInt(b.data.routeNumber) || 0;
+                    return aNum - bNum;
+                });
+                if (routeResults.length > 0) {
+                    hasResults = true;
+                    var showingR = routeResults.slice(0,10);
+                    var hiddenR = routeResults.length - showingR.length;
+                    html += '<div class="search-result-section"><h3>CBM Routes (' + routeResults.length + ' results)</h3>';
+                    html += '<table><thead><tr><th>Route</th><th>Type</th><th>Equipment Description</th><th>Start</th><th>End</th></tr></thead><tbody>';
+                    showingR.forEach(function(item) {
+                        var r = item.data;
+                        html += '<tr><td><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27' + item.key + '\x27);return false;">' + r.routeNumber + '</a></td><td>' + r.type + '</td><td>' + (r.notes || '\u2014') + '</td><td>' + r.startPoint + '</td><td>' + r.endPoint + '</td></tr>';
+                    });
+                    if (hiddenR > 0) {
+                        routeResults.slice(10).forEach(function(item) {
+                            var r = item.data;
+                            html += '<tr class="hidden-result" style="display:none;"><td><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27' + item.key + '\x27);return false;">' + r.routeNumber + '</a></td><td>' + r.type + '</td><td>' + (r.notes || '\u2014') + '</td><td>' + r.startPoint + '</td><td>' + r.endPoint + '</td></tr>';
+                        });
+                        html += '</tbody></table>';
+                        html += '<p style="font-size:12px;color:#6b7280;margin-top:8px;cursor:pointer;" onclick="this.parentElement.querySelectorAll(\x27.hidden-result\x27).forEach(function(el){el.style.display=\x27table-row\x27;});this.style.display=\x27none\x27;">+ ' + hiddenR + ' more (tap to show)</p>';
+                    } else {
+                        html += '</tbody></table>';
+                    }
+                    
+                    html += '</div>';
+                }
+            }
+
+            if (!hasResults) {
+                html += '<div class="empty-state">No results found for "' + query + '"</div>';
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        } catch(e) { showToast('Error: '+e.message,'error'); }
+        hideLoading();
+    }
+
+    // EQUIPMENT
+    let editingEquipmentKey = null;
+    async function saveEquipment() {
+        if (!checkFirebase()) return;
+        const conveyor = document.getElementById('eq-conveyor').value.trim();
+        const type = document.getElementById('eq-type').value;
+        if (!validateConveyor(conveyor, 'Conveyor Number')) return;
+        const notes = document.getElementById('eq-notes').value.trim();
+        const file = document.getElementById('eq-file').files[0];
+        if (!conveyor || !type) { showToast('Fill in conveyor number and type', 'error'); return; }
+        const key = sanitizeKey(conveyor);
+        const existing = await db.ref('equipment/' + key).once('value');
+        if (existing.val() && !editingEquipmentKey) {
+            const confirmed = await showModal('Equipment Exists', 'Equipment "' + conveyor + '" already exists (Type: ' + existing.val().type + '). Do you want to edit it?');
+            if (!confirmed) return;
+        }
+        showLoading();
+        try {
+            let imageUrl = existing.val()?.imageUrl || null;
+            if (file) imageUrl = await fileToBase64(file);
+            if(editingEquipmentKey&&editingEquipmentKey!==key){await db.ref('equipment/'+editingEquipmentKey).remove();}
+            await db.ref('equipment/' + key).set({ conveyorNumber: conveyor, type, notes, imageUrl, updatedAt: new Date().toISOString() });
+            showToast(editingEquipmentKey ? 'Equipment updated!' : 'Equipment saved!');
+            editingEquipmentKey = null;
+            document.getElementById('eq-conveyor').value = '';
+            document.getElementById('eq-type').value = '';
+            document.getElementById('eq-notes').value = '';
+            document.getElementById('eq-file').value = '';
+            document.getElementById('eq-preview').style.display = 'none';
+        } catch(e) { showToast('Error: '+e.message,'error'); }
+        hideLoading();
+    }
+    async function editEquipment(key) {
+        if (!checkFirebase()) return;
+        const snap = await db.ref('equipment/'+key).once('value');
+        const d = snap.val(); if(!d)return;
+        editingEquipmentKey = key;
+        document.getElementById('eq-conveyor').value = d.conveyorNumber||'';
+        document.getElementById('eq-type').value = d.type||'';
+        document.getElementById('eq-notes').value = d.notes||'';
+        if(d.imageUrl){document.getElementById('eq-preview').src=d.imageUrl;document.getElementById('eq-preview').style.display='block';}
+        showToast('Editing '+d.conveyorNumber,'success');
+        window.scrollTo({top:0,behavior:'smooth'});
+    }
+    function loadEquipmentList() {
+        if (!firebaseReady) return;
+        db.ref('equipment').on('value', snap => {
+            const container = document.getElementById('equipment-list');
+            const data = snap.val();
+            if (!data) { container.innerHTML = '<div class="empty-state">No equipment saved yet</div>'; return; }
+            let html = '<table id="equipment-table"><thead><tr>';
+            html += '<th onclick="sortTable(\'equipment-table\',0)">Conveyor</th>';
+            html += '<th onclick="sortTable(\'equipment-table\',1)">Type</th>';
+            html += '<th onclick="sortTable(\'equipment-table\',2)">Notes</th>';
+            html += '<th onclick="sortTable(\'equipment-table\',3)">Modified</th>';
+            html += '<th onclick="sortTable(\'equipment-table\',4)">Img</th>';
+            html += '<th>Action</th></tr></thead><tbody>';
+            Object.entries(data).forEach(([key, eq]) => {
+                html += '<tr><td>'+eq.conveyorNumber+'</td><td>'+eq.type+'</td><td>'+(eq.notes||'—')+'</td><td>'+(eq.updatedAt?new Date(eq.updatedAt).toLocaleDateString():'—')+'</td><td>'+(eq.imageUrl?'Yes':'—')+'</td>';
+                html += '<td><button class="btn btn-secondary btn-sm" onclick="editEquipment(\''+key+'\')">Edit</button> ';
+                html += '<button class="btn btn-danger btn-sm" onclick="deleteEntry(\'equipment\',\''+key+'\')">Del</button></td></tr>';
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        });
+    }
+
+    // BULK EQUIPMENT IMPORT
+    let eqImportData = [];
+    function downloadEqTemplate() {
+        const t = 'ConveyorNumber,Type,Notes\n180000,Transnorm,High Level\n180010,Nitta,';
+        const blob = new Blob([t],{type:'text/csv'});
+        const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='equipment_template.csv'; a.click();
+    }
+    function previewEqImport(input) {
+        const file = input.files[0]; if(!file) return;
+        const ext = file.name.split('.').pop().toLowerCase();
+        const reader = new FileReader();
+        if (ext==='xlsx'||ext==='xls') {
+            reader.onload = e => {
+                const wb = XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws,{header:1});
+                parseEqRows(rows);
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            reader.onload = e => {
+                const lines = e.target.result.split('\n').filter(l=>l.trim());
+                const rows = lines.map(l => l.split(',').map(c=>c.trim().replace(/^"|"$/g,'')));
+                parseEqRows(rows);
+            };
+            reader.readAsText(file);
+        }
+    }
+    function parseEqRows(rows) {
+        if(rows.length<2){showToast('File is empty','error');return;}
+        eqImportData = [];
+        for(let i=1;i<rows.length;i++){
+            const r=rows[i];
+            if(!r[0])continue;
+            eqImportData.push({conveyorNumber:r[0].toString().trim(),type:(r[1]||'').toString().trim(),notes:(r[2]||'').toString().trim()});
+        }
+        let html='<p style="font-size:13px;font-weight:600;">Preview ('+eqImportData.length+' items):</p>';
+        html+='<table><thead><tr><th>Conveyor</th><th>Type</th><th>Notes</th></tr></thead><tbody>';
+        eqImportData.forEach(r=>{html+='<tr><td>'+r.conveyorNumber+'</td><td>'+r.type+'</td><td>'+r.notes+'</td></tr>';});
+        html+='</tbody></table>';
+        document.getElementById('eq-import-preview').innerHTML=html;
+        document.getElementById('eq-import-preview').style.display='block';
+        document.getElementById('eq-import-notes-section').style.display='block';
+        document.getElementById('eq-import-btn').style.display='block';
+    }
+    async function importEquipment() {
+        if(!checkFirebase())return;
+        if(eqImportData.length===0)return;
+        const bulkNotes = document.getElementById('eq-import-notes').value.trim();
+        showLoading(); let imported=0,skipped=0;
+        try {
+            for(const item of eqImportData){
+                const key=sanitizeKey(item.conveyorNumber);
+                const existing=await db.ref('equipment/'+key).once('value');
+                if(existing.val()&&existing.val().imageUrl){skipped++;continue;}
+                const notes = item.notes || bulkNotes || '';
+                await db.ref('equipment/'+key).set({conveyorNumber:item.conveyorNumber,type:item.type,notes:notes,imageUrl:existing.val()?.imageUrl||null,updatedAt:new Date().toISOString()});
+                imported++;
+            }
+            showToast(imported+' imported, '+skipped+' skipped (had images).');
+            eqImportData=[];
+            document.getElementById('eq-import-preview').style.display='none';
+            document.getElementById('eq-import-notes-section').style.display='none';
+            document.getElementById('eq-import-notes').value='';
+            document.getElementById('eq-import-btn').style.display='none';
+            document.getElementById('eq-bulk-file').value='';
+        } catch(e){showToast('Error: '+e.message,'error');}
+        hideLoading();
+    }
+
+    // PARTS
+    let editingPartKey = null;
+    async function savePart() {
+        if (!checkFirebase()) return;
+        const conveyor = document.getElementById('part-conveyor').value.trim();
+        if (!validateConveyor(conveyor, 'Conveyor Number')) return;
+        const apn = document.getElementById('part-apn').value.trim();
+        const partType = document.getElementById('part-type').value;
+        const location = document.getElementById('part-location').value.trim();
+        const notes = document.getElementById('part-notes').value.trim();
+        if (!conveyor||!apn||!partType||!location) { showToast('Fill in all required fields','error'); return; }
+        showLoading();
+        try {
+            const apnKey = sanitizeKey(apn);
+            if (editingPartKey) {
+                // Editing existing - update fields
+                const snap = await db.ref('parts/' + editingPartKey).once('value');
+                const existing = snap.val();
+                if (existing) {
+                    var conveyors = existing.conveyors || [existing.conveyorNumber || ''];
+                    if (conveyors.indexOf(conveyor) < 0) conveyors.push(conveyor);
+                    await db.ref('parts/' + editingPartKey).set({apn:apn, partType:partType, location:location, notes:notes, conveyors:conveyors, updatedAt:new Date().toISOString()});
+                } else {
+                    await db.ref('parts/' + apnKey).set({apn:apn, partType:partType, location:location, notes:notes, conveyors:[conveyor], updatedAt:new Date().toISOString()});
+                }
+                showToast('Part updated!');
+                editingPartKey = null;
+            } else {
+                // Check if APN already exists
+                const existSnap = await db.ref('parts/' + apnKey).once('value');
+                const existing = existSnap.val();
+                if (existing) {
+                    // Silently merge - add conveyor to list
+                    var conveyors = existing.conveyors || [existing.conveyorNumber || ''];
+                    conveyors = conveyors.filter(function(c){return c;});
+                    if (conveyors.indexOf(conveyor) < 0) {
+                        conveyors.push(conveyor);
+                        await db.ref('parts/' + apnKey).update({conveyors:conveyors, updatedAt:new Date().toISOString()});
+                        showToast('Part ' + apn + ' updated — added conveyor ' + conveyor);
+                    } else {
+                        showToast('Part ' + apn + ' already has conveyor ' + conveyor, 'error');
+                        hideLoading(); return;
+                    }
+                } else {
+                    // New part
+                    await db.ref('parts/' + apnKey).set({apn:apn, partType:partType, location:location, notes:notes, conveyors:[conveyor], createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()});
+                    showToast('Part saved!');
+                }
+            }
+            document.getElementById('part-conveyor').value='';document.getElementById('part-apn').value='';
+            document.getElementById('part-type').value='';document.getElementById('part-location').value='';document.getElementById('part-notes').value='';
+        } catch(e){showToast('Error: '+e.message,'error');}
+        hideLoading();
+    }
+    async function editPart(key) {
+        if(!checkFirebase())return;
+        const snap=await db.ref('parts/'+key).once('value');const d=snap.val();if(!d)return;
+        editingPartKey=key;
+        var conveyorVal = '';
+        if (d.conveyors && d.conveyors.length > 0) conveyorVal = d.conveyors[0];
+        else conveyorVal = d.conveyorNumber || '';
+        document.getElementById('part-conveyor').value=conveyorVal;
+        document.getElementById('part-apn').value=d.apn||'';
+        document.getElementById('part-type').value=d.partType||'';
+        document.getElementById('part-location').value=d.location||'';
+        document.getElementById('part-notes').value=d.notes||'';
+        switchTab('parts');showToast('Editing part '+d.apn,'info');window.scrollTo(0,0);
+    }
+    function loadPartsList() {
+        if(!firebaseReady)return;
+        db.ref('parts').on('value',snap=>{
+            const container=document.getElementById('parts-list');const data=snap.val();
+            if(!data){container.innerHTML='<div class="empty-state">No parts saved yet</div>';return;}
+            let html='<table id="parts-table"><thead><tr>';
+            html+='<th onclick="sortTable(\'parts-table\',0)">APN</th>';
+            html+='<th onclick="sortTable(\'parts-table\',1)">Type</th>';
+            html+='<th onclick="sortTable(\'parts-table\',2)">Location</th>';
+            html+='<th onclick="sortTable(\'parts-table\',3)">Conveyors</th>';
+            html+='<th onclick="sortTable(\'parts-table\',4)">Notes</th>';
+            html+='<th>Action</th></tr></thead><tbody>';
+            Object.entries(data).forEach(([key,p])=>{
+                var pConvs=p.conveyors?(p.conveyors.join(', ')):(p.conveyorNumber||'');html+='<tr><td>'+p.apn+'</td><td>'+(p.partType||'—')+'</td><td>'+p.location+'</td><td>'+pConvs+'</td><td>'+(p.notes||'—')+'</td>';
+                html+='<td><button class="btn btn-secondary btn-sm" onclick="editPart(\''+key+'\')">Edit</button> ';
+                html+='<button class="btn btn-danger btn-sm" onclick="deleteEntry(\'parts\',\''+key+'\')">Del</button></td></tr>';
+            });
+            html+='</tbody></table>';
+            container.innerHTML=html;
+        });
+    }
+
+    // CBM ROUTES
+    let editingRouteKey = null;
+    function addWaypoint() { const c=document.getElementById('waypoints-container');const d=document.createElement('div');d.className='waypoint-row';d.innerHTML='<input type="text" placeholder="Conveyor number" class="waypoint-input"><button class="btn-remove" onclick="this.parentElement.remove()">x</button>';c.appendChild(d); }
+    async function loadRouteImage(imgId, conveyor) {
+        if(!firebaseReady||!conveyor.trim())return;
+        try{const snap=await db.ref('equipment/'+sanitizeKey(conveyor.trim())).once('value');const d=snap.val();const img=document.getElementById(imgId);if(d&&d.imageUrl){img.src=d.imageUrl;img.style.display='block';}else{img.style.display='none';}}catch(e){}
+    }
+    async function saveRoute() {
+        if(!checkFirebase())return;
+        const routeNum=document.getElementById('route-number').value.trim();
+        const type=document.getElementById('route-type').value;
+        const notes=document.getElementById('route-notes').value.trim();
+        const start=document.getElementById('route-start').value.trim();
+        const end=document.getElementById('route-end').value.trim();
+        const routeImgFile=document.getElementById('route-img-file').files[0];
+        if(!routeNum||!type||!start||!end||!notes){showToast('Fill in all required fields (including notes)','error');return;}
+        if(!validateConveyor(start,'Starting Point'))return;
+        if(!validateConveyor(end,'End Point'))return;
+        const waypoints=[];
+        document.querySelectorAll('.waypoint-input').forEach(inp=>{if(inp.value.trim())waypoints.push(inp.value.trim());});
+        const allPoints=[start,...waypoints,end];
+        const motors=[];
+        allPoints.forEach(p=>{motors.push(p+' Motor');motors.push(p+' Gearbox');});
+        showLoading();
+        try {
+            let routeImageUrl=null;
+            if(routeImgFile){routeImageUrl=await fileToBase64(routeImgFile);}
+            else if(editingRouteKey){const ex=await db.ref('routes/'+sanitizeKey(routeNum)).once('value');routeImageUrl=ex.val()?.routeImageUrl||null;}
+            const key=sanitizeKey(routeNum);
+            if(editingRouteKey&&editingRouteKey!==key){await db.ref('routes/'+editingRouteKey).remove();}
+            await db.ref('routes/'+key).set({routeNumber:routeNum,type,notes,startPoint:start,endPoint:end,waypoints,motors,routeImageUrl,createdAt:new Date().toISOString()});
+            // Auto-add equipment
+            for(const pt of allPoints){const pk=sanitizeKey(pt);const ex=await db.ref('equipment/'+pk).once('value');if(!ex.val()){await db.ref('equipment/'+pk).set({conveyorNumber:pt,type:'',notes:'',imageUrl:null,updatedAt:new Date().toISOString()});}}
+            showToast(editingRouteKey?'Route updated!':'Route saved!');
+            editingRouteKey=null;
+            document.getElementById('route-number').value='';document.getElementById('route-type').value='';document.getElementById('route-notes').value='';
+            document.getElementById('route-start').value='';document.getElementById('route-end').value='';
+            document.getElementById('route-start-img').style.display='none';document.getElementById('route-end-img').style.display='none';
+            document.getElementById('route-img-preview').style.display='none';document.getElementById('route-img-file').value='';
+            document.getElementById('waypoints-container').innerHTML='';
+        } catch(e){showToast('Error: '+e.message,'error');}
+        hideLoading();
+    }
+    async function editRoute(key) {
+        if(!checkFirebase())return;
+        const snap=await db.ref('routes/'+key).once('value');const d=snap.val();if(!d)return;
+        editingRouteKey=key;
+        document.getElementById('route-number').value=d.routeNumber||'';
+        document.getElementById('route-type').value=d.type||'';
+        document.getElementById('route-notes').value=d.notes||'';
+        document.getElementById('route-start').value=d.startPoint||'';
+        document.getElementById('route-end').value=d.endPoint||'';
+        const wpC=document.getElementById('waypoints-container');wpC.innerHTML='';
+        if(d.waypoints&&d.waypoints.length>0){d.waypoints.forEach(wp=>{const div=document.createElement('div');div.className='waypoint-row';div.innerHTML='<input type="text" value="'+wp+'" class="waypoint-input"><button class="btn-remove" onclick="this.parentElement.remove()">x</button>';wpC.appendChild(div);});}
+        if(d.routeImageUrl){document.getElementById('route-img-preview').src=d.routeImageUrl;document.getElementById('route-img-preview').style.display='block';}
+        showToast('Editing route '+d.routeNumber,'success');
+        window.scrollTo({top:0,behavior:'smooth'});
+    }
+    function loadRoutesList() {
+        if(!firebaseReady)return;
+        db.ref('routes').on('value', snap=>{
+            const container=document.getElementById('routes-list');const data=snap.val();
+            if(!data){container.innerHTML='<div class="empty-state">No routes saved yet</div>';return;}
+            let html='<table id="routes-table"><thead><tr>';
+            html+='<th onclick="sortTable(\'routes-table\',0)">Route</th>';
+            html+='<th onclick="sortTable(\'routes-table\',1)">Type</th>';
+            html+='<th onclick="sortTable(\'routes-table\',2)">Start</th>';
+            html+='<th onclick="sortTable(\'routes-table\',3)">End</th>';
+            html+='<th onclick="sortTable(\'routes-table\',4)">Notes</th>';
+            
+            html+='<th>Action</th></tr></thead><tbody>';
+            Object.entries(data).forEach(([key,r])=>{
+                html+='<tr><td>'+r.routeNumber+'</td><td>'+r.type+'</td><td>'+r.startPoint+'</td><td>'+r.endPoint+'</td><td>'+(r.notes||'—')+'</td>';
+                html+='<td><button class="btn btn-secondary btn-sm" onclick="editRoute(\''+key+'\')">Edit</button> ';
+                html+='<button class="btn btn-danger btn-sm" onclick="deleteEntry(\'routes\',\''+key+'\')">Del</button></td></tr>';
+            });
+            html+='</tbody></table>';
+            container.innerHTML=html;
+        });
+    }
+
+    // THERMAL READINGS
+    let currentThermalRoute='',currentThermalItems=[],thermalChart=null,thermalHistoryData=[];
+    async function loadThermalRoute() {
+        if(!checkFirebase())return;
+        const routeNum=document.getElementById('thermal-route').value.trim();if(!routeNum)return;
+        const key=sanitizeKey(routeNum);
+        showLoading();
+        try {
+            const snap=await db.ref('routes/'+key).once('value');const route=snap.val();
+            if(!route||!route.motors||route.motors.length===0){
+                document.getElementById('thermal-items').innerHTML='<div class="empty-state">No motors/gearboxes found for this route.</div>';
+                document.getElementById('thermal-save-btn').style.display='none';
+                document.getElementById('thermal-history-card').style.display='none';
+                hideLoading();return;
+            }
+            currentThermalRoute=key;currentThermalItems=route.motors;
+            // Show route location
+            let locationHtml='';
+            if(route.routeImageUrl){locationHtml='<div style="margin-bottom:12px;"><p style="font-size:12px;color:#6b7280;">Route Location:</p><img src="'+route.routeImageUrl+'" class="img-preview" style="display:block;"></div>';}
+            else{
+                const startSnap=await db.ref('equipment/'+sanitizeKey(route.startPoint)).once('value');
+                const endSnap=await db.ref('equipment/'+sanitizeKey(route.endPoint)).once('value');
+                const sEq=startSnap.val(),eEq=endSnap.val();
+                if(sEq&&sEq.imageUrl)locationHtml+='<div style="margin-bottom:8px;"><p style="font-size:12px;color:#6b7280;">Start ('+route.startPoint+'):</p><img src="'+sEq.imageUrl+'" class="img-preview" style="display:block;"></div>';
+                if(eEq&&eEq.imageUrl)locationHtml+='<div style="margin-bottom:8px;"><p style="font-size:12px;color:#6b7280;">End ('+route.endPoint+'):</p><img src="'+eEq.imageUrl+'" class="img-preview" style="display:block;"></div>';
+            }
+            // Grouped display
+            let html='';
+            const allPts=[route.startPoint,...(route.waypoints||[]),route.endPoint];
+            allPts.forEach((pt,pIdx)=>{
+                const mIdx=pIdx*2,gIdx=pIdx*2+1;
+                html+='<div style="background:#f1f5f9;border-radius:8px;padding:12px;margin-bottom:12px;">';
+                html+='<div style="font-size:13px;font-weight:600;color:#2563eb;margin-bottom:8px;">'+pt+'</div>';
+                html+='<div class="thermal-item-row"><span>Motor</span><input type="number" step="0.1" id="reading-'+mIdx+'" placeholder="°C"></div>';
+                html+='<div class="thermal-item-row"><span>Gearbox</span><input type="number" step="0.1" id="reading-'+gIdx+'" placeholder="°C"></div>';
+                html+='</div>';
+            });
+            document.getElementById('thermal-items').innerHTML=locationHtml+html;
+            document.getElementById('thermal-save-btn').style.display='block';
+            loadThermalHistory(key);
+        } catch(e){showToast('Error: '+e.message,'error');}
+        hideLoading();
+    }
+    function loadThermalHistory(routeKey) {
+        if(!firebaseReady)return;
+        document.getElementById('thermal-history-card').style.display='block';
+        db.ref('readings/'+routeKey).orderByChild('timestamp').limitToLast(50).once('value').then(snap=>{
+            const container=document.getElementById('thermal-history');const data=snap.val();
+            if(!data){container.innerHTML='<div class="empty-state">No historical data yet</div>';return;}
+            thermalHistoryData=Object.values(data).sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+            const select=document.getElementById('chart-component');
+            select.innerHTML='<option value="">Select component...</option>';
+            currentThermalItems.forEach(m=>{select.innerHTML+='<option value="'+m+'">'+m+'</option>';});
+            const entries=[...thermalHistoryData].reverse();
+            let html='';
+            entries.slice(0,20).forEach(entry=>{
+                const dateStr=new Date(entry.timestamp).toLocaleString();
+                html+='<div class="history-entry"><div class="timestamp">'+dateStr+(entry.recordedBy?' — <strong>'+entry.recordedBy+'</strong>':'')+'</div><div>';
+                if(entry.readings){Object.entries(entry.readings).forEach(([name,value])=>{html+='<span class="reading-chip">'+name+': <strong>'+value+'°C</strong></span>';});}
+                html+='</div></div>';
+            });
+            container.innerHTML=html;
+        });
+    }
+    async function saveThermalReadings() {
+        if(!checkFirebase())return;
+        if(!currentThermalRoute||currentThermalItems.length===0)return;
+        const name=document.getElementById('thermal-name').value.trim();
+        const readings={};let hasData=false;
+        currentThermalItems.forEach((motor,idx)=>{const val=document.getElementById('reading-'+idx).value;if(val){readings[motor]=parseFloat(val);hasData=true;}});
+        if(!hasData){showToast('Enter at least one reading','error');return;}
+        showLoading();
+        try {
+            await db.ref('readings/'+currentThermalRoute).push({readings,timestamp:new Date().toISOString(),recordedBy:name||'Unknown'});
+            showToast('Readings saved!');
+            currentThermalItems.forEach((_,idx)=>{document.getElementById('reading-'+idx).value='';});
+            loadThermalHistory(currentThermalRoute);
+        } catch(e){showToast('Error: '+e.message,'error');}
+        hideLoading();
+    }
+    function exportThermalExcel() {
+        if(thermalHistoryData.length===0){showToast('No data to export','error');return;}
+        const rows=[['Date','Recorded By',...currentThermalItems]];
+        thermalHistoryData.forEach(entry=>{
+            const row=[new Date(entry.timestamp).toLocaleString(),entry.recordedBy||''];
+            currentThermalItems.forEach(m=>{row.push(entry.readings?entry.readings[m]||'':'');});
+            rows.push(row);
+        });
+        const ws=XLSX.utils.aoa_to_sheet(rows);
+        const wb=XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb,ws,'Thermal Readings');
+        XLSX.writeFile(wb,'thermal_readings_route_'+currentThermalRoute+'.xlsx');
+        showToast('Excel exported!');
+    }
+    function renderChart() {
+        const component=document.getElementById('chart-component').value;
+        if(!component||thermalHistoryData.length===0)return;
+        const labels=[],values=[];
+        thermalHistoryData.forEach(entry=>{if(entry.readings&&entry.readings[component]!==undefined){labels.push(new Date(entry.timestamp).toLocaleDateString());values.push(entry.readings[component]);}});
+        if(thermalChart)thermalChart.destroy();
+        const ctx=document.getElementById('thermal-chart').getContext('2d');
+        thermalChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:component+' (°C)',data:values,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.1)',fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true}},scales:{y:{title:{display:true,text:'Temperature (°C)'}},x:{title:{display:true,text:'Date'}}}}});
+    }
+
+    // DELETE
+    
+
+    // QR SCANNER
+    let qrStream=null;
+    async function startQRScan() {
+        const container=document.getElementById('qr-scanner-container');const video=document.getElementById('qr-video');
+        container.style.display='block';
+        try{qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});video.srcObject=qrStream;video.play();
+            if('BarcodeDetector' in window){const detector=new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13']});const scanLoop=async()=>{if(!qrStream)return;try{const barcodes=await detector.detect(video);if(barcodes.length>0){document.getElementById('eq-conveyor').value=barcodes[0].rawValue;showToast('Scanned: '+barcodes[0].rawValue);stopQRScan();return;}}catch(e){}requestAnimationFrame(scanLoop);};requestAnimationFrame(scanLoop);}
+            else{showToast('QR scanning not supported. Try Chrome on mobile.','error');}
+        }catch(e){showToast('Camera access denied.','error');container.style.display='none';}
+    }
+    function stopQRScan(){if(qrStream){qrStream.getTracks().forEach(t=>t.stop());qrStream=null;}document.getElementById('qr-scanner-container').style.display='none';}
+
+    // BULK ROUTE IMPORT
+    let csvData=[];
+    function downloadRouteTemplate(){const t='RouteNumber,Type,StartPoint,EndPoint,Waypoints\n42,Ultrasound,702060,702200,"702070,702080,702100"\n542,Thermal,851410,851480,"851430,851460"';const blob=new Blob([t],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='routes_template.csv';a.click();}
+    function previewImport(input){
+        const file=input.files[0];if(!file)return;
+        const ext=file.name.split('.').pop().toLowerCase();
+        if(ext==='xlsx'||ext==='xls'){parseAPMExcel(file);}
+        else{const r=new FileReader();r.onload=e=>{parseCSVData(e.target.result);};r.readAsText(file);}
+    }
+    function parseAPMExcel(file){
+        const reader=new FileReader();
+        reader.onload=function(e){
+            try{const data=new Uint8Array(e.target.result);const wb=XLSX.read(data,{type:'array'});const sheets={};wb.SheetNames.forEach(name=>{sheets[name]=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1});});processAPMData(sheets);}
+            catch(err){showToast('Error reading Excel: '+err.message,'error');}
+        };reader.readAsArrayBuffer(file);
+    }
+    let pendingImportPoints=[],pendingImportType='Thermal';
+    function processAPMData(sheets){
+        csvData=[];
+        Object.entries(sheets).forEach(([sheetName,rows])=>{
+            if(rows.length<2)return;
+            const headers=rows[0].map(h=>(h||'').toString().trim());
+            const eqIdx=headers.findIndex(h=>h.toLowerCase()==='equipment');
+            if(eqIdx===-1)return;
+            const eqDescIdx=headers.findIndex(h=>h.toLowerCase()==='equipment description');
+            const descIdx=headers.findIndex(h=>h.toLowerCase()==='description'&&h.toLowerCase()!=='equipment description');
+            let routeNumber='',routeType='',routeDesc='';const points=[];
+            for(let i=1;i<rows.length;i++){
+                const eq=(rows[i][eqIdx]||'').toString().trim();if(!eq)continue;
+                const routeMatch=eq.match(/^CBM\.(ULTS|THERM)\.(\d+)$/i);
+                if(routeMatch){
+                    if(routeNumber&&points.length>0)saveRouteFromPoints(routeNumber,routeType,[...points],routeDesc);
+                    routeType=routeMatch[1].toUpperCase()==='ULTS'?'Ultrasound':'Thermal';
+                    routeNumber=routeMatch[2];
+                    routeDesc=eqDescIdx>=0?(rows[i][eqDescIdx]||'').toString().trim():'';
+                    points.length=0;continue;
+                }
+                
+                const eqDesc=eqDescIdx>=0?(rows[i][eqDescIdx]||'').toString().trim():'';
+                const cm=eq.match(/(\d{6})$/);if(cm){const cn=cm[1];if(!points.some(p=>p.number===cn))points.push({number:cn,description:eqDesc});}
+            }
+            if(routeNumber&&points.length>0)saveRouteFromPoints(routeNumber,routeType,points,routeDesc);
+            if(!routeNumber&&points.length>0){pendingImportPoints=points;const sm=sheetName.match(/(ULTS|THERM|Ultrasound|Thermal)/i);pendingImportType=sm?(sm[1].toUpperCase().includes('ULTS')?'Ultrasound':'Thermal'):'Thermal';showManualRoutePrompt();return;}
+        });
+        if(csvData.length>0)showImportPreview();
+    }
+    function saveRouteFromPoints(routeNumber,routeType,points,routeDesc){
+        const sorted=[...points].sort((a,b)=>parseInt(a.number)-parseInt(b.number));
+        const start=sorted[0].number,end=sorted[sorted.length-1].number;
+        const waypoints=sorted.slice(1,-1).map(p=>p.number);
+        const ptDescs={};sorted.forEach(function(p){if(p.description)ptDescs[p.number]=p.description;});
+        csvData.push({RouteNumber:routeNumber,Type:routeType,StartPoint:start,EndPoint:end,Waypoints:waypoints.join(','),needsTemp:routeType==='Thermal'&&routeNumber.toString().startsWith('5'),routeDesc:routeDesc||'',ptDescs:ptDescs});
+    }
+    function showManualRoutePrompt(){
+        let html='<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:16px;margin-bottom:12px;">';
+        html+='<p style="font-size:13px;font-weight:600;margin-bottom:8px;">No route header found. Enter route number:</p>';
+        html+='<div style="display:flex;gap:8px;margin-bottom:8px;"><input type="text" id="manual-route-number" placeholder="e.g. 542" style="padding:8px;border:1px solid #d1d5db;border-radius:6px;flex:1;">';
+        html+='<select id="manual-route-type" style="padding:8px;border:1px solid #d1d5db;border-radius:6px;"><option value="Thermal">Thermal</option><option value="Ultrasound">Ultrasound</option></select></div>';
+        html+='<button class="btn btn-primary btn-sm" onclick="confirmManualRoute()">Confirm</button></div>';
+        document.getElementById('csv-preview').innerHTML=html;document.getElementById('csv-preview').style.display='block';
+    }
+    function confirmManualRoute(){const rn=document.getElementById('manual-route-number').value.trim();const rt=document.getElementById('manual-route-type').value;if(!rn){showToast('Enter route number','error');return;}saveRouteFromPoints(rn,rt,pendingImportPoints);pendingImportPoints=[];showImportPreview();}
+    function showImportPreview(){
+        let html='<p style="font-size:13px;font-weight:600;">Preview ('+csvData.length+' routes):</p>';
+        html+='<table><thead><tr><th>Route</th><th>Type</th><th>Equip. Desc.</th><th>Start</th><th>End</th><th>Waypoints</th></tr></thead><tbody>';
+        csvData.forEach(r=>{html+='<tr><td>'+r.RouteNumber+'</td><td>'+r.Type+'</td><td>'+(r.routeDesc||'')+'</td><td>'+r.StartPoint+'</td><td>'+r.EndPoint+'</td><td>'+r.Waypoints+'</td></tr>';});
+        html+='</tbody></table>';
+        document.getElementById('csv-preview').innerHTML=html;document.getElementById('csv-preview').style.display='block';document.getElementById('csv-import-btn').style.display='inline-block';
+    }
+    function parseCSVData(text){
+        const lines=text.split('\n').filter(l=>l.trim());const headers=lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+        const required=['RouteNumber','Type','StartPoint','EndPoint'];
+        const missing=required.filter(r=>!headers.some(h=>h.toLowerCase()===r.toLowerCase()));
+        if(missing.length>0){showToast('Missing columns: '+missing.join(', '),'error');return;}
+        csvData=[];
+        for(let i=1;i<lines.length;i++){const values=parseCSVLine(lines[i]);if(values.length<4)continue;const row={};headers.forEach((h,idx)=>{row[h.trim()]=(values[idx]||'').trim().replace(/^"|"$/g,'');});csvData.push(row);}
+        showImportPreview();
+    }
+    function parseCSVLine(line){const result=[];let current='',inQ=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"')inQ=!inQ;else if(ch===','&&!inQ){result.push(current);current='';}else current+=ch;}result.push(current);return result;}
+    
+
+    async function importRoutes(){
+        if(!checkFirebase())return;if(csvData.length===0)return;
+        if(csvData.length>1){showToast('Only 1 route per import allowed. Please upload a single APM checklist.','error');return;}
+        showLoading();let imported=0,errors=0;
+        try{
+            for(const row of csvData){
+                const routeNum=(row.RouteNumber||'').toString();const type=row.Type||'';const start=(row.StartPoint||'').toString();const end=(row.EndPoint||'').toString();
+                const waypointsStr=(row.Waypoints||'').toString();
+                if(!routeNum||!type||!start||!end){errors++;continue;}
+                const waypoints=waypointsStr?waypointsStr.split(',').map(w=>w.trim()).filter(w=>w):[];
+                const allPoints=[start,...waypoints,end];
+                const motors=[];allPoints.forEach(p=>{motors.push(p+' Motor');motors.push(p+' Gearbox');});
+                const key=sanitizeKey(routeNum);
+                const routeData={routeNumber:routeNum,type,notes:row.routeDesc||'',startPoint:start,endPoint:end,waypoints,motors,needsTemp:row.needsTemp!==undefined?row.needsTemp:(type==='Thermal'),routeImageUrl:(document.getElementById('route-img-preview').style.display!=='none'?document.getElementById('route-img-preview').src:null),createdAt:new Date().toISOString()};
+                await db.ref('routes/'+key).set(routeData);
+                const ptDescs=row.ptDescs||{};for(const pt of allPoints){const pk=sanitizeKey(pt);const ex=await db.ref('equipment/'+pk).once('value');if(!ex.val()){await db.ref('equipment/'+pk).set({conveyorNumber:pt,type:'',notes:ptDescs[pt]||'',imageUrl:null,updatedAt:new Date().toISOString()});}else if(ptDescs[pt]){await db.ref('equipment/'+pk).update({notes:ptDescs[pt],updatedAt:new Date().toISOString()});}}
+                imported++;
+            }
+            showToast(imported+' route imported!'+((document.getElementById('route-img-preview').style.display!=='none'?' (with location image)':'')));
+            csvData=[];
+            document.getElementById('csv-preview').style.display='none';document.getElementById('csv-import-btn').style.display='none';document.getElementById('route-csv-file').value='';
+            document.getElementById('route-img-preview').style.display='none';document.getElementById('route-img-preview').src='';
+        }catch(e){showToast('Import error: '+e.message,'error');}
+        hideLoading();
+    }
+
+    
+    
+    // ============================================================
+    // DATA BACKUP/EXPORT
+    // ============================================================
+    async function downloadAllData() {
+        if (!checkFirebase()) return;
+        showLoading();
+        try {
+            const snap = await db.ref('/').once('value');
+            const data = snap.val() || {};
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'reliability_app_backup_' + new Date().toISOString().slice(0,10) + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Backup downloaded!');
+        } catch(e) {
+            showToast('Backup failed: ' + e.message, 'error');
+        }
+        hideLoading();
+    }
+
+
+
+    // ============================================================
+    // CONVEYOR NUMBER VALIDATION
+    // ============================================================
+    function isValidConveyor(num) {
+        return /^\d{6}$/.test(num.trim());
+    }
+
+    function validateConveyor(num, fieldName) {
+        if (!num || !num.trim()) {
+            showToast(fieldName + ' is required', 'error');
+            return false;
+        }
+        if (!isValidConveyor(num)) {
+            showToast(fieldName + ' must be exactly 6 digits (e.g. 180000)', 'error');
+            return false;
+        }
+        return true;
+    }
+
+    // ============================================================
+    // SOFT DELETE (Recently Deleted)
+    // ============================================================
+    async function deleteEntry(collection, key) {
+        if (!checkFirebase()) return;
+        const confirmed = await showModal('Delete Entry', 'Are you sure you want to delete this entry? It will be moved to Recently Deleted for 7 days.');
+        if (!confirmed) return;
+        showLoading();
+        try {
+            // Move to trash instead of permanent delete
+            const snap = await db.ref(collection + '/' + key).once('value');
+            const data = snap.val();
+            if (data) {
+                await db.ref('trash/' + collection + '/' + key).set({
+                    ...data,
+                    deletedAt: new Date().toISOString()
+                });
+            }
+            await db.ref(collection + '/' + key).remove();
+            showToast('Entry moved to Recently Deleted.');
+        } catch(e) {
+            showToast('Error: ' + e.message, 'error');
+        }
+        hideLoading();
+    }
+
+
+    // ============================================================
+    // PRINT THERMAL READINGS
+    // ============================================================
+    function printThermalReadings() {
+        const historyEl = document.getElementById('thermal-history');
+        if (!historyEl || !historyEl.innerHTML.trim()) {
+            showToast('No readings to print', 'error');
+            return;
+        }
+        const routeNum = document.getElementById('thermal-route').value.trim();
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Thermal Readings - Route ' + routeNum + '</title>');
+        printWindow.document.write('<style>body{font-family:sans-serif;padding:20px;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #ddd;padding:8px;text-align:left;} th{background:#f0f0f0;} h2{margin-bottom:10px;} .reading-chip{display:inline-block;padding:2px 8px;background:#e0f2fe;border-radius:4px;font-size:12px;margin:2px;}</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write('<h2>Thermal Readings - Route ' + routeNum + '</h2>');
+        printWindow.document.write('<p>Printed: ' + new Date().toLocaleString() + '</p><hr>');
+        printWindow.document.write(historyEl.innerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+
+    // ============================================================
+    // PRINT BLANK THERMAL SHEET
+    // ============================================================
+    function printBlankSheet() {
+        if (!currentThermalRoute || currentThermalItems.length === 0) {
+            showToast('Load a route first', 'error');
+            return;
+        }
+        const routeNum = document.getElementById('thermal-route').value.trim();
+        const allPoints = [];
+        for (let i = 0; i < currentThermalItems.length; i += 2) {
+            const motor = currentThermalItems[i] || '';
+            const equipment = motor.replace(' Motor', '');
+            allPoints.push(equipment);
+        }
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Thermal Route ' + routeNum + '</title>');
+        printWindow.document.write('<style>body{font-family:sans-serif;padding:20px;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #333;padding:10px;text-align:center;} th{background:#e0e0e0;font-size:13px;} td{font-size:13px;height:40px;} h2{margin-bottom:5px;} .header-info{font-size:13px;margin-bottom:15px;color:#555;}</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write('<h2>Thermal Readings - Route ' + routeNum + '</h2>');
+        printWindow.document.write('<p class="header-info">Date: ______________ &nbsp;&nbsp; Login ID: ______________</p>');
+        printWindow.document.write('<table><thead><tr><th>Equipment</th><th>Motor (°C)</th><th>Gearbox (°C)</th></tr></thead><tbody>');
+        allPoints.forEach(eq => {
+            printWindow.document.write('<tr><td>' + eq + '</td><td></td><td></td></tr>');
+        });
+        printWindow.document.write('</tbody></table>');
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+document.addEventListener('DOMContentLoaded', () => {
+        if(firebaseReady){loadEquipmentList();loadPartsList();loadRoutesList();}
+    });
+    
+
+    async function detailEdit(type, key) {
+        if (!checkFirebase()) return;
+        var refPath = '';
+        if (type === 'equipment') refPath = 'equipment/' + key;
+        else if (type === 'part') refPath = 'parts/' + key;
+        else if (type === 'route') refPath = 'routes/' + key;
+        var snap = await db.ref(refPath).once('value');
+        var data = snap.val();
+        if (!data) { showToast('Item not found', 'error'); return; }
+        closeDetail();
+        if (type === 'equipment') {
+            switchTabDirect('equipment');
+            editingEquipmentKey = key;
+            document.getElementById('eq-conveyor').value = data.conveyorNumber || '';
+            document.getElementById('eq-type').value = data.type || '';
+            document.getElementById('eq-notes').value = data.notes || '';
+            if (data.imageUrl) { document.getElementById('eq-preview').src = data.imageUrl; document.getElementById('eq-preview').style.display = 'block'; }
+            showToast('Editing ' + data.conveyorNumber, 'success');
+        } else if (type === 'part') {
+            switchTabDirect('parts');
+            editingPartKey = key;
+            document.getElementById('part-conveyor').value = (data.conveyors && data.conveyors.length > 0) ? data.conveyors[0] : (data.conveyorNumber || '');
+            document.getElementById('part-apn').value = data.apn || '';
+            document.getElementById('part-type').value = data.partType || '';
+            document.getElementById('part-location').value = data.location || '';
+            document.getElementById('part-notes').value = data.notes || '';
+            showToast('Editing part ' + data.apn, 'success');
+        } else if (type === 'route') {
+            switchTabDirect('routes');
+            editingRouteKey = key;
+            document.getElementById('route-number').value = data.routeNumber || '';
+            document.getElementById('route-type').value = data.type || '';
+            document.getElementById('route-notes').value = data.notes || '';
+            document.getElementById('route-start').value = data.startPoint || '';
+            document.getElementById('route-end').value = data.endPoint || '';
+            var wpContainer = document.getElementById('waypoints-container');
+            wpContainer.innerHTML = '';
+            if (data.waypoints) {
+                data.waypoints.forEach(function(w) {
+                    var row = document.createElement('div');
+                    row.className = 'waypoint-row';
+                    row.innerHTML = '<input type="text" class="waypoint-input" value="' + w + '" placeholder="Conveyor number"><button class="btn-remove" onclick="this.parentElement.remove()">X</button>';
+                    wpContainer.appendChild(row);
+                });
+            }
+            showToast('Editing route ' + data.routeNumber, 'success');
+        }
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+    async function detailDelete(type, key) {
+        if (!checkFirebase()) return;
+        var refPath = '';
+        var label = '';
+        if (type === 'equipment') { refPath = 'equipment/' + key; label = 'equipment'; }
+        else if (type === 'part') { refPath = 'parts/' + key; label = 'part'; }
+        else if (type === 'route') { refPath = 'routes/' + key; label = 'route'; }
+        var confirmed = await showModal('Delete ' + label, 'Are you sure you want to delete this ' + label + '? This action cannot be undone.');
+        if (!confirmed) return;
+        showLoading();
+        try {
+            await db.ref(refPath).remove();
+            showToast(label.charAt(0).toUpperCase() + label.slice(1) + ' deleted!');
+            closeDetail();
+            loadEquipmentList();
+            loadPartsList();
+            loadRoutesList();
+        } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        hideLoading();
+    }
+    function switchTabDirect(tab) {
+        document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+        document.getElementById('sec-' + tab).classList.add('active');
+        var tabs = document.querySelectorAll('.tab');
+        tabs.forEach(function(t) { if (t.textContent.toLowerCase().includes(tab.substring(0,4))) t.classList.add('active'); });
+    }
+    function closeDetail() {
+        document.getElementById('detail-overlay').classList.remove('active');
+    }
+    async function openDetail(type, key) {
+        if (!checkFirebase()) return;
+        showLoading();
+        try {
+                        var refPath = '';
+            if (type === 'equipment') refPath = 'equipment/' + key;
+            else if (type === 'part') refPath = 'parts/' + key;
+            else if (type === 'route') refPath = 'routes/' + key;
+            var snap = await db.ref(refPath).once('value');
+            var data = snap.val();
+            if (!data) { hideLoading(); showToast('Item not found', 'error'); return; }
+            var title = '';
+            var html = '<div style="display:flex;gap:8px;margin-bottom:16px;">';
+            html += '<button class="btn btn-primary btn-sm" onclick="detailEdit(\x27' + type + '\x27,\x27' + key + '\x27)">Edit</button>';
+            html += '<button class="btn btn-danger btn-sm" onclick="detailDelete(\x27' + type + '\x27,\x27' + key + '\x27)">Delete</button>';
+            html += '</div>';
+            html += '<div class="card">';
+            if (type === 'equipment') {
+                title = 'Equipment: ' + data.conveyorNumber;
+                html += '<div class="detail-field"><label>Conveyor Number</label><div class="value">' + data.conveyorNumber + '</div></div>';
+                html += '<div class="detail-field"><label>Type</label><div class="value">' + (data.type || 'Not set') + '</div></div>';
+                html += '<div class="detail-field"><label>Notes</label><div class="value">' + (data.notes || 'None') + '</div></div>';
+                if (data.updatedAt) html += '<div class="detail-field"><label>Last Modified</label><div class="value">' + new Date(data.updatedAt).toLocaleDateString() + '</div></div>';
+                if (data.imageUrl) html += '<div class="detail-field"><label>SCADA Screenshot</label><img src="' + data.imageUrl + '" class="img-preview" style="display:block;"></div>';
+                html += '</div>';
+                // Parts for this equipment (new format: conveyors array)
+                var partsSnap = await db.ref('parts').once('value');
+                var allParts = partsSnap.val() || {};
+                var eqParts = Object.entries(allParts).filter(function(e){
+                    var p = e[1];
+                    if (p.conveyors && Array.isArray(p.conveyors)) return p.conveyors.indexOf(data.conveyorNumber) >= 0;
+                    return p.conveyorNumber === data.conveyorNumber;
+                });
+                html += '<div class="card"><h2>Parts for ' + data.conveyorNumber + '</h2>';
+                if (eqParts.length > 0) {
+                    html += '<table><thead><tr><th>APN</th><th>Type</th><th>Location</th><th>Notes</th></tr></thead><tbody>';
+                    eqParts.forEach(function(e){
+                        html += '<tr><td><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27' + e[0] + '\x27);return false;">' + e[1].apn + '</a></td><td>' + (e[1].partType||'') + '</td><td>' + e[1].location + '</td><td>' + (e[1].notes||'') + '</td></tr>';
+                    });
+                    html += '</tbody></table>';
+                } else { html += '<p class="empty-state">No parts recorded</p>'; }
+                html += '</div>';
+                var routesSnap = await db.ref('routes').once('value');
+                var allRoutes = routesSnap.val() || {};
+                var eqRoutes = Object.entries(allRoutes).filter(function(e){ var pts = [e[1].startPoint].concat(e[1].waypoints||[]).concat([e[1].endPoint]); return pts.indexOf(data.conveyorNumber) >= 0; });
+                html += '<div class="card"><h2>Routes containing ' + data.conveyorNumber + '</h2>';
+                if (eqRoutes.length > 0) {
+                    html += '<table><thead><tr><th>Route</th><th>Type</th><th>Start</th><th>End</th></tr></thead><tbody>';
+                    eqRoutes.forEach(function(e){ html += '<tr><td><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27' + e[0] + '\x27);return false;">' + e[1].routeNumber + '</a></td><td>' + e[1].type + '</td><td>' + e[1].startPoint + '</td><td>' + e[1].endPoint + '</td></tr>'; });
+                    html += '</tbody></table>';
+                } else { html += '<p class="empty-state">Not part of any route</p>'; }
+                html += '</div>';
+            } else if (type === 'part') {
+                title = 'Part: ' + data.apn;
+                html += '<div class="detail-field"><label>APN</label><div class="value" style="font-size:20px;font-weight:700;">' + data.apn + '</div></div>';
+                html += '<div class="detail-field"><label>Part Type</label><div class="value">' + (data.partType || 'N/A') + '</div></div>';
+                html += '<div class="detail-field"><label>Store Location</label><div class="value" style="font-size:20px;font-weight:700;color:#2563eb;">' + (data.location || 'N/A') + '</div></div>';
+                html += '<div class="detail-field"><label>Description / Notes</label><div class="value">' + (data.notes || 'None') + '</div></div>';
+                // Show all conveyors
+                var conveyors = data.conveyors || (data.conveyorNumber ? [data.conveyorNumber] : []);
+                html += '<div class="detail-field"><label>Used on Equipment (' + conveyors.length + ')</label><div class="value">';
+                conveyors.forEach(function(c, idx) {
+                    if (idx > 0) html += ', ';
+                    html += '<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(c) + '\x27);return false;">' + c + '</a>';
+                });
+                html += '</div></div>';
+                html += '</div>';
+            } else if (type === 'route') {
+                title = 'Route: ' + data.routeNumber + ' (' + data.type + ')';
+                html += '<div class="detail-field"><label>Route Number</label><div class="value">' + data.routeNumber + '</div></div>';
+                html += '<div class="detail-field"><label>Type</label><div class="value">' + data.type + '</div></div>';
+                html += '<div class="detail-field"><label>Equipment Description</label><div class="value">' + (data.notes || 'None') + '</div></div>';
+                html += '<div class="detail-field"><label>Start</label><div class="value"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(data.startPoint) + '\x27);return false;">' + data.startPoint + '</a></div></div>';
+                if (data.waypoints && data.waypoints.length > 0) {
+                    html += '<div class="detail-field"><label>Waypoints</label><div class="value">';
+                    data.waypoints.forEach(function(w) { html += '<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(w) + '\x27);return false;">' + w + '</a> '; });
+                    html += '</div></div>';
+                }
+                html += '<div class="detail-field"><label>End</label><div class="value"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(data.endPoint) + '\x27);return false;">' + data.endPoint + '</a></div></div>';
+                if (data.routeImageUrl) {
+                    html += '<div class="detail-field"><label>Route Location</label><img src="' + data.routeImageUrl + '" class="img-preview" style="display:block;"></div>';
+                }
+                html += '</div>';
+            }
+            document.getElementById('detail-title').textContent = title;
+            document.getElementById('detail-content').innerHTML = html;
+            document.getElementById('detail-overlay').classList.add('active');
+            hideLoading();
+        } catch(e) { showToast('Error: '+e.message,'error'); hideLoading(); }
+    }
+
+
+    // ============================================================
+    // PASTE IMAGE FROM CLIPBOARD
+    // ============================================================
+    document.addEventListener('paste', function(e) {
+        var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        var imageFile = null;
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                imageFile = items[i].getAsFile();
+                break;
+            }
+        }
+        if (!imageFile) return;
+        var activeSection = document.querySelector('.section.active');
+        if (!activeSection) return;
+        var sectionId = activeSection.id;
+        if (sectionId === 'sec-equipment') {
+            var dt = new DataTransfer();
+            dt.items.add(imageFile);
+            document.getElementById('eq-file').files = dt.files;
+            previewImage(document.getElementById('eq-file'), 'eq-preview');
+            showToast('Image pasted!', 'success');
+        } else if (sectionId === 'sec-routes') {
+            var dt2 = new DataTransfer();
+            dt2.items.add(imageFile);
+            document.getElementById('route-img-file').files = dt2.files;
+            previewImage(document.getElementById('route-img-file'), 'route-img-preview');
+            showToast('Image pasted!', 'success');
+        }
+    });
+
+</script>
+</body>
+</html>
