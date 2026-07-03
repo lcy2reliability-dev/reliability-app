@@ -4,6 +4,20 @@
 
 ---
 
+## v1.01 — Bug Fix + Tab Rename
+**Date:** 2026-07-03  
+**Status:** Deployed
+
+### Fixes
+- **Critical:** Removed stray `async` keyword (line 1171) that caused `ReferenceError: async is not defined` — broke all JS execution (login, tabs, search, everything). Bug originated in the build session, not a deployment error.
+- **Tab renamed:** "Add Equipment" → "Manage Equipment"
+
+### Additions
+- **Logout / Switch User:** Tap the username in the header → dropdown with Switch User and Logout options
+- **Mobile optimization:** Flex header (title hidden on mobile), compact tabs, larger touch targets, iOS zoom prevention, scrollable tables
+
+---
+
 ## v1.00 — Initial Full Release
 
 **Date:** 2026-07-03**Status:** Deployed**File:** `index.html` (163 KB)
@@ -170,10 +184,9 @@ Complete rebuild of the Reliability App from the original proof-of-concept into 
 
 ## Future Roadmap
 
-- [x] Team dashboard (who recorded what, completion stats)
-- [x] Export to APM format for upload back to HxGN EAM
-- [x] Photo annotation (draw on screenshots to mark locations)
-- [x] Barcode/QR generation for equipment labels
+- [ ] Team dashboard (who recorded what, completion stats)
+- [ ] Photo annotation (draw on screenshots to mark locations)
+- [ ] Barcode/QR generation for equipment labels
 
 ---
 
