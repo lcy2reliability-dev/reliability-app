@@ -170,7 +170,6 @@ Complete rebuild of the Reliability App from the original proof-of-concept into 
 
 ## Future Roadmap
 
-- [x] Notification when equipment is due for PM (based on last completed date)
 - [x] Team dashboard (who recorded what, completion stats)
 - [x] Export to APM format for upload back to HxGN EAM
 - [x] Photo annotation (draw on screenshots to mark locations)
