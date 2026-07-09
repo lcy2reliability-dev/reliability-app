@@ -261,8 +261,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.05)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;">• Parts system overhaul (4,160 parts with full supplier data)<br>• Link/Unlink parts from positions<br>• Guided tour & Help page<br>• Temperature reading flags per route<br>• Subsequence search (type "cbs" to find CB.S positions)</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.06)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;">• Delete &amp; Unlink restricted to Edit screen (no accidental taps)<br>• Edit thermal readings with modal UI (no browser prompts)<br>• Recently Deleted — restore or permanently delete items<br>• Predictive search dropdown in global Search<br>• Improved touch targets &amp; visual polish</div>
                     <div style="font-size:11px;color:#9ca3af;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -300,9 +300,12 @@
         <div id="sec-search" class="section active">
             <div class="card" style="position:sticky;top:0;z-index:50;">
                 <h2>Search</h2>
-                <div class="form-group">
-                    <label>Search</label>
-                    <input type="text" id="search-conveyor" placeholder="Search by position, APN, route, description... (or type Ultrasound/Thermal/CBM)" oninput="liveSearchSuggest(this.value)" onkeyup="if(event.key==='Enter')searchAll()">
+                <div style="position:relative;">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" id="search-conveyor" placeholder="Search by position, APN, route, description... (or type Ultrasound/Thermal/CBM)" oninput="liveSearchSuggest(this.value)" onkeyup="if(event.key==='Enter')searchAll()">
+                    </div>
+                    <div id="main-search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:200;max-height:280px;overflow-y:auto;margin-top:2px;"></div>
                 </div>
                 <button class="btn btn-primary" onclick="searchAll()">Search</button>
                 <div class="search-filters" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
@@ -311,7 +314,6 @@
                     <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-routes" checked> CBM Routes</label>
                 </div>
             </div>
-            <div id="main-search-dropdown" style="display:none;position:absolute;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:100;width:100%;max-height:280px;overflow-y:auto;margin-top:2px;"></div>
             <div id="search-results"></div>
         </div>
 
@@ -834,26 +836,11 @@
     // ============================================================
     // POSITION AUTO-COMPLETE SYSTEM
     // ============================================================
-    let equipmentCache = null;
-    let equipmentCacheTime = 0;
-    const CACHE_TTL = 60000; // 1 minute cache
-
-    async function getEquipmentCache() {
-        if (!firebaseReady) return {};
-        const now = Date.now();
-        if (equipmentCache && (now - equipmentCacheTime) < CACHE_TTL) return equipmentCache;
-        try {
-            const snap = await db.ref('equipment').once('value');
-            equipmentCache = snap.val() || {};
-            equipmentCacheTime = now;
-            return equipmentCache;
-        } catch(e) { return equipmentCache || {}; }
-    }
-
-    async function invalidateEquipmentCache() {
-        equipmentCache = null;
-        equipmentCacheTime = 0;
-    }
+    // Cache vars — used by autocomplete and predictive search
+    let equipmentCache = null, equipmentCacheTime = 0;
+    let partsCache = null, partsCacheTime = 0;
+    let routesCache = null, routesCacheTime = 0;
+    const CACHE_TTL = 60000; // 1 minute
 
     let autocompleteTimeout = null;
     async function autocompletePosition(query, dropdownId, inputId) {
@@ -1499,7 +1486,38 @@ function clearForm() {
         status.innerHTML='<span style="color:#10b981;">✓ '+matches.length+' match'+(matches.length>1?'es':'')+'</span>';
     }
 
-    // [Removed: old selectPartPosition and savePart - replaced by saveNewPart and saveEditPart]
+    // Position autocomplete selection handler (for Add Part static form)
+    function selectPartPosition(key) {
+        var eq = equipmentCache && equipmentCache[key];
+        var cn = eq ? (eq.conveyorNumber || key) : key;
+        document.getElementById('part-conveyor').value = cn;
+        document.getElementById('part-autocomplete').style.display = 'none';
+        document.getElementById('part-pos-status').innerHTML = '<span style="color:#10b981;">&#10003; ' + cn + ' selected</span>';
+    }
+    // Save part from static Add Part form
+    async function savePart() {
+        if (!checkFirebase()) return;
+        var conveyor = document.getElementById('part-conveyor').value.trim();
+        var apn = document.getElementById('part-apn').value.trim();
+        var type = document.getElementById('part-type').value;
+        var loc = document.getElementById('part-location').value.trim();
+        var notes = document.getElementById('part-notes').value.trim();
+        if (!apn || !type) { showToast('APN and Part Type are required', 'error'); return; }
+        showLoading();
+        try {
+            var snap = await db.ref('parts').once('value');
+            var dup = Object.values(snap.val() || {}).find(function(p) { return (p.apn||'').toLowerCase() === apn.toLowerCase(); });
+            if (dup) { hideLoading(); showToast('APN ' + apn + ' already exists!', 'error'); return; }
+            await db.ref('parts').push({ apn: apn, partType: type, location: loc, notes: notes,
+                conveyors: conveyor ? [conveyor] : [], organization: 'LCY2', active: true,
+                createdAt: new Date().toISOString() });
+            invalidatePartsCache();
+            showToast('Part ' + apn + ' saved!', 'success');
+            ['part-conveyor','part-apn','part-location','part-notes'].forEach(function(id){ document.getElementById(id).value=''; });
+            document.getElementById('part-type').value = '';
+        } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        hideLoading();
+    }
     
     async function editPart(key){
         // Redirect to the detail edit page
@@ -2974,7 +2992,7 @@ function clearForm() {
                 html += '<div><span style="font-size:13px;font-weight:600;">' + p.apn + '</span>';
                 if(p.partType||p.partClass) html += ' <span style="font-size:11px;color:#6b7280;">(' + (p.partType||p.partClass) + ')</span>';
                 html += '</div>';
-                html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart('' + k + '','' + conveyorNumber + '')" style="white-space:nowrap;">Unlink</button>';
+                html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart(\x27' + k + '\x27,\x27' + conveyorNumber + '\x27)" style="white-space:nowrap;">Unlink</button>';
                 html += '</div>';
             });
             el.innerHTML = html;
@@ -2993,7 +3011,7 @@ function clearForm() {
         conveyors.forEach(function(c){
             html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:white;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;">';
             html += '<span style="font-size:13px;font-weight:600;">' + c + '</span>';
-            html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart('' + partKey + '','' + c + '')" style="white-space:nowrap;">Unlink</button>';
+            html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart(\x27' + partKey + '\x27,\x27' + c + '\x27)" style="white-space:nowrap;">Unlink</button>';
             html += '</div>';
         });
         el.innerHTML = html;
@@ -3012,10 +3030,7 @@ function clearForm() {
     // ============================================================
     // PREDICTIVE SEARCH CACHE
     // ============================================================
-    var equipmentCache=null,equipmentCacheTime=0;
-    var partsCache=null,partsCacheTime=0;
-    var routesCache=null,routesCacheTime=0;
-    var CACHE_TTL=60000;
+    // (cache vars declared above in the autocomplete section)
     async function getEquipmentCache() {
         if (!firebaseReady) return {};
         const now = Date.now();
@@ -3074,7 +3089,7 @@ function clearForm() {
                 var typeLabel={equipment:'Position',part:'Part',route:'Route'};
                 var html='';
                 results.forEach(function(r){
-                    html+='<div class="autocomplete-item" onclick="document.getElementById('main-search-dropdown').style.display='none';openDetail(''+r.type+'',''+r.key+'')">';
+                    html+='<div class="autocomplete-item" onclick="document.getElementById(\x27main-search-dropdown\x27).style.display=\x27none\x27;openDetail(\x27'+r.type+'\x27,\x27'+r.key+'\x27)">';
                     html+='<span style="font-size:10px;padding:1px 6px;border-radius:8px;margin-right:6px;'+typeStyle[r.type]+'">'+typeLabel[r.type]+'</span>';
                     html+='<strong>'+r.label+'</strong>';
                     if(r.sub)html+=' <span style="color:#6b7280;font-size:12px;">— '+r.sub.substring(0,50)+'</span>';
@@ -3112,8 +3127,8 @@ function clearForm() {
                     html+='<div><span style="font-size:11px;padding:1px 6px;border-radius:8px;background:#f3f4f6;color:#374151;margin-right:6px;">'+typeLabel+'</span>';
                     html+='<strong>'+label+'</strong><span style="font-size:11px;color:#9ca3af;margin-left:8px;">Deleted: '+deletedAt+'</span></div>';
                     html+='<div style="display:flex;gap:6px;">';
-                    html+='<button class="btn btn-secondary btn-sm" onclick="restoreTrashItem(''+col+'',''+k+'')">Restore</button>';
-                    html+='<button class="btn btn-danger btn-sm" onclick="permanentDeleteTrashItem(''+col+'',''+k+'')">Delete Forever</button>';
+                    html+='<button class="btn btn-secondary btn-sm" onclick="restoreTrashItem(\x27'+col+'\x27,\x27'+k+'\x27)">Restore</button>';
+                    html+='<button class="btn btn-danger btn-sm" onclick="permanentDeleteTrashItem(\x27'+col+'\x27,\x27'+k+'\x27)">Delete Forever</button>';
                     html+='</div></div>';
                 });
             });
@@ -3456,7 +3471,7 @@ function clearForm() {
         if (!currentValue || isNaN(currentValue)) return;
         var val = parseFloat(currentValue);
         try {
-            var snap = await db.ref('thermalReadings/' + routeKey).limitToLast(10).once('value');
+            var snap = await db.ref('readings/' + routeKey).limitToLast(10).once('value');
             var readings = snap.val();
             if (!readings) return;
             var historicalValues = [];
@@ -3982,7 +3997,7 @@ function clearForm() {
             html += '<input type="file" id="bulk-import-file" accept=".csv,.xlsx,.xls" style="display:none" onchange="previewImport(this)">';
             html += '<p style="font-size:12px;">Drag & drop APM Checklist, or click to browse</p></div>';
             html += '<div id="csv-preview" style="display:none;margin-top:12px;"></div>';
-            html += '<button id="csv-import-btn" class="btn btn-primary" style="display:none;margin-top:12px;" onclick="importRoutes()">Import Routes</button>';
+            html += '<button id="csv-import-btn" class="btn btn-primary" style="display:none;margin-top:12px;" onclick="smartSaveRoute()">Import Routes</button>';
             html += '</div></div>';
         }
         html += '</div>';
@@ -4133,7 +4148,7 @@ function clearForm() {
         html += '<input type="file" id="bulk-import-file" accept=".csv,.xlsx,.xls" style="display:none" onchange="previewImport(this)">';
         html += '<p>Drag & drop APM Checklist, or click to browse</p></div>';
         html += '<div id="csv-preview" style="display:none;margin-top:12px;"></div>';
-        html += '<button id="csv-import-btn" class="btn btn-primary" style="display:none;margin-top:12px;" onclick="importRoutes()">Import Routes</button>';
+        html += '<button id="csv-import-btn" class="btn btn-primary" style="display:none;margin-top:12px;" onclick="smartSaveRoute()">Import Routes</button>';
         html += '</div>';
         document.getElementById('add-form-content').innerHTML = html;
         document.getElementById('add-form-overlay').classList.add('active');
@@ -4868,7 +4883,7 @@ function clearForm() {
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.05';
+    var APP_VERSION = '1.06';
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== APP_VERSION) {
