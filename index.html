@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- LCY2 Reliability App v2.0 - Batches A+B+C+D (Built 2026-07-01) -->
+<!-- RME App v1.06 - Updated 2026-07-09 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reliability App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RME App</title>
     <script>var _isPreview=false;try{_isPreview=(window.self!==window.top)}catch(e){_isPreview=true}</script>
     <script>if(!_isPreview)document.write('\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">\x3C/script>\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">\x3C/script>\x3Cscript src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">\x3C/script>\x3Cscript src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">\x3C/script>')</script>
     <style>
@@ -17,7 +17,7 @@
         .tabs { display: flex; background: #37475A; overflow-x: auto; border-bottom: 3px solid #00A8E1; }
         .tab { padding: 12px 16px; color: #d5dbdb; cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
         .tab:hover { color: #ffffff; background: rgba(255,255,255,0.08); }
-        .tab.active { color: #00A8E1; }
+        .tab.active { color: #00A8E1; border-bottom-color: #00A8E1; }
         .content { max-width: 900px; margin: 0 auto; padding: 20px; }
         .section { display: none; }
         .section.active { display: block; }
@@ -36,7 +36,7 @@
         .btn-secondary:hover { background: #d1d5db; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-danger:hover { background: #dc2626; }
-        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; min-height: 36px; }
         .btn-add { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; margin-top: 8px; }
         .btn-add:hover { background: #059669; }
         .btn-remove { background: #ef4444; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; margin-left: 8px; }
@@ -56,7 +56,7 @@
         .toast.show { transform: translateY(0); opacity: 1; }
         .toast.success { background: #10b981; }
         .toast.error { background: #ef4444; }
-        .loading { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 9998; align-items: center; justify-content: center; }
+        .loading { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(2px); z-index: 9998; align-items: center; justify-content: center; }
         .loading.active { display: flex; }
         .spinner { width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -84,6 +84,9 @@
         .filter-input { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; margin-bottom: 8px; }
         .filter-input:focus { outline: none; border-color: #60a5fa; }
         .notes-display { font-size: 12px; color: #6b7280; font-style: italic; margin-top: 2px; }
+        .autocomplete-item { padding:10px 14px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:13px; }
+        .autocomplete-item:hover { background:#f8fafc; }
+        .autocomplete-item:last-child { border-bottom:none; }
         .search-link { color:#00A8E1; text-decoration:none; cursor:pointer; font-weight:600; }
         .search-link:hover { text-decoration:underline; }
         .detail-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#f0f2f5; z-index:9997; overflow-y:auto; }
@@ -133,7 +136,7 @@
             .form-group label { font-size: 12px; }
             .form-group input, .form-group select, .form-group textarea { font-size: 16px; padding: 10px; }
             .btn { padding: 10px 16px; font-size: 14px; }
-            .btn-sm { width: auto; }
+            .btn-sm { width: auto; min-height: 44px; }
             table { font-size: 11px; display: block; overflow-x: auto; }
             th, td { padding: 8px 6px; white-space: nowrap; }
             .thermal-item-row { flex-direction: column; align-items: stretch; gap: 8px; }
@@ -226,7 +229,7 @@
     <!-- LOGIN OVERLAY -->
     <div class="login-overlay" id="login-overlay" style="display:none;">
         <div class="login-card" id="login-card">
-            <h2>Reliability App</h2>
+            <h2>RME App</h2>
             <p id="login-prompt-text">Enter your Login ID to get started</p>
             <div id="login-returning" style="display:none;">
                 <p style="font-size:16px;margin-bottom:16px;">Welcome back, <strong id="login-returning-name"></strong>!</p>
@@ -241,7 +244,7 @@
     </div>
 
     <div class="header" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;">
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="goHome()" title="Home">
             <svg width="120" height="28" viewBox="0 0 200 48" xmlns="http://www.w3.org/2000/svg">
                 <text x="2" y="32" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#ffffff">amazon</text>
                 <path d="M18 38 Q60 48 108 38" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round"/>
@@ -249,7 +252,7 @@
                 <text x="115" y="32" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#00A8E1">rme</text>
             </svg>
         </div>
-        <h1 class="header-title" style="font-size:20px;font-weight:600;">Reliability App</h1>
+        <h1 class="header-title" style="font-size:20px;font-weight:600;position:absolute;left:50%;transform:translateX(-50%);">RME App</h1>
         <button onclick="toggleBurgerMenu()" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;padding:4px 8px;" title="Menu" style="position:relative;">&#9776;<span class="whats-new-dot" id="whats-new-dot"></span></button>
         <div id="burger-menu" style="display:none;position:fixed;top:0;right:0;width:280px;height:100%;background:white;box-shadow:-4px 0 12px rgba(0,0,0,0.15);z-index:10000;overflow-y:auto;transition:transform 0.3s;">
             <div style="padding:16px 20px;background:#1a1a2e;color:white;display:flex;justify-content:space-between;align-items:center;">
@@ -270,12 +273,13 @@
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Tools</div>
                 <div onclick="openManageInactive()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Manage Inactive Items</div>
                 <div onclick="downloadAllData()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#11015; Download Backup</div>
-                <div style="height:1px;background:#e5e7eb;margin:8px 20px;"></div>
+                <div onclick="openRecentlyDeleted()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128465; Recently Deleted</div>
                 <div style="height:1px;background:#e5e7eb;margin:8px 20px;"></div>
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Help</div>
                 <div onclick="toggleBurgerMenu();startTour();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Take the Tour</div>
                 <div onclick="toggleBurgerMenu();openHelpPage();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Help & Reference</div>
                 <div onclick="window.open('https://github.com/lcy2reliability-dev/reliability-app/blob/main/CHANGELOG.md','_blank')" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Changelog</div>
+                <div style="height:1px;background:#e5e7eb;margin:8px 20px;"></div>
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Account</div>
                 <div id="burger-user" style="padding:10px 20px;font-size:14px;color:#1a1a2e;font-weight:500;">&#128100; Not logged in</div>
                 <div onclick="burgerSwitchUser()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Switch User</div>
@@ -294,11 +298,11 @@
     <div class="content">
         <!-- SEARCH -->
         <div id="sec-search" class="section active">
-            <div class="card">
+            <div class="card" style="position:sticky;top:0;z-index:50;">
                 <h2>Search</h2>
                 <div class="form-group">
                     <label>Search</label>
-                    <input type="text" id="search-conveyor" placeholder="Search by position, APN, route, description... (or type Ultrasound/Thermal/CBM)" onkeyup="if(event.key==='Enter')searchAll()">
+                    <input type="text" id="search-conveyor" placeholder="Search by position, APN, route, description... (or type Ultrasound/Thermal/CBM)" oninput="liveSearchSuggest(this.value)" onkeyup="if(event.key==='Enter')searchAll()">
                 </div>
                 <button class="btn btn-primary" onclick="searchAll()">Search</button>
                 <div class="search-filters" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
@@ -307,6 +311,7 @@
                     <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-routes" checked> CBM Routes</label>
                 </div>
             </div>
+            <div id="main-search-dropdown" style="display:none;position:absolute;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:100;width:100%;max-height:280px;overflow-y:auto;margin-top:2px;"></div>
             <div id="search-results"></div>
         </div>
 
@@ -567,7 +572,7 @@
             </div>
         </div>
     </div>
-    <div class="loading" id="loading"><div class="spinner"></div></div>
+    <div class="loading" id="loading"><div style="background:white;border-radius:12px;padding:24px 32px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);"><div class="spinner"></div><span style="font-size:13px;font-weight:500;color:#374151;">Loading...</span></div></div>
     <div class="modal-overlay" id="modal">
         <div class="modal" id="modal-inner">
             <h3 id="modal-title">Confirm</h3>
@@ -1384,8 +1389,7 @@ function clearForm() {
             let html='<table id="equipment-table"><thead><tr><th onclick="sortTable(\'equipment-table\',0)">Position</th><th onclick="sortTable(\'equipment-table\',1)">Type</th><th onclick="sortTable(\'equipment-table\',2)">Description</th><th onclick="sortTable(\'equipment-table\',3)">Img</th><th>Action</th></tr></thead><tbody>';
             Object.entries(data).forEach(([key,eq])=>{
                 html+='<tr><td>'+eq.conveyorNumber+'</td><td>'+eq.type+'</td><td>'+(eq.description||eq.notes||'\u2014')+'</td><td>'+(eq.imageUrl?'Yes':'\u2014')+'</td>';
-                html+='<td><button class="btn btn-secondary btn-sm" onclick="editEquipment(\''+key+'\')">\u270E</button> ';
-                html+='<button class="btn btn-danger btn-sm" onclick="deleteEntry(\'equipment\',\''+key+'\')">Del</button></td></tr>';
+                html+='<td><button class="btn btn-secondary btn-sm" onclick="editEquipment(\''+key+'\')">&#9998;</button></td></tr>';
             });
             html+='</tbody></table>';container.innerHTML=html;
             } catch(e) { console.error('Position list error:', e); }
@@ -1510,7 +1514,7 @@ function clearForm() {
             Object.entries(data).forEach(([key,p])=>{
                 var convs=p.conveyors?p.conveyors.join(', '):(p.conveyorNumber||'');
                 html+='<tr><td>'+p.apn+'</td><td>'+(p.partType||'\u2014')+'</td><td>'+p.location+'</td><td>'+convs+'</td><td>'+(p.notes||'\u2014')+'</td>';
-                html+='<td><button class="btn btn-secondary btn-sm" onclick="editPart(\''+key+'\')">✎</button> <button class="btn btn-danger btn-sm" onclick="deleteEntry(\'parts\',\''+key+'\')">Del</button></td></tr>';
+                html+='<td><button class="btn btn-secondary btn-sm" onclick="editPart(\''+key+'\')">✎</button></td></tr>';
             });
             html+='</tbody></table>';container.innerHTML=html;
             } catch(e) { console.error('Parts list error:', e); }
@@ -2210,7 +2214,7 @@ function clearForm() {
                 let html='<table id="routes-table"><thead><tr><th onclick="sortTable(\'routes-table\',0)">Route</th><th onclick="sortTable(\'routes-table\',1)">Type</th><th onclick="sortTable(\'routes-table\',2)">Start</th><th onclick="sortTable(\'routes-table\',3)">End</th><th onclick="sortTable(\'routes-table\',4)">Description</th><th>Action</th></tr></thead><tbody>';
                 Object.entries(data).forEach(([key,r])=>{
                     html+='<tr><td>'+r.routeNumber+'</td><td>'+r.type+'</td><td>'+r.startPoint+'</td><td>'+(r.endPoint||'\u2014')+'</td><td>'+(r.notes||'\u2014')+'</td>';
-                    html+='<td><button class="btn btn-secondary btn-sm" onclick="editRoute(\''+key+'\')">✎</button> <button class="btn btn-danger btn-sm" onclick="deleteEntry(\'routes\',\''+key+'\')">Del</button></td></tr>';
+                    html+='<td><button class="btn btn-secondary btn-sm" onclick="editRoute(\''+key+'\')">✎</button></td></tr>';
                 });
                 html+='</tbody></table>';container.innerHTML=html;
             }catch(e){console.error('Routes list error:',e);}
@@ -2372,8 +2376,7 @@ function clearForm() {
                 }
                 // Edit/Delete buttons (only for author)
                 if(entry.recordedBy && entry.recordedBy.toLowerCase()===currentUser){
-                    html+='<div style="margin-top:6px;"><button class="btn btn-secondary btn-sm" onclick="editThermalReading(\x27'+routeKey+'\x27,\x27'+entry._key+'\x27)">Edit</button> ';
-                    html+='<button class="btn btn-danger btn-sm" onclick="deleteThermalReading(\x27'+routeKey+'\x27,\x27'+entry._key+'\x27)">Delete</button></div>';
+                    html+='<div style="margin-top:6px;"><button class="btn btn-secondary btn-sm" onclick="editThermalReading(\x27'+routeKey+'\x27,\x27'+entry._key+'\x27)">Edit</button></div>';
                 }
                 html+='</div>';
             });
@@ -2626,7 +2629,7 @@ function clearForm() {
 
             if(type==='equipment'){
                 title='Position: '+data.conveyorNumber;
-                html+='<div class="detail-field"><label>Position</label><div class="value">'+data.conveyorNumber+'</div></div>';
+                html+='<div class="detail-field"><label>Position</label><div class="value" style="font-size:20px;font-weight:700;">'+data.conveyorNumber+'</div></div>';
                 html+='<div class="detail-field"><label>Type</label><div class="value">'+(data.type||'Not set')+'</div></div>';
                 html+='<div class="detail-field"><label>Description</label><div class="value">'+(data.description||'None')+'</div></div>';
                 if(data.area)html+='<div class="detail-field"><label>Area</label><div class="value">'+data.area+'</div></div>';
@@ -2643,7 +2646,7 @@ function clearForm() {
                 var eqParts=Object.entries(allParts).filter(([k,p])=>p.conveyors&&p.conveyors.indexOf(data.conveyorNumber)>=0);
                 html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Linked Parts <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkPartPopup(\x27'+data.conveyorNumber+'\x27)">+ Link Part</button></h2>';
                 if(eqParts.length>0){
-                    html+='<table><thead><tr><th>APN</th><th>Class</th><th>Bin</th><th>Description</th><th>Criticality</th><th></th></tr></thead><tbody>';
+                    html+='<table><thead><tr><th>APN</th><th>Class</th><th>Bin</th><th>Qty</th><th>Description</th><th>Criticality</th><th>Observations</th></tr></thead><tbody>';
                     eqParts.forEach(([k,p])=>{
                         var cc='#6b7280';
                         if((p.criticality||'').includes('HIGH'))cc='#dc2626';
@@ -2652,9 +2655,12 @@ function clearForm() {
                         html+='<tr><td><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+k+'\x27);return false;">'+p.apn+'</a></td>';
                         html+='<td><span style="font-size:11px;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:8px;">'+(p.partClass||p.partType||'')+'</span></td>';
                         html+='<td style="font-weight:600;">'+(p.binLocation||p.location||'')+'</td>';
+                        var _cn=p.conveyorNotes&&p.conveyorNotes[sanitizeKey(data.conveyorNumber)];
+                        html+='<td style="font-size:12px;text-align:center;">'+((_cn&&_cn.quantity)?_cn.quantity:'—')+'</td>';
                         html+='<td style="font-size:12px;color:#4b5563;">'+(p.partDescription||p.notes||'')+'</td>';
                         html+='<td><span style="color:'+cc+';font-weight:600;font-size:12px;">'+(p.criticality||'')+'</span></td>';
-                        html+='<td><a href="#" onclick="event.stopPropagation();unlinkPart(\x27'+k+'\x27,\x27'+data.conveyorNumber+'\x27);return false;" style="color:#ef4444;font-size:11px;text-decoration:none;" title="Unlink part">✕</a></td></tr>';
+                        html+='<td style="font-size:12px;color:#4b5563;font-style:italic;max-width:140px;">'+((_cn&&_cn.observations)?_cn.observations:'—')+'</td>';
+                        html+='</tr>';
                     });
                     html+='</tbody></table>';
                 } else {
@@ -2703,7 +2709,7 @@ function clearForm() {
                 html+='<div class="card"><h2>Linked Positions ('+conveyors.length+')</h2>';
                 if(conveyors.length>0){
                     html+='<div style="display:flex;flex-wrap:wrap;gap:8px;">';
-                    conveyors.forEach(function(c){html+='<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px 4px 12px;background:#f1f5f9;border-radius:6px;font-size:13px;"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(c)+'\x27);return false;">'+c+'</a><a href="#" onclick="event.stopPropagation();unlinkPart(\x27'+key+'\x27,\x27'+c+'\x27);return false;" style="color:#ef4444;font-size:14px;text-decoration:none;margin-left:4px;" title="Unlink position">✕</a></span>';});
+                    conveyors.forEach(function(c){html+='<span style="display:inline-flex;align-items:center;padding:4px 12px;background:#f1f5f9;border-radius:6px;font-size:13px;"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(c)+'\x27);return false;">'+c+'</a></span>';});
                     html+='</div>';
                 } else {
                     html+='<p class="empty-state">Not linked to any position</p>';
@@ -2836,6 +2842,7 @@ function clearForm() {
                 html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditPosition(\x27' + key + '\x27)">Save Changes</button>';
                 html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27equipment\x27,\x27' + key + '\x27)">Cancel</button>';
                 
+                html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#9ca3af;">Loading linked parts...</p></div>';
             } else if (type === 'route') {
                 html += '<div class="form-group"><label>Route Number</label><input type="text" id="edit-route-num" value="' + (data.routeNumber||'') + '"></div>';
                 html += '<div class="form-group"><label>Type</label><select id="edit-route-type">';
@@ -2925,6 +2932,7 @@ function clearForm() {
                 html += '</label></div>';
                 html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditPart(\x27' + key + '\x27)">Save Changes</button>';
                 html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27part\x27,\x27' + key + '\x27)">Cancel</button>';
+                html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#9ca3af;">Loading linked positions...</p></div>';
             }
             
             // Danger Zone (all types)
@@ -2941,7 +2949,201 @@ function clearForm() {
             document.getElementById('detail-content').innerHTML = html;
             document.getElementById('detail-overlay').classList.add('active');
             hideLoading();
+            if(type==='equipment'){loadEditLinkedParts(key, data.conveyorNumber);}
+            else if(type==='part'){loadEditLinkedPositions(key, data.conveyors||[]);}
         });
+    }
+    // Edit overlay: load linked parts for equipment
+    async function loadEditLinkedParts(equipmentKey, conveyorNumber) {
+        var el = document.getElementById('edit-linked-section');
+        if (!el) return;
+        if (!firebaseReady) { el.innerHTML = ''; return; }
+        try {
+            var snap = await db.ref('parts').once('value');
+            var parts = snap.val() || {};
+            var linked = Object.entries(parts).filter(function(e){ var p=e[1]; return p.active !== false && p.conveyors && p.conveyors.indexOf(conveyorNumber) >= 0; });
+            if (linked.length === 0) {
+                el.innerHTML = '<p style="font-size:13px;color:#9ca3af;margin:0;">No parts currently linked to this position.</p>';
+                return;
+            }
+            var html = '<h3 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:10px;">Linked Parts (' + linked.length + ')</h3>';
+            html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Remove a part link from this position. The part record is not deleted.</p>';
+            linked.forEach(function(e){
+                var k=e[0],p=e[1];
+                html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:white;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;gap:8px;">';
+                html += '<div><span style="font-size:13px;font-weight:600;">' + p.apn + '</span>';
+                if(p.partType||p.partClass) html += ' <span style="font-size:11px;color:#6b7280;">(' + (p.partType||p.partClass) + ')</span>';
+                html += '</div>';
+                html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart('' + k + '','' + conveyorNumber + '')" style="white-space:nowrap;">Unlink</button>';
+                html += '</div>';
+            });
+            el.innerHTML = html;
+        } catch(e) { el.innerHTML = '<p style="font-size:12px;color:#ef4444;margin:0;">Could not load linked parts.</p>'; }
+    }
+    function loadEditLinkedPositions(partKey, conveyors) {
+        var el = document.getElementById('edit-linked-section');
+        if (!el) return;
+        conveyors = conveyors || [];
+        if (conveyors.length === 0) {
+            el.innerHTML = '<p style="font-size:13px;color:#9ca3af;margin:0;">This part is not linked to any position.</p>';
+            return;
+        }
+        var html = '<h3 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:10px;">Linked Positions (' + conveyors.length + ')</h3>';
+        html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Remove a position link from this part. The position record is not deleted.</p>';
+        conveyors.forEach(function(c){
+            html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:white;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;">';
+            html += '<span style="font-size:13px;font-weight:600;">' + c + '</span>';
+            html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart('' + partKey + '','' + c + '')" style="white-space:nowrap;">Unlink</button>';
+            html += '</div>';
+        });
+        el.innerHTML = html;
+    }
+    // ============================================================
+    // HOME BUTTON
+    // ============================================================
+    function goHome() {
+        document.getElementById('detail-overlay').classList.remove('active');
+        document.getElementById('add-form-overlay').classList.remove('active');
+        var bm=document.getElementById('burger-menu');var bb=document.getElementById('burger-backdrop');
+        if(bm)bm.style.display='none';if(bb)bb.style.display='none';
+        var dd=document.getElementById('main-search-dropdown');if(dd)dd.style.display='none';
+        switchTabDirect('search');
+    }
+    // ============================================================
+    // PREDICTIVE SEARCH CACHE
+    // ============================================================
+    var equipmentCache=null,equipmentCacheTime=0;
+    var partsCache=null,partsCacheTime=0;
+    var routesCache=null,routesCacheTime=0;
+    var CACHE_TTL=60000;
+    async function getEquipmentCache() {
+        if (!firebaseReady) return {};
+        const now = Date.now();
+        if (equipmentCache && (now - equipmentCacheTime) < CACHE_TTL) return equipmentCache;
+        try { const snap = await db.ref('equipment').once('value'); equipmentCache = snap.val() || {}; equipmentCacheTime = now; return equipmentCache; }
+        catch(e) { return equipmentCache || {}; }
+    }
+    async function invalidateEquipmentCache() { equipmentCache = null; equipmentCacheTime = 0; }
+    async function getPartsCache() {
+        if (!firebaseReady) return {};
+        const now = Date.now();
+        if (partsCache && (now - partsCacheTime) < CACHE_TTL) return partsCache;
+        try { const snap = await db.ref('parts').once('value'); partsCache = snap.val() || {}; partsCacheTime = now; return partsCache; }
+        catch(e) { return partsCache || {}; }
+    }
+    async function invalidatePartsCache() { partsCache = null; partsCacheTime = 0; }
+    async function getRoutesCache() {
+        if (!firebaseReady) return {};
+        const now = Date.now();
+        if (routesCache && (now - routesCacheTime) < CACHE_TTL) return routesCache;
+        try { const snap = await db.ref('routes').once('value'); routesCache = snap.val() || {}; routesCacheTime = now; return routesCache; }
+        catch(e) { return routesCache || {}; }
+    }
+    async function invalidateRoutesCache() { routesCache = null; routesCacheTime = 0; }
+    // ============================================================
+    // PREDICTIVE SEARCH DROPDOWN
+    // ============================================================
+    var _liveSearchTimer=null;
+    function liveSearchSuggest(query){
+        var dd=document.getElementById('main-search-dropdown');if(!dd)return;
+        if(!query||query.length<2){dd.style.display='none';return;}
+        clearTimeout(_liveSearchTimer);
+        _liveSearchTimer=setTimeout(async function(){
+            if(!firebaseReady){return;}
+            var q=query.toLowerCase();
+            try{
+                var results=[];
+                var[eq,pts,rts]=await Promise.all([getEquipmentCache(),getPartsCache(),getRoutesCache()]);
+                Object.entries(eq).forEach(function([k,v]){
+                    if(v.active===false||results.length>=8)return;
+                    var cn=(v.conveyorNumber||'').toLowerCase();var desc=(v.description||v.notes||'').toLowerCase();
+                    if(cn.includes(q)||desc.includes(q))results.push({type:'equipment',key:k,label:v.conveyorNumber,sub:v.description||v.notes||''});
+                });
+                Object.entries(pts).forEach(function([k,v]){
+                    if(v.active===false||results.length>=8)return;
+                    var apn=(v.apn||'').toLowerCase();var desc=(v.partDescription||v.notes||'').toLowerCase();
+                    if(apn.includes(q)||desc.includes(q))results.push({type:'part',key:k,label:v.apn,sub:v.partDescription||v.notes||''});
+                });
+                Object.entries(rts).forEach(function([k,v]){
+                    if(v.active===false||results.length>=8)return;
+                    var rn=(v.routeNumber?v.routeNumber.toString():'').toLowerCase();var desc=(v.notes||'').toLowerCase();
+                    if(rn.includes(q)||desc.includes(q))results.push({type:'route',key:k,label:v.routeNumber,sub:(v.type||'')+(v.notes?' — '+v.notes.substring(0,40):'')});
+                });
+                if(!results.length){dd.style.display='none';return;}
+                var typeStyle={equipment:'background:#eff6ff;color:#1d4ed8;',part:'background:#f0fdf4;color:#15803d;',route:'background:#fff7ed;color:#c2410c;'};
+                var typeLabel={equipment:'Position',part:'Part',route:'Route'};
+                var html='';
+                results.forEach(function(r){
+                    html+='<div class="autocomplete-item" onclick="document.getElementById('main-search-dropdown').style.display='none';openDetail(''+r.type+'',''+r.key+'')">';
+                    html+='<span style="font-size:10px;padding:1px 6px;border-radius:8px;margin-right:6px;'+typeStyle[r.type]+'">'+typeLabel[r.type]+'</span>';
+                    html+='<strong>'+r.label+'</strong>';
+                    if(r.sub)html+=' <span style="color:#6b7280;font-size:12px;">— '+r.sub.substring(0,50)+'</span>';
+                    html+='</div>';
+                });
+                dd.innerHTML=html;dd.style.display='block';
+            }catch(e){dd.style.display='none';}
+        },300);
+    }
+    document.addEventListener('click',function(e){
+        var dd=document.getElementById('main-search-dropdown');var inp=document.getElementById('search-conveyor');
+        if(dd&&inp&&!dd.contains(e.target)&&e.target!==inp)dd.style.display='none';
+    });
+    // ============================================================
+    // RECENTLY DELETED
+    // ============================================================
+    async function openRecentlyDeleted() {
+        if(!checkFirebase())return;
+        var bm=document.getElementById('burger-menu');var bb=document.getElementById('burger-backdrop');
+        if(bm)bm.style.display='none';if(bb)bb.style.display='none';
+        showLoading();
+        try {
+            var snap=await db.ref('trash').once('value');var trash=snap.val()||{};
+            var html='<div class="card"><h2>Recently Deleted</h2>';
+            html+='<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Items are permanently removed after 7 days.</p>';
+            var hasItems=false;
+            ['equipment','parts','routes'].forEach(function(col){
+                var items=trash[col]||{};
+                Object.entries(items).forEach(function([k,v]){
+                    hasItems=true;
+                    var deletedAt=v.deletedAt?new Date(v.deletedAt).toLocaleDateString():'Unknown';
+                    var label=v.conveyorNumber||v.apn||v.routeNumber||k;
+                    var typeLabel=col==='equipment'?'Position':col==='parts'?'Part':'Route';
+                    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;">';
+                    html+='<div><span style="font-size:11px;padding:1px 6px;border-radius:8px;background:#f3f4f6;color:#374151;margin-right:6px;">'+typeLabel+'</span>';
+                    html+='<strong>'+label+'</strong><span style="font-size:11px;color:#9ca3af;margin-left:8px;">Deleted: '+deletedAt+'</span></div>';
+                    html+='<div style="display:flex;gap:6px;">';
+                    html+='<button class="btn btn-secondary btn-sm" onclick="restoreTrashItem(''+col+'',''+k+'')">Restore</button>';
+                    html+='<button class="btn btn-danger btn-sm" onclick="permanentDeleteTrashItem(''+col+'',''+k+'')">Delete Forever</button>';
+                    html+='</div></div>';
+                });
+            });
+            if(!hasItems)html+='<div class="empty-state">No recently deleted items</div>';
+            html+='</div>';
+            document.getElementById('detail-content').innerHTML=html;
+            document.getElementById('detail-title').textContent='Recently Deleted';
+            document.getElementById('detail-overlay').classList.add('active');
+        }catch(e){showToast('Error: '+e.message,'error');}
+        hideLoading();
+    }
+    async function restoreTrashItem(col, key) {
+        if(!checkFirebase())return;showLoading();
+        try {
+            var snap=await db.ref('trash/'+col+'/'+key).once('value');var data=snap.val();
+            if(!data){showToast('Item not found','error');hideLoading();return;}
+            delete data.deletedAt;
+            await db.ref(col+'/'+key).set(data);await db.ref('trash/'+col+'/'+key).remove();
+            showToast('Restored!','success');openRecentlyDeleted();
+        }catch(e){hideLoading();showToast('Error: '+e.message,'error');}
+        hideLoading();
+    }
+    async function permanentDeleteTrashItem(col, key) {
+        var confirmed=await showModal('Delete Permanently','This cannot be undone. Permanently delete this item?');
+        if(!confirmed)return;if(!checkFirebase())return;showLoading();
+        try {
+            await db.ref('trash/'+col+'/'+key).remove();
+            showToast('Permanently deleted.','success');openRecentlyDeleted();
+        }catch(e){hideLoading();showToast('Error: '+e.message,'error');}
+        hideLoading();
     }
     async function detailDelete(type,key){
         if(!checkFirebase())return;
@@ -2954,7 +3156,7 @@ function clearForm() {
             const snap=await db.ref(refPath).once('value');const data=snap.val();
             if(data)await db.ref('trash/'+type+'/'+key).set({...data,deletedAt:new Date().toISOString()});
             await db.ref(refPath).remove();
-            showToast(label+' deleted!');closeDetail();
+            showToast(label+' deleted!');closeDetail();setTimeout(function(){var _q=document.getElementById('search-conveyor');if(_q&&_q.value.trim())searchAll();},200);
         }catch(e){showToast('Error: '+e.message,'error');}
         hideLoading();
     }
@@ -3540,45 +3742,72 @@ function clearForm() {
 
 
     async function editThermalReading(routeKey, readingKey) {
+        if (!checkFirebase()) return;
+        showLoading();
         var snap = await db.ref('readings/' + routeKey + '/' + readingKey).once('value');
+        hideLoading();
         var entry = snap.val();
         if (!entry || !entry.readings) { showToast('Reading not found', 'error'); return; }
-        // Build an edit form
         var components = Object.keys(entry.readings);
-        var msg = 'Edit readings:\n';
-        components.forEach(function(c) { msg += c + ': ' + entry.readings[c] + '\n'; });
+        var recordedDate = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '';
+        var bodyHtml = '<p style="font-size:12px;color:#6b7280;margin-bottom:14px;">Recorded: ' + recordedDate + (entry.recordedBy ? ' by ' + entry.recordedBy : '') + '</p>';
+        components.forEach(function(c) {
+            var inputId = 'tr-edit-' + c.replace(/[^a-z0-9]/gi, '_');
+            bodyHtml += '<div class="form-group"><label>' + c + ' (°C)</label>';
+            bodyHtml += '<input type="number" id="' + inputId + '" value="' + entry.readings[c] + '" step="0.1" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;"></div>';
+        });
+        bodyHtml += '<div style="margin-top:16px;padding:12px;border:1px solid #fca5a5;border-radius:8px;background:#fef2f2;">';
+        bodyHtml += '<p style="font-size:12px;color:#dc2626;font-weight:600;margin-bottom:8px;">⚠️ Danger Zone</p>';
+        bodyHtml += '<p style="font-size:12px;color:#6b7280;margin-bottom:8px;">Permanently delete this reading. Cannot be undone.</p>';
+        bodyHtml += '<button class="btn btn-danger btn-sm" onclick="deleteThermalReading(\''+routeKey+'\',\''+readingKey+'\')">Delete This Reading</button>';
+        bodyHtml += '</div>';
+        var result = await showCustomModal('Edit Reading', bodyHtml, [
+            {label:'Cancel', class:'btn-secondary', value:'cancel'},
+            {label:'Save Changes', class:'btn-primary', value:'save'}
+        ]);
+        if (result !== 'save') return;
         var newValues = {};
         var changed = false;
-        for (var i = 0; i < components.length; i++) {
-            var comp = components[i];
-            var newVal = prompt(comp + ' (current: ' + entry.readings[comp] + ' °C):', entry.readings[comp]);
-            if (newVal === null) return; // Cancelled
-            var parsed = parseFloat(newVal);
+        components.forEach(function(c) {
+            var inputId = 'tr-edit-' + c.replace(/[^a-z0-9]/gi, '_');
+            var el = document.getElementById(inputId);
+            var parsed = el ? parseFloat(el.value) : NaN;
             if (!isNaN(parsed)) {
-                newValues[comp] = parsed;
-                if (parsed !== entry.readings[comp]) changed = true;
+                newValues[c] = parsed;
+                if (parsed !== entry.readings[c]) changed = true;
             } else {
-                newValues[comp] = entry.readings[comp];
+                newValues[c] = entry.readings[c];
             }
-        }
+        });
         if (!changed) { showToast('No changes made'); return; }
-        await db.ref('readings/' + routeKey + '/' + readingKey + '/readings').set(newValues);
-        await db.ref('readings/' + routeKey + '/' + readingKey + '/editedAt').set(new Date().toISOString());
-        await db.ref('readings/' + routeKey + '/' + readingKey + '/editedBy').set(currentUser);
-        showToast('Reading updated!');
-        // Refresh history if visible
-        var histContainer = document.getElementById('detail-thermal-history');
-        if (histContainer) renderThermalHistory(routeKey, histContainer);
+        showLoading();
+        try {
+            await db.ref('readings/' + routeKey + '/' + readingKey + '/readings').set(newValues);
+            await db.ref('readings/' + routeKey + '/' + readingKey + '/editedAt').set(new Date().toISOString());
+            await db.ref('readings/' + routeKey + '/' + readingKey + '/editedBy').set(currentUser);
+            showToast('Reading updated!', 'success');
+            var histContainer = document.getElementById('detail-thermal-history');
+            if (histContainer) renderThermalHistory(routeKey, histContainer);
+        } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        hideLoading();
     }
-
     async function deleteThermalReading(routeKey, readingKey) {
-        var confirmed = await showModal('Delete Reading', 'Are you sure you want to delete this thermal reading? This cannot be undone.');
+        // Close any open custom modal first
+        var existingOverlay = document.querySelector('.modal-overlay.active');
+        if (existingOverlay) existingOverlay.classList.remove('active');
+        var confirmed = await showCustomModal('\u26a0\ufe0f Delete Reading',
+            '<p style="color:#374151;">Permanently delete this thermal reading?</p><p style="font-size:12px;color:#9ca3af;margin-top:6px;">This cannot be undone.</p>',
+            [{label:'Cancel',class:'btn-secondary',value:false},{label:'Delete',class:'btn-danger',value:true}]);
         if (!confirmed) return;
-        await db.ref('readings/' + routeKey + '/' + readingKey).remove();
-        showToast('Reading deleted!');
-        // Refresh history
-        var histContainer = document.getElementById('detail-thermal-history');
-        if (histContainer) renderThermalHistory(routeKey, histContainer);
+        if (!checkFirebase()) return;
+        showLoading();
+        try {
+            await db.ref('readings/' + routeKey + '/' + readingKey).remove();
+            showToast('Reading deleted!', 'success');
+            var histContainer = document.getElementById('detail-thermal-history');
+            if (histContainer) renderThermalHistory(routeKey, histContainer);
+        } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        hideLoading();
     }
 
 
@@ -4315,6 +4544,8 @@ function clearForm() {
             html += '<p style="font-size:13px;margin:4px 0;">Manufacturer: ' + (found.primaryManufacturer||'N/A') + '</p>';
             html += '<hr style="margin:12px 0;border:none;border-top:1px solid #d1fae5;">';
             html += '<p style="font-size:13px;font-weight:600;">Link this part to ' + conveyorNumber + '?</p>';
+            html += '<div class="form-group" style="margin-top:12px;"><label>Quantity at this position</label><input type="number" id="link-qty" placeholder="e.g. 2" min="1" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
+            html += '<div class="form-group"><label>Observations (optional)</label><input type="text" id="link-obs" placeholder="e.g. bearing size, notes..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
             html += '<button class="btn btn-primary" style="margin-top:8px;" onclick="confirmLinkPart(\x27' + foundKey + '\x27,\x27' + conveyorNumber + '\x27)">Confirm Link</button>';
             html += ' <button class="btn btn-secondary" style="margin-top:8px;" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(conveyorNumber) + '\x27)">Cancel</button>';
             html += '</div>';
@@ -4338,6 +4569,15 @@ function clearForm() {
                 conveyors.push(conveyorNumber);
                 await db.ref('parts/' + partKey + '/conveyors').set(conveyors);
             }
+            var qty = document.getElementById('link-qty') ? document.getElementById('link-qty').value.trim() : '';
+            var obs = document.getElementById('link-obs') ? document.getElementById('link-obs').value.trim() : '';
+            if (qty || obs) {
+                await db.ref('parts/' + partKey + '/conveyorNotes/' + sanitizeKey(conveyorNumber)).set({
+                    quantity: qty || null,
+                    observations: obs || null,
+                    updatedAt: new Date().toISOString()
+                });
+            }
             showToast('Part linked to ' + conveyorNumber + '!', 'success');
             hideLoading();
             openDetail('equipment', sanitizeKey(conveyorNumber));
@@ -4349,7 +4589,20 @@ function clearForm() {
     // UNLINK PART FROM POSITION
     // ============================================================
     async function unlinkPart(partKey, conveyorNumber) {
-        var confirmed = await showModal('Unlink Part', 'Remove the link between this part and position ' + conveyorNumber + '? The part will not be deleted.');
+        var _noteBody = '<p style="margin-bottom:8px;">Remove the link between this part and position <strong>' + conveyorNumber + '</strong>?</p>';
+        try {
+            var _ns = await db.ref('parts/' + partKey + '/conveyorNotes/' + sanitizeKey(conveyorNumber)).once('value');
+            var _nd = _ns.val();
+            if (_nd) {
+                if (_nd.quantity) _noteBody += '<span style="font-size:13px;color:#374151;">Qty recorded: <strong>' + _nd.quantity + '</strong></span><br>';
+                if (_nd.observations) _noteBody += '<span style="font-size:13px;color:#6b7280;font-style:italic;">Obs: ' + _nd.observations + '</span><br>';
+            }
+        } catch(e) {}
+        _noteBody += '<span style="font-size:12px;color:#9ca3af;display:block;margin-top:6px;">The part itself will not be deleted.</span>';
+        var confirmed = await showCustomModal('⚠️ Unlink Part', _noteBody, [
+            {label:'Cancel',class:'btn-secondary',value:false},
+            {label:'Unlink',class:'btn-danger',value:true}
+        ]);
         if (!confirmed) return;
         if (!checkFirebase()) return;
         showLoading();
@@ -4365,10 +4618,8 @@ function clearForm() {
                 showToast('Link not found', 'error');
             }
             hideLoading();
-            // Refresh the current view
             var detailContent = document.getElementById('detail-content');
             if (detailContent) {
-                // Detect which view we're on and refresh
                 if (detailContent.innerHTML.indexOf('Linked Parts') >= 0) {
                     openDetail('equipment', sanitizeKey(conveyorNumber));
                 } else {

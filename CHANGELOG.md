@@ -1,10 +1,72 @@
 # Reliability App — Changelog
 
-**Repository:** GitHub → GitHub Pages (lcy2reliability-dev.github.io/reliability-app) (lcy2reliability-dev.github.io/reliability-app)**Platform:** Single-page HTML app with Firebase Realtime Database**Site:** LCY2, Tilbury**Maintained by:** Tittus Streuti (strtt)
+**Repository:** GitHub → GitHub Pages (lcy2reliability-dev.github.io/reliability-app)
+**Platform:** Single-page HTML app with Firebase Realtime Database
+**Site:** LCY2, Tilbury
+**Maintained by:** Tittus Streuti (strtt)
+**Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 ---
 
+## v1.06 — Edit-Only Delete/Unlink + Design Polish
+**Date:** 2026-07-09  
+**Status:** Ready to deploy  
+**File:** `index.html` (334,131 bytes)
 
+### Security / UX
+- **Delete and Unlink restricted to Edit screen only:** removed all Del buttons from the Positions, Parts, and Routes list tables (search/browse views). Removed the ✕ Unlink button from the Linked Parts table in position detail, and from the linked-position chips in part detail. Removed the Delete button from thermal reading history. All destructive actions are now only accessible through the Edit overlay (accessed via the ✎ button or Edit button from the detail page).
+- **Unlink sections added to Edit overlay:** when editing a Position, the Edit screen now shows all linked parts with an Unlink button next to each. When editing a Part, it shows all linked positions with Unlink buttons. Unlinking from here triggers the full confirmation modal (below).
+- **Unlink confirmation modal:** all Unlink actions now open a warning modal (`⚠️ Unlink Part`) showing the position name and any saved Qty/Observations for that link before confirming. Cancel/Unlink buttons. The part itself is never deleted by an unlink.
+
+### Design Polish
+- **Active tab highlight:** selected tab now shows a blue bottom border (`#00A8E1`) in addition to the text colour change, making the active tab immediately obvious.
+- **Touch targets enlarged:** `.btn-sm` buttons now have `min-height: 36px` (desktop) and `44px` (mobile), meeting minimum touch-target guidelines.
+- **Loading overlay:** the spinner is now presented inside a white card with a "Loading..." label and a subtle `backdrop-filter: blur(2px)` behind it — easier to read against any background.
+- **Header title centred:** the "RME App" title in the header is now absolutely centred regardless of the logo or burger-menu button width.
+- **Position Number in detail view:** the Position ID field (conveyor number) is now displayed at `font-size: 20px; font-weight: 700` — matching the APN styling on part detail pages.
+- **Predictive search dropdown CSS:** `.autocomplete-item` class added; dropdown items have hover state and bottom border separators.
+
+### Internal
+- **liveSearchSuggest now uses Firebase cache:** predictive search reads from `getEquipmentCache()`, `getPartsCache()`, and `getRoutesCache()` instead of making fresh Firebase calls every 300ms. Reduces read overhead during live typing.
+
+---
+
+## v1.05 — RME App Rebrand + UX Fixes
+**Date:** 2026-07-09  
+**Status:** Ready to deploy  
+**File:** `index.html` (324,005 bytes)
+
+### Features
+- **Predictive (typeahead) search restored** on the main Search bar: results appear in a dropdown as you type (2+ characters), showing matching Positions, Parts, and Routes with type badges. Clicking a result opens the detail page directly. Pressing Enter still runs the full search as before. Dropdown dismisses on outside click.
+- **Logo is now interactive:** clicking the Amazon RME logo in the header returns to the Search tab, closes any open overlays, and clears the search state — equivalent to a home button.
+- **Link Part to Conveyor — Quantity + Observations fields added:** when linking a part to a conveyor (from position detail page), two new fields now appear after confirming the part: *Qty on this conveyor* (how many of that part are used) and *Observations* (optional free text, e.g. “described as end pulley, but actually tension roller”). Both values are saved to Firebase under `parts/{key}/conveyorNotes/{conveyorKey}`.
+
+### Bug Fixes
+- **Pinch-to-zoom on mobile now works:** removed `maximum-scale=1.0, user-scalable=no` from the viewport meta tag, which was blocking native zoom on touchscreens.
+- **Deleted item now disappears from screen immediately:** after deleting any item (from detail page or search results table), the search results auto-refresh so the deleted record is no longer visible. Previously the stale row / card remained until the next manual search.
+- **Burger menu dividers corrected:** removed the duplicate divider between Tools and Help; added the missing divider between Help and Account. Menu sections are now consistently separated.
+
+### Rebrand
+- **App renamed from “Reliability App” to “RME App”** across all surfaces: browser tab title, header, login screen. More inclusive naming for the site.
+
+### Notes
+- Menu section header font sizes confirmed consistent: all section labels (Add New, Tools, Help, Account) are `12px` uppercase; all menu items are `14px`. No changes needed.
+
+---
+
+## v1.04 — Thermal History Toggle + Carrier Position Import
+**Date:** 2026-07-08  
+**Status:** Deployed  
+**File:** `index.html` (317,935 bytes)
+
+### Bug Fix
+- **Thermal History section on route detail page** now correctly respects the `readingRequired` toggle: hidden when off, shown when on, and re-hides if toggled off again. Previously it could remain visible regardless of the toggle state.
+
+### Data
+- Imported 17 **CARRIER**-class positions from the RME building position spreadsheet (`CB.SRT.01.CARR.01`–`CARR.16` + `CB.SRT.01.LN.FLAT`), each enriched with manufacturer (DEMATIC), model (SC3CAR.GRP), and criticality data. Import skips any position already in the database.
+- Remaining RME position classes from the same spreadsheet (CONV, GUARD, CNTRL, STN, BLDG, SUB, GATE, CHUTE, SRT, STCKR — roughly 3,900 positions) were reviewed but **not imported** — decision deferred, on hold until requested.
+
+---
 
 ## v1.03 — UI Restructure: Simplified Navigation
 **Date:** 2026-07-03  
