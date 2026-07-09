@@ -2386,9 +2386,10 @@ function clearForm() {
                     });
                     Object.entries(points).forEach(function(pt){
                         var name=pt[0],vals=pt[1];
-                        html+='<div style="margin:4px 0;"><strong style="color:#2563eb;">'+name+'</strong>: ';
-                        if(vals.motor!==null)html+='<span class="reading-chip">Motor: '+vals.motor+'\u00B0C</span> ';
-                        if(vals.gearbox!==null)html+='<span class="reading-chip">Gearbox: '+vals.gearbox+'\u00B0C</span>';
+                        html+='<div style="margin:6px 0 10px;">';
+                        html+='<div style="font-weight:700;color:#2563eb;font-size:13px;margin-bottom:3px;">'+name+'</div>';
+                        if(vals.motor!==null)html+='<div style="padding-left:8px;margin-bottom:2px;"><span class="reading-chip">Motor Temperature: '+vals.motor+'\u00B0C</span></div>';
+                        if(vals.gearbox!==null)html+='<div style="padding-left:8px;"><span class="reading-chip">Gearbox Temperature: '+vals.gearbox+'\u00B0C</span></div>';
                         html+='</div>';
                     });
                 }
@@ -3066,25 +3067,39 @@ function clearForm() {
         _liveSearchTimer=setTimeout(async function(){
             if(!firebaseReady){return;}
             var q=query.toLowerCase();
+            // Score a field against the query: exact=100, starts-with=50, contains=10
+            function score(field){
+                if(!field)return 0;
+                var f=field.toString().toLowerCase();
+                if(f===q)return 100;
+                if(f.startsWith(q))return 50;
+                if(f.includes(q))return 10;
+                return 0;
+            }
             try{
                 var results=[];
                 var[eq,pts,rts]=await Promise.all([getEquipmentCache(),getPartsCache(),getRoutesCache()]);
+                // Collect ALL matches with relevance score — no early cutoff
                 Object.entries(eq).forEach(function([k,v]){
-                    if(v.active===false||results.length>=8)return;
-                    var cn=(v.conveyorNumber||'').toLowerCase();var desc=(v.description||v.notes||'').toLowerCase();
-                    if(cn.includes(q)||desc.includes(q))results.push({type:'equipment',key:k,label:v.conveyorNumber,sub:v.description||v.notes||''});
+                    if(v.active===false)return;
+                    var s=Math.max(score(v.conveyorNumber),score(v.description),score(v.notes));
+                    if(s>0)results.push({type:'equipment',key:k,label:v.conveyorNumber,sub:v.description||v.notes||'',_score:s});
                 });
                 Object.entries(pts).forEach(function([k,v]){
-                    if(v.active===false||results.length>=8)return;
-                    var apn=(v.apn||'').toLowerCase();var desc=(v.partDescription||v.notes||'').toLowerCase();
-                    if(apn.includes(q)||desc.includes(q))results.push({type:'part',key:k,label:v.apn,sub:v.partDescription||v.notes||''});
+                    if(v.active===false)return;
+                    var s=Math.max(score(v.apn),score(v.partDescription),score(v.notes));
+                    if(s>0)results.push({type:'part',key:k,label:v.apn,sub:v.partDescription||v.notes||'',_score:s});
                 });
                 Object.entries(rts).forEach(function([k,v]){
-                    if(v.active===false||results.length>=8)return;
-                    var rn=(v.routeNumber?v.routeNumber.toString():'').toLowerCase();var desc=(v.notes||'').toLowerCase();
-                    if(rn.includes(q)||desc.includes(q))results.push({type:'route',key:k,label:v.routeNumber,sub:(v.type||'')+(v.notes?' — '+v.notes.substring(0,40):'')});
+                    if(v.active===false)return;
+                    var rn=v.routeNumber?v.routeNumber.toString():'';
+                    var s=Math.max(score(rn),score(v.notes),score(v.type));
+                    if(s>0)results.push({type:'route',key:k,label:v.routeNumber,sub:(v.type||'')+(v.notes?' — '+v.notes.substring(0,40):''),_score:s});
                 });
                 if(!results.length){dd.style.display='none';return;}
+                // Sort by score descending, then show top 8
+                results.sort(function(a,b){return b._score-a._score;});
+                results=results.slice(0,8);
                 var typeStyle={equipment:'background:#eff6ff;color:#1d4ed8;',part:'background:#f0fdf4;color:#15803d;',route:'background:#fff7ed;color:#c2410c;'};
                 var typeLabel={equipment:'Position',part:'Part',route:'Route'};
                 var html='';
@@ -3481,24 +3496,36 @@ function clearForm() {
                     if (!isNaN(v) && v > 0) historicalValues.push(v);
                 }
             });
-            if (historicalValues.length < 3) return; // Not enough history
+            if (historicalValues.length < 3) return; // Need at least 3 readings for a baseline
             var avg = historicalValues.reduce(function(a, b) { return a + b; }, 0) / historicalValues.length;
-            var threshold = 7;
+            var threshold = 10; // 10°C above baseline = investigate (ISO 13373)
             if (val > avg + threshold) {
                 var diff = (val - avg).toFixed(1);
-                showToast(component + ': ' + val + '\u00B0C is ' + diff + '\u00B0C above average (' + avg.toFixed(1) + '\u00B0C)', 'error');
-                var addNote = confirm(component + ' reading (' + val + '\u00B0C) is ' + diff + '\u00B0C above the historical average (' + avg.toFixed(1) + '\u00B0C).\n\nWould you like to add a note?');
-                if (addNote) {
-                    var noteText = prompt('Add note about this reading:');
-                    if (noteText && noteText.trim()) {
-                        await db.ref('notes/routes/' + routeKey).push({
-                            text: '[THERMAL ALERT] ' + component + ': ' + val + '\u00B0C (avg ' + avg.toFixed(1) + '\u00B0C) - ' + noteText.trim(),
-                            author: currentUser,
-                            createdAt: new Date().toISOString()
-                        });
-                        showToast('Note saved to route!');
-                    }
-                }
+                showToast(component + ': ' + val + '\u00B0C is ' + diff + '\u00B0C above average \u2014 ALERT', 'error');
+                var noteBody = '<div style="margin-bottom:12px;padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;">'
+                    + '<div style="font-weight:700;color:#b91c1c;margin-bottom:4px;">\u26a0\ufe0f Thermal Alert</div>'
+                    + '<div style="font-size:13px;color:#374151;">' + component + '</div>'
+                    + '<div style="font-size:13px;margin-top:6px;">'
+                    + 'Reading: <strong>' + val + '\u00B0C</strong> &nbsp;|&nbsp; '
+                    + 'Avg (last ' + historicalValues.length + '): <strong>' + avg.toFixed(1) + '\u00B0C</strong> &nbsp;|&nbsp; '
+                    + 'Excess: <strong style="color:#b91c1c;">+' + diff + '\u00B0C</strong>'
+                    + '</div></div>'
+                    + '<div class="form-group"><label>Add a note to this route (optional)</label>'
+                    + '<textarea id="anomaly-note-input" rows="3" placeholder="Describe what you observed..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></textarea></div>';
+                await showCustomModal('Thermal Anomaly Detected', noteBody, [
+                    { label: 'Save Note', className: 'btn-primary', action: async function() {
+                        var noteText = document.getElementById('anomaly-note-input');
+                        if (noteText && noteText.value.trim()) {
+                            await db.ref('notes/routes/' + routeKey).push({
+                                text: '[THERMAL ALERT] ' + component + ': ' + val + '\u00B0C (avg ' + avg.toFixed(1) + '\u00B0C, +' + diff + '\u00B0C) \u2014 ' + noteText.value.trim(),
+                                author: currentUser,
+                                createdAt: new Date().toISOString()
+                            });
+                            showToast('Thermal alert note saved to route.');
+                        }
+                    }},
+                    { label: 'Dismiss', className: 'btn-secondary', action: function() {} }
+                ]);
             }
         } catch(e) { console.error('Anomaly check error:', e); }
     }
