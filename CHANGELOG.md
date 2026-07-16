@@ -6,6 +6,264 @@
 **Maintained by:** Tittus Streuti (strtt)
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
+
+## v1.07 — 2026-07-16
+**Status:** Deploying in OPEN mode (login / permissions stay off until the secure-mode rollout).
+
+**Highlights:**
+- **Parts Associated** — imported catalogue reference list on every position; link parts straight from it (see below).
+- **Route data audit** — all 372 active routes reconciled to the master CBM sheet.
+- **Accessibility** — modal focus management, keyboard/Escape handling, ARIA roles.
+- **Login switch (dormant)** — `AUTH_ENABLED` flag; ships open, flip to secure later.
+- **Technician permissions** + **security-rules compatibility** groundwork (active only in secure mode).
+- **Fix: thermal readings failed to save on any dotted-name position** (SLAM, CB, AFE, ESTOP, etc.) — see below.
+
+Full detail of each item below.
+
+
+## Fix — thermal readings crash on dotted position names (post-v1.06)
+**Date:** 2026-07-16
+**Status:** Fixed in working file, not yet deployed
+**Trigger:** Recording a reading on `SLAM.306.DVT1` (and every other position whose name contains a dot) failed with `push failed: value argument contains an invalid key ... Keys must be non-empty strings and can't contain ".", "#", "$", "/", "[", or "]"`.
+
+### Cause
+Each reading was stored under a key built from the position name plus " Motor" / " Gearbox" (e.g. `SLAM.306.DVT1 Motor`). Firebase forbids `.` `#` `$` `/` `[` `]` in keys, so the whole save was rejected. Only purely numeric positions (e.g. `140060 Motor`) saved — they have no illegal characters — which is why the bug looked intermittent.
+
+### Fix
+Reading keys are now run through the existing `sanitizeKey()` (dots → underscores) so they are always Firebase-legal, and a parallel `labels` map is saved alongside each reading batch mapping the sanitized key back to its original display name (`SLAM.306.DVT1 Motor`). History, charts, Excel export, the edit dialog and anomaly alerts all read the display name from `labels`, so the UI is unchanged — positions still show their real dotted names.
+
+- **Backward compatible:** old readings (numeric positions) have no dots, so `sanitizeKey` is a no-op and the value lookups are identical; where a `labels` map is absent the code falls back to the key itself, which for old data equals the display name.
+- Touched: `saveThermalReadings`, `saveRecordedReadings`, `renderThermalHistory`, `renderChart`, `exportThermalExcel`, `editThermalReading`, `checkThermalAnomaly` (16 edits total).
+
+---
+
+## Parts Associated (imported catalogue reference) (post-v1.06)
+**Date:** 2026-07-16  
+**Status:** Built in working file, not yet deployed  
+**Trigger:** Tittus wants each position to show the parts the maintenance catalogue says belong to it, as a reference the technician can turn into real linked parts.
+
+### What it does
+Each position detail now shows a second card, **Parts Associated**, below Linked Parts. It is an imported, read-only reference list (APN, class, quantity, description) pulled from the site parts catalogue. The catalogue is known to be noisy, so the list is treated as a suggestion, not truth.
+
+- **Link** (technician+): opens the normal qty/observations popup, pre-filled with the imported quantity (which the tech can correct). On confirm it links the part to the position and the entry moves up into Linked Parts. If the APN is not yet a real part record, a minimal one is created from the reference first (promotion), then linked.
+- **Unlink** (from the Edit screen, unchanged location): now also **restores** the part to Parts Associated, so the reference is never lost.
+- **Remove ✕** (admin only): prunes a wrong entry from the associated list without touching any linked part.
+- **One list per position:** an APN is either Linked or Associated for a position, never both. Linking (by any path) drops it from Associated; unlinking sends it back.
+
+### Storage / performance
+- Stored in a **separate top-level node** `associatedParts/{positionKey}`, **not** nested in `equipment`, so the app's startup load is unchanged.
+- Loaded **lazily** — one small read only when a position detail is opened (a few KB), never the whole 10 MB.
+- Import was filtered from a 94 MB / 661k-row region BOM down to **10.2 MB / 107,633 entries across 3,371 positions** by keeping only positions that exist in the app (matched by the last dotted segment / trailing digits of the catalogue equipment tag) and de-duping by APN.
+
+### Data model
+`associatedParts/{sanitizeKey(conveyorNumber)}` = array of `{apn, description, partType, qty}`.
+
+### Re-import note
+Re-import is an Aki-run REST operation (admin file → filtered → written). A future re-import must **merge**, not overwrite, or it would clobber admin removals and the Linked/Associated state. Not scheduled yet.
+
+## Login Switch — Open vs Secure Mode (post-v1.06)
+**Date:** 2026-07-16  
+**Status:** Ready to deploy  
+**Trigger:** Tittus wants to ship the v1.07 improvements now without turning on the login gate — the app is contained (3 users) and the login/PIN/permissions rollout can wait.
+
+### What changed
+A single flag, **`AUTH_ENABLED`**, near the top of the login code decides how the app behaves:
+- **`false` (the shipped default) — OPEN mode.** No Firebase login. On first load the app asks once for a name (remembered in the browser, used to attribute readings/notes), then gives full access — exactly like the original pre-auth build. Deployable immediately with **zero** Firebase console work.
+- **`true` — SECURE mode.** The full Firebase login (Login ID + PIN) with viewer/technician/admin roles. Flip this only when doing the login rollout, and only after enabling Email/Password in the console and publishing the locked rules (see `SECURITY_SETUP.md`).
+
+### How it works
+- Startup dispatches to `initNoAuth()` in open mode instead of the Firebase auth listener.
+- The existing login overlay is reused as a name-only prompt (the PIN field, its label, and the account hint are hidden); the prompt reads "Enter your name to continue".
+- "Logout" in open mode simply switches the remembered name (no Firebase sign-out).
+- Nothing else changes: same screens, same data, same features. Flipping the flag is the only action needed to move between modes.
+
+## Technician Permissions Expansion (for v1.07 deploy)
+**Date:** 2026-07-14  
+**Status:** Ready to deploy  
+**Trigger:** Requested by Tittus — technicians should be able to do day-to-day data upkeep, not just record readings. Deletion, decommissioning, bulk imports, and user management stay admin-only.
+
+### What changed
+Technicians (not just admins) can now:
+- **Add and edit positions, parts, and routes** — the create forms and the edit forms both save for technicians now (previously the edit form opened but the Save button was blocked).
+- **Add, replace, and remove SCADA location screenshots.**
+- **Link and unlink parts to/from positions.**
+- **Edit route waypoints** (start point, waypoints, end point).
+
+Still **admin-only**: deleting positions/parts/routes, decommissioning (the active/inactive toggle), restoring or permanently purging from Recently Deleted, bulk position imports, full-database backup, and managing users/roles.
+
+### How it's enforced (both layers)
+- **In the app:** 16 functions were moved from an admin-only guard (`requireAdmin`) to a write-access guard (`requireWrite`, i.e. technician or admin): the position save/edit paths, the part save/edit paths, the route save/edit paths (`smartSaveRoute` and the manual/APM/CSV single-route savers it dispatches to), the SCADA picture add/replace/remove functions, and the link/unlink-part functions. The delete, trash, decommission, bulk-import, backup, and user-management functions keep their admin-only guard.
+- **In the Firebase rules** (`SECURITY_SETUP.md`): for `equipment`, `parts`, and `routes`, the collection-level write stays admin-only, and a new per-item (`$key`) rule additionally allows a technician to write an item **only while the result still exists** (`newData.exists()`). Creating and editing satisfy that; deleting (nulling a node) does not — so technicians can create/edit but the database itself still refuses to let them delete. Single-item paths under those nodes (a route's waypoints, a part's `conveyorNotes` link) are covered because rules cascade down to child paths.
+
+## Accessibility (Modal/Keyboard) & Security-Rules Compatibility (post-v1.06)
+**Date:** 2026-07-14  
+**Status:** Ready to deploy  
+**Trigger:** Completing the 3 Critical + 4 High accessibility findings that Round 6 explicitly **deferred** ("tackle as its own focused pass"), plus preparing the app so it stays fully functional once the locked server-side Firebase rules in `SECURITY_SETUP.md` are published.
+
+### Accessibility — dialog & tab semantics (was deferred in Round 6)
+- **The confirmation modal and the three full-screen overlays (detail page, add-item form, login) now announce themselves as dialogs.** Added `role="dialog"` + `aria-modal="true"` to each, gave the confirm modal `aria-labelledby` pointing at its title, and gave the overlays descriptive `aria-label`s. Screen readers now correctly announce "dialog" and its purpose instead of reading it as an anonymous block of page content.
+- **The Search / Work Assigned tabs are now proper tabs.** The tab strip is marked `role="tablist"`, each tab is `role="tab"` with `aria-selected` reflecting the active state (kept in sync by `switchTab`/`switchTabDirect`), and the global keyboard handler now activates a focused tab on Enter/Space the same way it does buttons. Previously they were generic `role="button"` elements with no selected-state announced.
+
+### Accessibility — modal focus management (was deferred in Round 6)
+- **The confirmation modal now traps and restores keyboard focus.** When it opens, focus moves into the dialog; Tab / Shift+Tab cycle only within the dialog's own controls instead of leaking to the page behind it; and when it closes, focus returns to whatever element the user was on before it opened. Keyboard and screen-reader users can no longer get "lost" behind an open modal.
+- **Escape now closes the modal.** Pressing Escape triggers the modal's Cancel action (its secondary button) when one is present, matching standard dialog behaviour. Previously the only way out was a mouse click.
+
+### Security-rules compatibility (so nothing breaks when the locked rules go live)
+The locked rules in `SECURITY_SETUP.md` set the database root to no-read / no-write and only open specific top-level nodes. Four code paths assumed root-level or unconditional access and were adjusted so they keep working (and stop generating permission-denied noise) once the rules are published:
+- **"Download Backup" no longer reads the database root.** It read `db.ref('/')` for a whole-tree dump; under the locked rules that single call is denied even for an admin (read permission does not cascade up from child nodes to the root). It now reads each of the nine covered nodes individually and assembles them into the same backup file — same output, but permitted.
+- **The three login-time maintenance routines now check role before writing.** `oneTimeCleanup` (writes equipment) and `cleanupDuplicateEndpoints` (writes routes) are now admin-only; `cleanupOldWork` (removes stale Work Assigned entries) now requires write access. They run for every user on login, so without these guards a viewer's login would have fired writes that the locked rules deny. (`migratePartsData` was already guarded.)
+
+### Verified
+- Cross-checked every Firebase path the app reads/writes against the rules in `SECURITY_SETUP.md`: all nine top-level nodes the app touches (`equipment`, `parts`, `routes`, `readings`, `trash`, `users`, `workAssigned`, `workLog`, `notes`) are covered, and all dynamic `db.ref(collection + '/' + key)` calls resolve to a covered node. The only uncovered access was the root-level backup read, now fixed above.
+- File passes a JavaScript syntax check with balanced braces (1422/1422) and parentheses (4819/4819).
+
+### Still outstanding (not in this batch)
+- **Predictive search dropdown keyboard navigation** (arrow-key / Enter selection) — one of the Round 6 High findings, still deferred. Genuinely separate work from the modal/tab pass and lower risk to users than the modal trap, which is why it wasn't bundled here.
+
+
+## Performance, Quality & Contrast Fixes (post-v1.06) — Council Audit Round 6
+**Date:** 2026-07-14  
+**Status:** Ready to deploy  
+**Trigger:** Second half of the follow-up verification audit — Performance, Code Quality, and UX/Accessibility auditors, run alongside the Security/Correctness/Domain pass above. Zero Critical findings from Performance and Quality. UX/Accessibility found 3 Critical (modal focus/keyboard-trap gaps) which are **not** included in this batch — see "Deferred" below.
+
+### Performance
+- **Work Assigned no longer re-downloads the whole job list on every check.** Eight different actions — saving a thermal reading, the daily cleanup, opening a detail page, clearing all jobs, adding an item to Work Assigned, adding a thermal note, adding a route, and editing a thermal reading — each independently pulled the *entire* `workAssigned` collection from Firebase just to check "is this already in my queue?". Since the Work Assigned tab already keeps a live, continuously-updated copy of that same data (via its real-time listener), all eight now reuse that in-memory copy instead of making their own network round trip. On a busy day this cuts roughly 8 redundant full-collection downloads down to 0–1.
+- **Recording thermal readings no longer re-reads the same history multiple times.** Each temperature measurement was checked against its own 3-reads-of-history lookup, so a route with 6 motors/gearboxes fired 6 near-identical Firebase reads for one save. History is now fetched once per save and reused for every component's anomaly check.
+
+### Code quality — cache freshness
+- **New positions, routes, deletions, and reactivations now show up immediately instead of after up to 60 seconds.** Four write paths (`saveNewPosition`, `saveNewRoute`, `deleteEntry`, `reactivateItem`) wrote to Firebase but never told the app's 60-second in-memory cache that its copy was stale — so a newly added position, a freshly created route (and the positions it auto-creates), a deleted item, or a reactivated item could still show as absent/present/inactive in search and duplicate-checks for up to a minute. All four now invalidate the relevant cache right after saving.
+
+### Accessibility
+- **Low-contrast secondary text now meets readability guidelines.** A light grey (`#9ca3af`) used throughout the app for hints, timestamps, and empty-state text failed the minimum WCAG contrast ratio against a white background (roughly 2:1 vs. the 4.5:1 required). Swapped app-wide for a darker grey (`#6b7280`, already used elsewhere in the app for the same purpose) — same visual hierarchy, actually readable.
+- **Burger menu button no longer silently drops its positioning style.** The hamburger button had two `style=` attributes on one element; browsers only honour the first, so the `position:relative` needed by the "what's new" notification dot was being discarded. Merged into one attribute.
+- **A dead real-time listener and a page-init failure now tell the user something's wrong** instead of only logging to the browser console. If the Work Assigned list's live connection drops, or if login setup fails partway through, the user now sees a toast telling them to refresh, instead of a silently frozen or empty screen.
+
+### Deferred (flagged, not fixed this round — bigger scope, higher regression risk if rushed)
+The UX/Accessibility auditor found 3 Critical and 4 High findings that are all real but represent a bigger, riskier unit of work: the confirmation modal has no `role="dialog"`, no keyboard focus-trap, and no Escape-to-close; the predictive search dropdown has no keyboard navigation; the Search/Work Assigned tabs and three full-screen overlays (burger menu, detail page, add-item form) are missing dialog semantics and don't manage keyboard focus. Recommending this be tackled as its own focused pass — touching focus/keyboard behaviour across every overlay in one hurried batch is exactly the kind of change that should get its own attention and testing rather than being bundled in.
+
+---
+
+## XSS Hardening & Follow-up Fixes (post-v1.06) — Council Audit Round 5
+**Date:** 2026-07-14  
+**Status:** Ready to deploy  
+**Trigger:** Follow-up verification audit (3 focused auditors — security, correctness, domain) run against the Round 2 fixes above, to confirm no Critical/High issues remained before deploy. Zero Critical findings. One live HIGH (DOM-XSS) and 8 live Medium/Low escaping gaps fixed below; several other reported findings turned out to be dead code from the pre-v1.03 tabbed UI (see "Investigated, no action needed" below) and were left alone.
+
+### Security — remaining XSS gaps closed
+- **Search: typing HTML into the search box no longer risks injecting markup.** The "No results found for…" message echoed the raw search text into the page; a search for something like `<img onerror=...>` would have executed. The searched text, and an inactive-item name shown in the "Found in inactive items" panel, are now escaped.
+- **Thermal recording form now escapes everything sourced from Firebase.** The route number and notes in the recording form's heading, each measurement point's label, and the hidden component identifiers on the Motor/Gearbox inputs were all inserted unescaped — now all escaped.
+- **Work Assigned list now escapes job type, equipment name, and linked part fields** (APN and part type) shown on each job card.
+- **Position detail's Linked Parts table** now escapes the Bin Location/Location column (every other column in that row was already escaped — this one was missed).
+- **Route detail** now escapes each route waypoint's display name and the component names listed in the "View trend for" dropdown.
+- **`editNote` now checks write permission directly** (it was only ever called from an already-guarded caller, but the guard belongs on the function itself, matching the pattern used by `deleteNote` right next to it).
+- **Burger menu now escapes the displayed username** when the menu is reopened (the very first render already escaped it; this only affected the secondary update).
+
+### Domain — thermal anomaly detection
+- **A reading of exactly 0°C no longer silently skips anomaly checking.** `checkThermalAnomaly`'s guard used `!currentValue`, and in JavaScript `!0` is `true` — so a genuine 0°C reading (which, per the bilateral fix above, is exactly the kind of under-temperature/sensor-detachment signal this check exists to catch) was treated as "no value" and ignored. The guard now checks for null/undefined/empty-string/NaN explicitly instead of falsiness.
+
+### Investigated, no action needed
+- The verification audit flagged several functions (`loadEquipmentList`, `loadPartsList`, `loadRoutesList`, the bulk equipment CSV/XLSX import, the QR scanner, and the old standalone Thermal Readings tab) as referencing HTML elements that don't exist. Traced each one: they all belong to the "Manage Equipment/Parts/Routes" and "Thermal Readings" tabs that were removed in v1.03 — the markup was left in the file but wrapped in `display:none!important` with no code path that ever un-hides it. Confirmed dead and unreachable by any current user action; no fix applied. Candidate for a future cleanup pass (delete the orphaned HTML/JS) but zero runtime risk today.
+- `showPartsPopup`'s missing permission guard was also traced to the same dead "Add Part Used" button inside the removed Manage Equipment tab — unreachable, no fix needed.
+
+---
+
+## Security Hardening & Consolidated Fixes (post-v1.06) — Council Audit Round 2
+**Date:** 2026-07-14  
+**Status:** Ready to deploy  
+**Trigger:** Consolidated Critical/High/Medium findings from a two-round, six-angle audit (security, correctness, UX, performance, code quality, reliability-engineering domain). Applied as 12 guarded patch batches, each verifying exact match counts before writing; final file passes a JS syntax check with balanced braces/parens.
+
+### Security — permission guards (client-side)
+- **12 state-changing actions now check the user's role before running.** Functions that edit or delete data — editing a thermal reading, marking a job done/undone, editing a note, reactivating a deleted item, removing/replacing a picture, toggling a route active, clearing all jobs, opening the edit form, running the parts-data migration, downloading a full backup, and opening the Recently Deleted screen — previously ran regardless of whether the user was a viewer, editor, or admin. Each now enforces the appropriate write- or admin-level guard. (These are client-side guards; server-side Firebase Security Rules are the real enforcement layer and are tracked separately in SECURITY_SETUP.md.)
+- **PIN validation tightened.** Login now requires a PIN of 6 or more digits (digits only), rejecting short or non-numeric input that the previous length-only check would have let through.
+
+### Security — HTML escaping (XSS hardening)
+- **26 places that displayed user-entered text now escape it first.** Anywhere a record's free-text fields (descriptions, notes, areas, serial numbers, criticality, store/bin locations, manufacturer/supplier, conveyor numbers, route waypoints, search queries reflected back on screen) were dropped straight into the page, a crafted value could have injected markup or broken the layout. All of these display sites now run through `escapeHtml()`. Covers position detail, part detail, route detail, the link-part popup, inactive-item search, autocomplete, and the Recently Deleted list.
+
+### Correctness — data safety
+- **CRITICAL: deleting from the detail page no longer skips the trash.** `confirmDetailDelete` was hard-deleting the record outright, bypassing the soft-delete `trash/` collection that every other delete path uses — so those items were unrecoverable and never appeared in Recently Deleted. It now moves the record to `trash/{collection}/{key}` with a `deletedAt` timestamp first, matching the rest of the app.
+
+### Correctness — dead/mismatched code
+- **Work Assigned drag-to-reorder, overdue detection, and the tab count now actually work.** A cluster of functions (`updateWorkCount`, `renumberJobs`, `saveJobOrder`, `checkOverdueJobs`, and all the drag handlers in `initJobDragDrop`) targeted DOM that doesn't exist — the class `.work-job-card`, the id `#work-jobs-list`, and `dataset.jobId` — while the actual render uses `.work-card`, `#work-list`, and `data-key`. These had silently never worked; the selectors are now corrected to match what's rendered.
+- **Programmatic tab switches to Routes no longer depend on a stray click event.** Three call sites (`editRoute`, `relinkRoute`, and one more) called `switchTab('routes')`, which relies on the implicit `window.event` — undefined when the call isn't triggered by an inline click, so the switch could misbehave. They now call `switchTabDirect('routes')`.
+- **Route detail loads thermal history consistently.** The route branch of `openDetail` used one condition to decide whether to *show* the thermal-history card and a different one to decide whether to *load* it. Both now use the shared `routeReadingRequired(route)` helper.
+- **Editing a note with an apostrophe no longer breaks the note list.** `refreshNotesList` was substituting `&apos;` into an inline onclick attribute, which broke the handler's parsing. It now escapes correctly.
+- **Role changes refresh the user list.** `changeUserRole` now awaits `openUsersScreen()` so the list reflects the change.
+- **"Done by" is now recorded.** Marking a job done now saves `completedBy` so it's clear who completed it.
+
+### Domain — thermal anomaly detection (CBM correctness)
+- **Cold faults are now detected, not just hot ones.** The anomaly check only ever alerted on over-temperature. Per ISO 13373, a sudden drop (sensor detachment, a cooling fault reading unrealistically low) is just as diagnostic. The check is now bilateral — it alerts on a 10 degC deviation from a component's own historical average in *either* direction, with the alert wording and colour reflecting hot vs cold.
+- **Valid cold readings are no longer discarded from the baseline.** The historical-average calculation filtered readings with `value > 0`, silently dropping legitimate near-zero/cold readings. It now filters on `value >= TEMP_MIN`, so the baseline reflects real history.
+
+### Performance
+- **Fewer full-database reads.** Several paths that re-pulled entire collections from Firebase now reuse the in-memory caches: route/part lookups when opening a detail page, duplicate-APN checks in `savePart`/`saveNewPart`, the edit-linked-parts list, part-to-link search, and the three-collection inactive-item search. `saveNewPart` also now invalidates the parts cache after saving, so new parts appear immediately.
+
+### UX & accessibility
+- **Login fields are now labelled** (`<label>` elements for the login ID and PIN inputs) for screen-reader and autofill support.
+- **Toast notifications announce themselves** to screen readers (`role="alert"`, `aria-live="assertive"`).
+- **Viewers no longer see controls they can't use** — the note-input box and Add-note button are hidden from view-only users.
+- **Cleaner logout.** `burgerLogout` guards its listener-detach calls (`.off()`) against a missing database handle and re-applies role-based visibility after logging out.
+
+---
+
+## UX & Accessibility (post-v1.06) — Council Audit Round 4
+**Date:** 2026-07-14  
+**Status:** Ready to deploy  
+**Trigger:** UX/accessibility findings from the multi-angle audit. Aimed at glove/thumb use on the shop floor and basic keyboard/screen-reader support.
+
+- **Bigger touch targets.** Tabs and search autocomplete rows are now at least 44px tall (Apple/WCAG minimum), and the small remove/add buttons get a 44px minimum height on mobile, so they're easier to hit with a thumb or glove.
+- **No more iOS zoom-jump on inputs.** iOS auto-zooms when you focus an input smaller than 16px. All inputs are now forced to 16px on mobile, so focusing a field no longer yanks the layout around.
+- **Numeric keypad for temperature entry.** The four thermal reading fields now request a decimal numeric keypad (`inputmode="decimal"`), so technicians get digits instead of the full keyboard.
+- **Spinner can't get stuck.** The loading overlay now has a 15-second safety timeout — if a Firebase call hangs (bad Wi-Fi), the spinner clears itself instead of trapping the user on a frozen screen.
+- **Offline indicator.** A red "You are offline" banner now appears automatically when the device loses connectivity and disappears when it returns, so technicians know their changes may not be saving.
+- **Keyboard access.** The tabs and burger-menu items are now reachable by Tab and can be activated with Enter or Space (they carry `role="button"` and `tabindex`), with a single shared key handler.
+
+---
+
+## Performance (post-v1.06) — Council Audit Round 3
+**Date:** 2026-07-14  
+**Status:** Ready to deploy  
+**Trigger:** Performance findings from the multi-angle audit. No user-facing behaviour change; the app just loads and runs lighter, especially on poor warehouse Wi-Fi.
+
+- **Faster first load — heavy libraries no longer block the page.** Chart.js (~200KB) and the XLSX/Excel library (~860KB) were loaded up front via a render-blocking `document.write`, stalling the whole app behind ~1.3MB of downloads before anything appeared. Only Firebase now loads up front; Chart.js and XLSX load lazily on demand (and quietly preload in the background a second after login), via a small `loadScriptOnce` helper. All chart and Excel import/export code now `await`s the relevant library, so nothing breaks if you use a feature before its library finishes loading.
+- **Search is dramatically cheaper.** `searchAll` re-downloaded the entire equipment, parts, and routes database (including any base64 images stored on records) from Firebase on every single search. It now reuses the same 60-second in-memory cache the autocomplete uses, so repeated searches are instant and don't re-pull the whole DB each tap.
+- **Route detail opens faster.** The route detail page validated each route point with its own sequential Firebase round-trip (N points = N blocking reads). It now reads the equipment cache once and checks all points in memory — one fetch instead of N.
+- **Work Assigned list no longer stacks listeners / flickers.** `loadWorkAssigned` is called after every work add/edit/delete, and each call attached a *new* realtime listener without removing the old one, so the list re-rendered multiple times (visible flicker) and leaked memory. It now detaches the previous listener before attaching a fresh one.
+- **Thermal chart is cleaned up on close.** Leaving a route detail page now destroys the Chart.js instance, freeing the canvas and avoiding a slow memory creep across many route views.
+
+---
+
+## Bug Fixes (post-v1.06) — Council Audit Round 1
+**Date:** 2026-07-14  
+**Status:** Ready to deploy  
+**Trigger:** Full multi-angle audit (security, correctness, UX, performance, code quality, reliability-engineering domain).
+
+### Thermal / Anomaly Detection (core safety feature — was silently broken)
+- **Anomaly detection now fires on the main Thermal tab.** Readings recorded from the Thermal tab were checked against a component key of `reading-0`, `reading-1`... which never matched the stored keys (e.g. `"<point> Motor"`), so no alert could ever trigger from that path. The check now maps each input to its real component via `currentThermalItems`, so it matches the stored reading key exactly.
+- **Anomaly alert notes now actually save.** The anomaly modal's buttons used `{className, action}`, but `showCustomModal` reads `{class, value}` and resolves with `value` (it never calls `action`). The "Save Note" callback therefore never ran. Rewritten to check the resolved value and save the note.
+- **Anomaly baseline no longer self-contaminates.** The new reading was written to Firebase *before* the anomaly check read the last-10 history, so the reading polluted its own baseline average. The check now runs before the save.
+
+### Work Assigned
+- **Job notes no longer corrupt after the first save.** Notes were stored as a JS array via `.set([...])`; Firebase returns that as an object on re-read, so the second `.push()` threw and the list stopped rendering. Now appended with `.push()` and rendered via `Object.values()`.
+
+### Recently Deleted
+- **Deleted Positions/Parts/Routes are now restorable again.** `detailDelete` wrote soft-deletes to `trash/part/` and `trash/route/` (singular), but the Recently Deleted screen reads `trash/parts/` and `trash/routes/` (plural), so those items were invisible and unrestorable. The write path now uses the plural collection names to match.
+
+### Search freshness
+- **Edits and deletes now appear in search immediately.** `detailDelete`, `confirmDetailDelete`, `saveEditPosition`, `saveEditRoute`, and `saveEditPart` now invalidate the relevant 60-second search cache, so changes show up in the predictive dropdown and full search right away instead of after up to a minute.
+
+### Reliability / memory
+- **Firebase listeners no longer leak on logout.** `equipment`, `parts`, `routes`, and `workAssigned` real-time listeners are now detached (`.off()`) in `burgerLogout`, preventing them stacking up (and the associated memory growth / post-logout `currentUser` crash) across repeated logins on a shared device.
+
+### Consistency (native dialogs removed)
+- **Replaced all 6 remaining native `confirm()`/`prompt()` calls with the app's custom modal** (`promptEditNote`, `addWorkNote` note + save-to-entity, `addThermalNoteToWork`, `saveRecordedReadings`, `saveWorkJobNote`). Native dialogs block the JS thread, can't be styled, and misbehave on mobile/PWA. All now use styled `showCustomModal` prompts and Yes/No confirmations.
+
+### Also fixed
+- **Help & Reference page can now be closed.** `openHelpPage` showed the overlay with an inline `style.display='block'`, but every close path only removes the `active` class — so the Back button did nothing. It now opens via `classList.add('active')` to match.
+
+### Round 1 (continued) — deferred structural fixes
+- **Thermal recording UI now appears on new/imported routes immediately.** Routes were created with the field `needsTemp`, but the Record button, thermal-history section, and Work Assigned Record button all gated on a *different* field, `readingRequired` — which only the Edit form ever wrote. A freshly created or imported route showed no recording UI until someone opened Edit and re-saved. Added a single `routeReadingRequired(route)` helper (prefers `readingRequired`, then `needsTemp`, then falls back to `type === 'Thermal'`) used at all 6 read sites, and made all 5 write sites set **both** fields to the same value. `saveEditRoute` now derives both from the checkbox instead of hardcoding `needsTemp` to `type === 'Thermal'`.
+- **Editing a Work Assigned job no longer risks permanent data loss.** `editWork` previously deleted the record and opened a blank Add form — if you closed without re-saving, the job was gone. It now fetches the job, opens the modal pre-filled in a true "Edit Work Assigned" mode, and saves via an `update()` (preserving `createdAt`, adding `updatedAt`) instead of delete-then-recreate.
+- **`saveRecordedReadings` anomaly baseline no longer self-contaminates.** Like the main Thermal tab fix, the route-detail recording path now runs all anomaly checks *before* writing the new readings to Firebase, so a reading can't pollute its own historical average. The old post-save anomaly loop was removed.
+
 ---
 
 ## v1.06 — Edit-Only Delete/Unlink + Design Polish
