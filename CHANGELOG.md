@@ -7,6 +7,141 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.10 — 2026-07-29
+**Status:** Not deployed yet. This upload folds every unreleased change into a single drag-drop: the v1.10 batch below plus the v1.09 items (iOS scanning, smart scan routing, search-box upgrades, results summary, code-audit fixes) and the older v1.07/v1.08 items still pending (Parts Associated, route audit, overnight-work fix, dead-code sweep, DB cleanup).
+
+**Highlights:**
+- **Home dashboard** — the Search tab now opens on a small dashboard: a greeting, today's date, a big Scan button, and three tap-through tiles (Pending jobs, Open alerts, Due for reading). If any routes need attention, the top three appear as red cards you can tap straight to the route.
+- **Open Alerts view** — a new burger-menu entry lists every thermal route whose most recent reading is more than 10°C from the component's own baseline (ISO 13373). A red badge on the burger button shows the count. The same screen has a "Due for a Reading" section for thermal routes recorded before but not in the last 7 days.
+- **Record form redesigned** — opening a thermal route to record readings now shows a per-component baseline hint (last value, historical average, sample count), and each input tints green / amber / red as you type based on the deviation from that component's baseline. A sticky save bar shows the running "N of M entered" counter.
+- **Step-by-step recording mode** — optional mode that walks you through one reading at a time with a large on-screen number pad (great for gloves / cold hands). Inputs become read-only so a stray tap can't overwrite them.
+- **Drafts survive interruptions** — partly-typed readings are saved to the phone as you go, so if you lock the phone, get called away, or the app closes mid-route, the numbers are still there when you reopen it.
+- **Offline reading buffer** — if you take readings without signal, they save locally and a small "waiting to sync" banner appears at the top. As soon as the phone reconnects, they upload automatically and the banner clears.
+- **Grouped anomaly summary** — when a reading trips more than one alert, they now appear in one summary modal with a single shared note, instead of one modal per component.
+- **Search results become tap-cards on mobile** — the wide routes and parts tables now stack into readable cards on narrow screens; on desktop they stay as tables.
+- **Reorderable work cards** — drag work cards on desktop or tap the ▲ / ▼ arrows on mobile to change job order. Your order is remembered locally per user. Times on cards show "just now / Nm ago / HH:MM / Yesterday HH:MM".
+- **Trend sparklines** — route search results and thermal work cards show a tiny 12-reading line chart, colored green / amber / red by the last vs average deviation.
+- **Print / Save PDF route report** — every route detail has a Print button that opens a clean printable report (route metadata, points, last 6 thermal readings per component with average, latest anomaly flags, and route notes). No new library; works from the browser's standard print dialog (including "Save as PDF" and iOS Safari's Share → Print).
+- **Higher-contrast tabs** — the inactive Search / Work Assigned tab is lighter and heavier, and the active tab has a bright cyan accent so it's obvious which section you're looking at.
+
+**Detail:**
+
+### Home dashboard
+- Fills the empty state of the Search results area on load and whenever the search box is cleared. When you run a real search it's replaced by results; clearing the search brings it back.
+- Pending jobs count comes from the live Work Assigned list, so it's always in sync with the Work tab.
+- Alerts and Due tiles read from a shared thermal-scan (2-minute cache) so opening the dashboard, the burger badge and the Open Alerts view all reuse one set of Firebase reads.
+- Big Scan button uses the same universal scanner as the Search box (native `BarcodeDetector` on Android/desktop, ZXing fallback on iPhone).
+
+### Open Alerts + Due for a Reading
+- The scan iterates only active thermal routes with defined motors/gearboxes and pulls each route's last 15 readings in parallel. Routes with fewer than four total readings are skipped for alert scoring (need a latest reading plus at least three prior for a baseline).
+- Each component's baseline is computed from prior readings only (the reading being scored is excluded), matching the semantics used at record-time. Threshold is 10°C in either direction.
+- Due list: thermal routes that have at least one reading on record but whose most recent one is older than 7 days. Never-recorded routes are deliberately excluded so the list doesn't flood with un-initialised routes.
+- Alerts sort by biggest deviation first; Due sorts by oldest first.
+
+### Record form
+- Layout groups each reading point (Motor + Gearbox) as one card. Motor first, then Gearbox, per the memory convention.
+- Baseline hint reads the route's last 10 readings and per component computes: last value, average, and sample count. Fewer than 3 samples shows "no history yet" or "(3+ for alerts)" so it's clear when tinting will kick in.
+- Live tint (`recTint`): green under 7°C deviation, amber 7–10°C, red at 10°C or more. Uses each component's own average.
+- Sticky bar (`.rec-savebar`) at the bottom shows a running "N of M readings entered" counter and holds the Save / Cancel buttons within thumb reach on mobile.
+- Step-by-step mode (`enterStepMode`) hides all but the active point, sets every input `readonly`, and reveals a 3x4 number pad plus Prev / Show all / Next / Save controls. The bottom progress bar fills as you go. Focusing a specific point jumps the step index.
+- Drafts (`saveDraft` / `loadDraft` / `clearDraft`): keyed per route in localStorage under `rme_draft_<routeKey>`, storing every non-empty input by its DOM id (plus the note text under `__note`). Fires on every keystroke. Restored on open with a "Draft restored" toast that names the count. Cleared on successful save (online or offline).
+
+### Offline / sync
+- `.info/connected` and `navigator.onLine` are watched; if either drops, an offline banner shows at the top of the app.
+- Saving a reading while offline stores the payload in localStorage (`rme_pending_readings`) with the route key, route number, readings, note, timestamp, and recorded-by. A "sync status" strip shows the pending count.
+- When the app reconnects, `flushPendingReadings` pushes everything to `readings/` and any notes to `notes/routes/`, then clears the buffer and shows a synced confirmation. The push order matches the order captured, so the earliest offline reading gets the earliest server timestamp.
+
+### Anomaly summary
+- `_detectAnomaly(component, currentValue, sharedHistory, displayLabel)` is now pure and returns a structured alert (or null). `saveRecordedReadings` runs it in a loop and collects a list before deciding to prompt.
+- If any component alerts, one `showAnomalySummary` modal appears with a per-component card (over/under, reading vs average, deviation) and a single note textarea. Save writes one note per component to `notes/routes/<key>` with the prefix `[THERMAL ALERT]`, sharing the user note text at the end.
+
+### Responsive search tables
+- The Routes and Parts result tables carry `class="rtable"` with `data-label` on every `<td>`. Under 640 px they collapse to tap-cards using CSS `td::before { content:attr(data-label); }`, with the header row hidden.
+
+### Work reorder + relative times
+- Non-done cards carry `draggable="true"` on desktop; the existing drag handlers are now wired up.
+- Every card also has a top-right ▲ / ▼ pair that swaps the card with its non-done sibling in the given direction.
+- Order is persisted in `localStorage` under `work_order_<login>` on every reorder and on every Done toggle. `loadWorkAssigned`'s sort applies: done last, then saved-order index, then createdAt descending, so a new job lands at the top the first time it appears.
+- Added-time and note-times use `formatWorkTime` (just now / N minutes ago / HH:MM / Yesterday HH:MM / date HH:MM) instead of the previous raw locale time.
+
+### Tab contrast
+- `.tab` inactive color moves from `#d5dbdb` to `#eaeeef` and weight 500 → 600; `.tab.active` gets a bright `#4cc3ef` foreground, weight 700, and a subtle `rgba(255,255,255,0.06)` background so the active section is obvious.
+
+### Sparklines
+- `sparklineSvg(values, w, h)` hand-draws a `<polyline>` plus a last-point dot inside a fixed-size SVG (green / amber / red by last-vs-average deviation, thresholds 7 and 10). No external library.
+- `_getSparkValues(rk)` reads the last 12 readings for the route (with a 90-second per-route cache), averages each entry's numeric readings into one trend point, and returns the array.
+- Placeholders (`<span class="rspark" data-rk="<key>">`) are injected on thermal-route search rows and thermal CBM work cards; `renderSparklines(container)` fills them asynchronously after render.
+
+### Print / PDF route report
+- Every route detail page has a **Print / Save PDF** button (`printRouteReport(routeKey)`). It builds a print-only report into a hidden `#print-root` container, adds `body.printing`, calls `window.print()`, and cleans up on `afterprint`.
+- Print CSS hides every direct body child except `#print-root`, sets `@page { margin: 14 mm }`, and avoids page-breaks inside sections and table rows.
+- Report content: header (title, generated timestamp, user); metadata table (route number, type); description; route points (Start / waypoints / End); thermal readings (last 6 per component with an average column); anomaly flags on the latest reading; the last 30 route notes.
+- No new library, no CSP change. Works from every browser's standard print dialog (including "Save as PDF" and iOS Safari's Share → Print sheet).
+
+### Version stamps + caches
+- `APP_VERSION` → `1.10`; HTML top comment → v1.10; What's New banner → v1.10 with a new bullet list. New readings invalidate both the alerts scan cache and the affected route's sparkline cache so the dashboard, badge and lists refresh on the next open.
+
+
+## v1.09 — 2026-07-29
+**Status:** Deploying in OPEN mode. This one upload bundles everything pending: the v1.09 items here, the v1.08 items (barcode scan in Search, search-Enter fix), and the v1.07 items (Parts Associated, route audit, overnight-work fix, dead-code sweep, DB cleanup).
+
+**Highlights:**
+- **Barcode / QR scanning now works on iPhone** — the scanner previously relied on a browser feature (`BarcodeDetector`) that iOS Safari doesn't have. It now falls back to an in-page scanning library, so iPhones scan too. Android and desktop Chrome/Edge keep using the fast built-in detector.
+- **Scan straight to what you need** — scanning a route number jumps directly into recording a reading for that route; scanning a position or part opens its detail page; anything else drops into the search box and runs the search.
+- **Search box upgrades** — arrow keys move through the suggestions and Enter opens the highlighted one; a clear (x) button empties the box in one tap; recent items you've opened appear when the box is empty.
+- **Torch and buzz while scanning** — a flashlight button appears when the device supports it (for low light), and the phone gives a short vibrate on a successful scan. Both are no-ops on iPhone (the browser doesn't allow them there) and harmless.
+- **Results summary + remembered filters** — the results page shows a short count (e.g. "Found 3 positions and 1 route"), and your Positions / Parts / Routes filter choices are remembered between searches.
+
+**Detail:**
+
+### iOS / universal scanning
+- When the browser has a native `BarcodeDetector` (Android, desktop Chrome/Edge) the scanner uses it directly — fast, nothing to download.
+- Otherwise (notably iOS Safari) it lazy-loads the ZXing library from the existing allowed CDN and decodes from the live camera stream. This is the change that makes iPhones work.
+- The rear camera is preferred (`facingMode:environment`); the stream and library are always torn down on close, so there's no lingering camera light.
+
+### Smart scan routing
+- On a successful read the scanned value is matched against the data: an exact route number goes to record-a-reading; an exact position or part opens its detail page; otherwise the value fills the search box and runs a normal search.
+- A double-fire guard marks the scanner inactive before the first async step so a single scan can't trigger two actions.
+
+### Search box
+- Suggestions are keyboard-navigable: ArrowDown / ArrowUp highlight an item, Enter opens the highlighted suggestion (or runs a full search if none is highlighted), Escape closes the list.
+- A clear (x) button appears inside the box when it has text and empties it in one tap.
+- Recent items (the last few positions, parts, or routes you opened) appear when the box is focused and empty. They're stored locally on the device.
+
+### Torch, vibrate, and results
+- The torch/flashlight toggle appears in the scanner only if the camera reports the capability; it toggles the camera track's torch constraint.
+- A short `navigator.vibrate` fires on a successful scan where supported.
+- The results page prints a count-summary line, and the Positions / Parts / Routes section filters are saved to and restored from local storage.
+
+### Code audit fixes
+A static-analysis pass over the whole file (function references, handlers, DOM IDs, Firebase paths, duplicate declarations) found and fixed the following. All are folded into this same v1.09 upload; none change how the app looks or behaves for normal use.
+- **Faster, lighter startup** — on load the app was silently subscribing to the entire equipment, parts, and routes data (the routes data alone is several MB of embedded images) to fill three on-screen lists that no longer exist, then discarding it. Those three subscriptions are removed, so the app opens with less network traffic and memory use.
+- **"Add it now" for an unregistered route now works** — when adding a CBM job for a route that isn't registered yet, choosing "add it now" used to target an old, permanently-hidden form and appeared to do nothing. It now opens the proper Add Route form with the route number pre-filled.
+- **Side-menu no longer pops open unexpectedly** — opening an add-form from outside the side menu (e.g. the "Add New Part" button shown when a part search finds nothing) could accidentally slide the menu open. The add-form now only closes the menu if it was already open.
+- **Thermal export filename** — the "Export to Excel" button on a thermal route now names the file with the route number instead of leaving it blank (e.g. thermal_readings_route_CBM.THRM.01.xlsx).
+- **Housekeeping** — removed an old unused thermal-save function (superseded by the current save path) plus the three dead list functions above, and corrected a stale code comment. About 110 lines / 8 KB trimmed, no behaviour change.
+
+
+## v1.08 — 2026-07-29
+**Status:** Superseded by v1.09 (never shipped on its own) — its items are included in the single v1.09 deploy. Bundles the pending v1.07 work below (dead-code sweep, overnight-work fix) plus the two new items here.
+
+**Highlights:**
+- **Scan a barcode / QR code from Search** — a camera button next to the search box opens a live scanner; a successful scan drops the value into the search box and runs the search automatically. (Rebuilds the old removed `startQRScan` stub properly, wired to a real button.)
+- **Fix: search now responds immediately on Enter** — pressing Enter closes the predictive-suggestions dropdown and shows the results straight away; no more clicking elsewhere to dismiss the dropdown first.
+
+**Detail:**
+
+### Barcode / QR scanning in Search
+- New camera button (📷) sits to the right of the search input.
+- Uses the browser's built-in `BarcodeDetector` with a rear-facing camera (`facingMode:'environment'`). Detects QR plus common 1-D/2-D barcodes (Code 128/39/93, EAN-13/8, UPC-A/E, Codabar, ITF, Data Matrix, Aztec, PDF417) — the exact set is filtered to whatever the device supports.
+- Full-screen scanner overlay with a live video preview, a green aiming line, and a Cancel button. On a successful read the overlay closes, the code is written to the search box, a toast confirms it, and `searchAll()` runs.
+- Graceful fallbacks: if `BarcodeDetector` isn't available (e.g. iOS Safari) it explains to use the phone's Camera app and paste; if the camera permission is denied or unavailable it shows a clear message and closes. The camera stream is always stopped on close (no lingering camera light).
+
+### Fix: predictive search closing on Enter
+- Previously, pressing Enter ran the search but the suggestions dropdown stayed open (a debounced suggest timer re-opened it ~300 ms later), so you had to click elsewhere to clear it.
+- `searchAll()` now cancels any pending suggest timer and hides the dropdown as its first action; the Enter handler also blurs the input (closing the on-screen keyboard on mobile). Clicking the Search button behaves the same way.
+
+
 ## v1.07 — 2026-07-16
 **Status:** Deploying in OPEN mode (login / permissions stay off until the secure-mode rollout).
 
@@ -21,6 +156,33 @@
 - **Add to Work ↔ Remove from Work toggle** — on a position/route detail page, once a job is added the green button becomes a red “Remove from Work” button (and flips back on removal). No more hunting through Work Assigned to undo a mis-tap.
 
 Full detail of each item below.
+
+
+## Cleanup — dead-code sweep (2026-07-29)
+**Status:** In working file, deploys with v1.07. No behaviour change — only unreachable code removed.
+
+Removed 19 functions that were never called anywhere in the app (leftovers from earlier Quick iterations, since superseded by the current wired equivalents), plus two orphaned globals and some dead CSS:
+
+- **Removed functions:** addRouteToWork, addWorkNote, burgerBulkImport, clearAllJobs, clearForm, deleteEntry, deleteJob, detailDelete, filterTable, loadThermalRoute, printBlankSheet, relinkRoute, removePicture, replacePicture, saveNewRoute, startQRScan, toggleRouteActive, stopQRScan, and the already-noted markJobDone/checkOverdueJobs.
+- **Removed globals:** `qrStream` (only used by the dead QR-scan stub).
+- Live functionality is unaffected — deletes go through `deleteWork`/`confirmDetailDelete`, notes through `saveWorkJobNote`, thermal recording through `goRecordThermal`, route creation through the import flow, etc. Every remaining on-click handler was verified to resolve to a defined function.
+
+**Net:** ~300 lines removed, file ~365 KB (was ~385 KB). Syntax verified, braces/parens balanced.
+
+**Note — QR/barcode scanning:** the removed `startQRScan` was a stub for scanning a position's QR/barcode to auto-fill the number. It referenced UI elements that no longer exist and was never reachable. If we want QR scanning as a real feature later, it should be rebuilt and wired to a button properly.
+
+
+## Fix — uncompleted work no longer deleted overnight; overdue now shows in red (2026-07-29)
+**Status:** In working file, deploys with v1.07
+
+**The bug you hit:** thermal routes left assigned but not marked complete were being *deleted* at the 4am day-boundary. `cleanupOldWork()` was removing every job older than the cutoff regardless of status.
+
+**Fixed / added:**
+1. **Uncompleted jobs carry over.** The overnight cleanup now only removes jobs that were already marked **done** before the cutoff. Anything still pending stays in your queue the next day.
+2. **Overdue jobs show in red.** A pending job created before today's work-day boundary now renders as a red card with an **OVERDUE** badge. (The old `checkOverdueJobs()` never worked — it read a `createdAt` attribute the card never set, styled a class name that didn't match the card, and only ran once so live updates wiped it. Overdue state is now computed inline on every render, so it's always correct.)
+3. **Completing an overdue job clears it instantly.** Toggling an overdue carry-over to done removes it from the queue immediately (rather than leaving it greyed until the next 4am sweep). Same-day jobs still grey out and clear on the normal overnight cycle.
+
+**Dead code removed:** the broken `checkOverdueJobs()` function, the unused `markJobDone()` function, and two orphaned `.work-job-card.overdue` CSS rules. (Noted: the wider `.work-job-card` CSS block, ~14 rules, is entirely unused — safe to remove in a later tidy-up.)
 
 
 ## Feature — Add to Work / Remove from Work toggle (2026-07-28)

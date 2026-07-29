@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- RME App v1.07 - Updated 2026-07-16 -->
+<!-- RME App v1.10 - Updated 2026-07-29 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -17,9 +17,9 @@
         .header h1 { font-size: 20px; font-weight: 600; }
         .header p { font-size: 12px; opacity: 0.7; margin-top: 4px; }
         .tabs { display: flex; background: #37475A; overflow-x: auto; border-bottom: 3px solid #00A8E1; }
-        .tab { padding: 12px 16px; color: #d5dbdb; cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; min-height: 44px; display: flex; align-items: center; }
+        .tab { padding: 12px 16px; color: #eaeeef; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; min-height: 44px; display: flex; align-items: center; }
         .tab:hover { color: #ffffff; background: rgba(255,255,255,0.08); }
-        .tab.active { color: #00A8E1; border-bottom-color: #00A8E1; }
+        .tab.active { color: #4cc3ef; border-bottom-color: #00A8E1; font-weight: 700; background: rgba(255,255,255,0.06); }
         .content { max-width: 900px; margin: 0 auto; padding: 20px; }
         .section { display: none; }
         .section.active { display: block; }
@@ -88,6 +88,7 @@
         .notes-display { font-size: 12px; color: #6b7280; font-style: italic; margin-top: 2px; }
         .autocomplete-item { padding:10px 14px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:13px; min-height:44px; display:flex; align-items:center; }
         .autocomplete-item:hover { background:#f8fafc; }
+        .autocomplete-item.active { background:#dbeafe; }
         .autocomplete-item:last-child { border-bottom:none; }
         .search-link { color:#00A8E1; text-decoration:none; cursor:pointer; font-weight:600; }
         .search-link:hover { text-decoration:underline; }
@@ -107,7 +108,7 @@
         .login-card input { width:100%; padding:12px; border:1px solid #d1d5db; border-radius:8px; font-size:16px; margin-bottom:12px; text-align:center; }
         .login-card input:focus { outline:none; border-color:#60a5fa; }
         .login-card .btn { width:100%; padding:14px; font-size:16px; }
-        .work-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:14px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; }
+        .work-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:14px; padding-right:44px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; position:relative; }
         .work-card:hover { border-color:#60a5fa; box-shadow:0 2px 8px rgba(37,99,235,0.1); }
         .work-card .work-type { font-size:11px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:4px; display:inline-block; margin-bottom:6px; }
         .work-card .work-type.fwo { background:#fee2e2; color:#dc2626; }
@@ -115,7 +116,19 @@
         .work-card .work-type.cbm { background:#d1fae5; color:#00A8E1; }
         .work-card .work-equipment { font-size:15px; font-weight:600; color:#1a1a2e; }
         .work-card .work-details { font-size:12px; color:#6b7280; margin-top:4px; }
+        .work-card.overdue { background:#fef2f2; border-color:#fca5a5; }
+        .work-card.overdue:hover { border-color:#f87171; }
+        .work-card .overdue-badge { display:inline-block; padding:2px 8px; margin-left:8px; background:#ef4444; color:#fff; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:0.3px; vertical-align:middle; }
         .work-card-actions { display:flex; gap:6px; margin-top:8px; }
+        .work-card.dragging { opacity:0.5; }
+        .work-card.drag-over { border-color:#2563eb; border-style:dashed; }
+        .work-card[draggable="true"] { cursor:grab; }
+        .work-reorder { position:absolute; top:10px; right:8px; display:flex; flex-direction:column; gap:3px; z-index:1; }
+        .work-reorder button { width:30px; height:22px; padding:0; font-size:11px; line-height:1; border:1px solid #d1d5db; background:#f9fafb; border-radius:5px; cursor:pointer; color:#374151; }
+        .work-reorder button:hover { background:#eef2ff; border-color:#c7d2fe; }
+        .work-reorder button:active { background:#e5e7eb; }
+        .rspark { display:inline-flex; align-items:center; min-height:18px; vertical-align:middle; }
+        .spark-svg { display:block; }
         .char-count { font-size:11px; color:#6b7280; text-align:right; margin-top:2px; }
         .thermal-history-reading { padding:8px 0; border-bottom:1px solid #f1f5f9; }
         .thermal-history-reading:last-child { border-bottom:none; }
@@ -145,6 +158,9 @@
             th, td { padding: 8px 6px; white-space: nowrap; }
             .thermal-item-row { flex-direction: column; align-items: stretch; gap: 8px; }
             .thermal-item-row input { width: 100%; }
+            .rec-point-row{ flex-direction:column; align-items:stretch; gap:6px; }
+            .rec-point-row input{ width:100%; }
+            .rec-pad button{ padding:18px 0; font-size:22px; min-height:58px; }
             .thermal-item-row span { font-size: 13px; }
             .file-upload { padding: 14px; }
             .file-upload p { font-size: 12px; }
@@ -196,8 +212,6 @@
         .work-job-card .job-notes { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1f5f9; }
         .work-job-card.done { background: #f0fdf4; border-color: #86efac; }
         .work-job-card.done .job-title { text-decoration: line-through; color: #6b7280; }
-        .work-job-card.overdue { background: #fef2f2; border-color: #fca5a5; }
-        .work-job-card .overdue-badge { display: inline-block; padding: 2px 8px; background: #ef4444; color: white; border-radius: 4px; font-size: 10px; font-weight: 600; margin-left: 8px; }
         .work-job-actions { display: flex; gap: 6px; margin-top: 10px; }
         .work-job-actions button { font-size: 11px; padding: 4px 10px; }
         
@@ -229,6 +243,108 @@
         body:not(.role-admin) .admin-only{display:none!important;}
         body:not(.role-technician):not(.role-admin) .write-only{display:none!important;}
         .role-review-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-left:6px;vertical-align:middle;}
+        .sync-status{ display:none; position:fixed; bottom:12px; left:12px; z-index:9996; padding:8px 14px; border-radius:20px; font-size:12px; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:72vw; }
+        .sync-status.pending{ background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+        .sync-status.ok{ background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; }
+        /* Record-form v1.10: baseline hints, live tint, sticky save bar, step-through, number pad */
+        .rec-toolbar{ display:flex; justify-content:flex-end; margin-bottom:10px; }
+        .rec-point-group{ background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:10px; }
+        .rec-point-group.rec-hidden{ display:none; }
+        .rec-point-title{ font-weight:600; color:#2563eb; margin-bottom:8px; }
+        .rec-point{ margin-bottom:10px; }
+        .rec-point:last-child{ margin-bottom:0; }
+        .rec-point-row{ display:flex; align-items:center; gap:12px; }
+        .rec-point-row span.rec-label{ flex:1; font-size:14px; font-weight:500; }
+        .rec-point-row input{ width:120px; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:16px; text-align:center; transition:border-color .15s, background .15s, box-shadow .15s; }
+        .rec-point-row input.rec-ok{ border-color:#10b981; background:#ecfdf5; }
+        .rec-point-row input.rec-warn{ border-color:#f59e0b; background:#fffbeb; }
+        .rec-point-row input.rec-alert{ border-color:#ef4444; background:#fef2f2; }
+        .rec-point-row input.rec-active{ box-shadow:0 0 0 3px rgba(37,99,235,.35); border-color:#2563eb; }
+        .rec-hint{ font-size:11px; color:#6b7280; margin-top:3px; margin-left:2px; }
+        .rec-savebar{ position:sticky; bottom:0; background:#fff; border-top:1px solid #e5e7eb; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 -2px 8px rgba(0,0,0,0.06); z-index:5; border-radius:0 0 8px 8px; }
+        .rec-counter{ font-size:13px; font-weight:600; color:#374151; }
+        .rec-savebar-btns{ display:flex; gap:8px; }
+        .rec-stepbar{ position:sticky; bottom:0; background:#fff; border-top:1px solid #e5e7eb; padding:12px; box-shadow:0 -2px 8px rgba(0,0,0,0.06); z-index:6; }
+        .rec-progress{ height:6px; background:#e5e7eb; border-radius:3px; overflow:hidden; margin-bottom:10px; }
+        .rec-progress-fill{ height:100%; background:#2563eb; transition:width .2s; }
+        .rec-step-label{ text-align:center; font-size:14px; color:#111827; margin-bottom:10px; font-weight:600; }
+        .rec-pad{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+        .rec-pad button{ padding:16px 0; font-size:20px; font-weight:600; border:1px solid #d1d5db; border-radius:8px; background:#f9fafb; color:#111827; min-height:52px; cursor:pointer; }
+        .rec-pad button:active{ background:#e5e7eb; }
+        .rec-stepnav{ display:flex; gap:8px; }
+        .rec-stepnav button{ flex:1; min-height:48px; }
+        /* Search results: table on wide screens, tap-cards on mobile (v1.10) */
+        @media (max-width:640px){
+            table.rtable{ display:block; overflow:visible; font-size:13px; margin-top:8px; }
+            table.rtable thead{ display:none; }
+            table.rtable tbody{ display:block; }
+            table.rtable tr{ display:block; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+            table.rtable td{ display:flex; justify-content:space-between; align-items:baseline; gap:14px; border:none; padding:5px 0; text-align:right; min-height:auto; }
+            table.rtable td::before{ content:attr(data-label); font-weight:700; color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:.3px; text-align:left; flex:0 0 auto; }
+            table.rtable td:first-child{ font-size:16px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; margin-bottom:4px; }
+            table.rtable td:first-child::before{ align-self:center; }
+            table.rtable td:empty{ display:none; }
+            table.rtable td .search-link{ text-align:right; }
+        }
+        /* Print / PDF route report (v1.10): no library, browser print dialog */
+        #print-root { display:none; }
+        .pr-report { font-family:Arial,Helvetica,sans-serif; color:#111; font-size:12px; }
+        .pr-head { border-bottom:2px solid #232F3E; padding-bottom:8px; margin-bottom:12px; }
+        .pr-title { font-size:18px; font-weight:700; color:#232F3E; }
+        .pr-sub { font-size:11px; color:#555; margin-top:2px; }
+        .pr-meta { width:100%; border-collapse:collapse; margin-bottom:14px; font-size:12px; }
+        .pr-meta td { padding:3px 8px; border:1px solid #ccc; }
+        .pr-meta td:nth-child(odd){ background:#f3f4f6; font-weight:600; width:14%; }
+        .pr-section { margin-bottom:14px; }
+        .pr-h { font-size:13px; font-weight:700; color:#232F3E; border-bottom:1px solid #d1d5db; padding-bottom:3px; margin-bottom:6px; }
+        .pr-p { font-size:12px; }
+        .pr-pts { margin:0; padding-left:20px; font-size:12px; }
+        .pr-pts li { margin-bottom:2px; }
+        .pr-tbl { width:100%; border-collapse:collapse; font-size:11px; }
+        .pr-tbl th, .pr-tbl td { border:1px solid #ccc; padding:4px 6px; text-align:center; }
+        .pr-tbl th { background:#232F3E; color:#fff; font-weight:600; }
+        .pr-tbl td:first-child, .pr-tbl th:first-child { text-align:left; }
+        .pr-tbl tr:nth-child(even) td { background:#f7f8fa; }
+        .pr-alert { margin-top:8px; padding:8px 10px; border:1px solid #fecaca; background:#fef2f2; border-radius:4px; font-size:11px; color:#7f1d1d; }
+        .pr-alert ul { margin:4px 0 0 0; padding-left:18px; }
+        .pr-note { border-left:3px solid #d1d5db; padding:2px 0 2px 8px; margin-bottom:6px; font-size:11px; }
+        .pr-note-meta { color:#6b7280; font-size:10px; }
+        .pr-foot { margin-top:18px; border-top:1px solid #d1d5db; padding-top:6px; font-size:10px; color:#6b7280; text-align:center; }
+        @media print {
+            body.printing > *:not(#print-root){ display:none !important; }
+            body.printing #print-root { display:block !important; }
+            .no-print { display:none !important; }
+            @page { margin:14mm; }
+            .pr-section { page-break-inside:avoid; }
+            .pr-tbl tr { page-break-inside:avoid; }
+        }
+        /* Home dashboard (v1.10): tiles + big scan + needs-attention list */
+        .dash-hero { display:flex; align-items:center; justify-content:space-between; gap:12px; background:linear-gradient(135deg,#232F3E,#37475A); color:#fff; border-radius:14px; padding:16px 18px; margin-bottom:14px; }
+        .dash-hello { font-size:18px; font-weight:700; }
+        .dash-date { font-size:12px; color:#c7d0da; margin-top:2px; }
+        .dash-scan { background:#00A8E1; color:#fff; border:none; border-radius:12px; padding:12px 20px; font-size:16px; font-weight:700; cursor:pointer; min-height:48px; box-shadow:0 2px 8px rgba(0,168,225,0.4); white-space:nowrap; }
+        .dash-scan:active { transform:scale(0.97); }
+        .dash-tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
+        .dash-tile { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 6px; text-align:center; cursor:pointer; transition:box-shadow .15s; min-height:82px; }
+        .dash-tile:active { box-shadow:0 2px 8px rgba(0,0,0,0.12); }
+        .dash-num { font-size:26px; font-weight:800; color:#232F3E; line-height:1; }
+        .dash-lbl { font-size:11px; color:#6b7280; margin-top:6px; }
+        .dash-tile.dash-alert.on .dash-num { color:#ef4444; }
+        .dash-tile.dash-due.on .dash-num { color:#d97706; }
+        .dash-att-h { font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin:4px 0 8px; }
+        .dash-att { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #fecaca; border-left:4px solid #ef4444; border-radius:10px; padding:10px 12px; margin-bottom:8px; cursor:pointer; }
+        .dash-att-dot { width:8px; height:8px; border-radius:50%; background:#ef4444; flex:0 0 auto; }
+        .dash-att-route { font-weight:700; font-size:14px; color:#111827; }
+        .dash-att-detail { font-size:12px; color:#b91c1c; margin-left:auto; text-align:right; }
+        .dash-att-more { font-size:13px; color:#2563eb; cursor:pointer; padding:6px 4px; font-weight:600; text-align:center; }
+        .dash-hint { font-size:12px; color:#9ca3af; text-align:center; margin-top:10px; }
+        @media (max-width:640px){
+            .dash-hero { padding:14px; }
+            .dash-hello { font-size:16px; }
+            .dash-scan { padding:10px 14px; font-size:15px; }
+            .dash-tile { padding:12px 4px; }
+            .dash-num { font-size:22px; }
+        }
     </style>
 </head>
 <body>
@@ -272,8 +388,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.07)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;">• New "Parts Associated" list on every position — link catalogue parts straight to where they belong<br>• All CBM routes reconciled against the master sheet<br>• Accessibility &amp; keyboard-navigation improvements</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.10)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; Home dashboard: quick tiles for pending jobs, open alerts and routes due &mdash; plus a big Scan button<br>&bull; Open Alerts: routes whose latest reading is more than 10&deg;C from baseline, and a Due list for routes not recorded in 7+ days<br>&bull; Record form redesigned: baseline hints, live green / amber / red tint, and a step-by-step mode with a number pad<br>&bull; Offline: readings taken without signal are buffered locally and sync automatically when you&#39;re back online<br>&bull; Trend sparklines on route results and work cards; print / save a PDF report from any route<br>&bull; Reorder work cards with drag or arrow buttons; jobs remember their order between sessions</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -282,6 +398,7 @@
                 <div class="admin-only" onclick="openAddForm('route')" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">+ New Route</div>
                 <div style="height:1px;background:#e5e7eb;margin:8px 20px;"></div>
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Tools</div>
+                <div role="button" tabindex="0" onclick="toggleBurgerMenu();openAlertsView();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#9888; Open Alerts <span id="burger-alerts-badge" style="display:none;background:#ef4444;color:white;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:4px;"></span></div>
                 <div class="admin-only" onclick="openManageInactive()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Manage Inactive Items</div>
                 <div onclick="downloadAllData()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#11015; Download Backup</div>
                 <div class="admin-only" onclick="openRecentlyDeleted()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128465; Recently Deleted</div>
@@ -308,6 +425,7 @@
         <strong>Firebase not configured.</strong> Add your Firebase config to enable data storage.
     </div>
     <div id="offline-banner" role="status" aria-live="polite" style="display:none;background:#fee2e2;color:#991b1b;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;border-bottom:1px solid #fca5a5;">&#9888; You are offline — changes may not save until your connection returns.</div>
+    <div id="sync-status" class="sync-status" role="status" aria-live="polite" style="display:none;"></div>
     <div class="content">
         <!-- SEARCH -->
         <div id="sec-search" class="section active">
@@ -316,15 +434,15 @@
                 <div style="position:relative;">
                     <div class="form-group">
                         <label>Search</label>
-                        <input type="text" id="search-conveyor" placeholder="Search by position, APN, route, description... (or type Ultrasound/Thermal/CBM)" oninput="liveSearchSuggest(this.value)" onkeyup="if(event.key==='Enter')searchAll()">
+                        <div style="display:flex;gap:8px;align-items:stretch;"><div style="position:relative;flex:1;min-width:0;display:flex;"><input type="text" id="search-conveyor" placeholder="Search by position, APN, route, description... (or type Ultrasound/Thermal/CBM)" oninput="liveSearchSuggest(this.value);updateSearchClear()" onkeydown="handleSearchKey(event)" onfocus="onSearchFocus()" autocomplete="off" style="flex:1;min-width:0;padding-right:36px;"><button type="button" id="search-clear-btn" onclick="clearSearchInput()" aria-label="Clear search" title="Clear" style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:22px;line-height:1;color:#9ca3af;cursor:pointer;padding:2px 8px;">&times;</button></div><button class="btn btn-secondary" onclick="openScanner()" title="Scan barcode / QR code" aria-label="Scan barcode or QR code" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">📷</button></div>
                     </div>
                     <div id="main-search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:200;max-height:280px;overflow-y:auto;margin-top:2px;"></div>
                 </div>
                 <button class="btn btn-primary" onclick="searchAll()">Search</button>
                 <div class="search-filters" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-                    <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-equipment" checked> Positions</label>
-                    <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-parts" checked> Parts</label>
-                    <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-routes" checked> CBM Routes</label>
+                    <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-equipment" checked onchange="saveSearchFilters()"> Positions</label>
+                    <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-parts" checked onchange="saveSearchFilters()"> Parts</label>
+                    <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-routes" checked onchange="saveSearchFilters()"> CBM Routes</label>
                 </div>
             </div>
             <div id="search-results"></div>
@@ -805,13 +923,11 @@
             try {
                 oneTimeCleanup();
                 migratePartsData();
-                loadEquipmentList();
-                loadPartsList();
-                loadRoutesList();
                 loadWorkAssigned();
                 cleanupOldWork();
                 cleanupDuplicateEndpoints();
-                setTimeout(function() { initJobDragDrop(); checkOverdueJobs(); updateWorkCount(); ensureChart().catch(function(){}); ensureXLSX().catch(function(){}); }, 1000);
+                db.ref('.info/connected').on('value', function(cs){ _fbConnected = cs.val()===true; _updateOfflineBanner(); if(_fbConnected) flushPendingReadings(); });
+                setTimeout(function() { initJobDragDrop(); updateWorkCount(); ensureChart().catch(function(){}); ensureXLSX().catch(function(){}); try{renderDashboard();}catch(e){} }, 1000);
             } catch(e) { console.error('Init error:', e); showToast('Something failed to load — please refresh the page.', 'error'); }
         }
     }
@@ -823,9 +939,60 @@
     var _loadingTimer = null;
     function showLoading() { document.getElementById('loading').classList.add('active'); clearTimeout(_loadingTimer); _loadingTimer = setTimeout(hideLoading, 15000); }
     function hideLoading() { clearTimeout(_loadingTimer); document.getElementById('loading').classList.remove('active'); }
-    // Round 4 UX/a11y: offline indicator + keyboard activation of role=button elements
-    function _updateOfflineBanner() { var b = document.getElementById('offline-banner'); if (b) b.style.display = navigator.onLine ? 'none' : 'block'; }
-    window.addEventListener('online', _updateOfflineBanner);
+    // Connectivity, offline reading buffer, and reading drafts (v1.10)
+    var _fbConnected = true;
+    var RB_KEY = 'rme_pending_readings';
+    function _getPendingReadings(){ try{ return JSON.parse(localStorage.getItem(RB_KEY)||'[]'); }catch(e){ return []; } }
+    function _setPendingReadings(a){ try{ localStorage.setItem(RB_KEY, JSON.stringify(a)); }catch(e){} }
+    function pendingReadingsCount(){ return _getPendingReadings().length; }
+    function bufferReading(entry){ var a=_getPendingReadings(); a.push(entry); _setPendingReadings(a); updateSyncStatus(); }
+    function updateSyncStatus(){
+        var el=document.getElementById('sync-status'); if(!el) return;
+        var n=pendingReadingsCount();
+        if(n>0){ el.style.display='block'; el.className='sync-status pending'; el.innerHTML='&#8635; '+n+' reading'+(n===1?'':'s')+' waiting to sync'; }
+        else { el.style.display='none'; }
+    }
+    function _updateOfflineBanner(){
+        var online = navigator.onLine && _fbConnected;
+        var b = document.getElementById('offline-banner'); if (b) b.style.display = online ? 'none' : 'block';
+        updateSyncStatus();
+    }
+    var _flushingReadings=false;
+    async function flushPendingReadings(){
+        if(_flushingReadings) return;
+        if(!firebaseReady || !_fbConnected || !navigator.onLine) return;
+        var a=_getPendingReadings(); if(a.length===0) return;
+        _flushingReadings=true;
+        var remaining=[];
+        for(var i=0;i<a.length;i++){
+            var e=a[i];
+            try{
+                await db.ref('readings/'+e.routeKey).push(e.payload);
+                if(e.note){ try{ await addNote('routes', e.routeKey, e.note); }catch(_n){} }
+            }catch(err){ remaining.push(e); }
+        }
+        _setPendingReadings(remaining);
+        _flushingReadings=false;
+        updateSyncStatus();
+        if(remaining.length===0 && a.length>0){
+            var el=document.getElementById('sync-status');
+            if(el){ el.style.display='block'; el.className='sync-status ok'; el.innerHTML='&#10003; All readings synced'; setTimeout(function(){ if(pendingReadingsCount()===0 && el){el.style.display='none';} },3000); }
+            showToast(a.length+' offline reading'+(a.length===1?'':'s')+' synced','success');
+        }
+    }
+    // Reading drafts - survive reload / phone lock mid-entry
+    function _draftKey(rk){ return 'rme_draft_'+rk; }
+    function saveDraft(routeKey){
+        try{
+            var d={}; document.querySelectorAll('#detail-content input[type=number]').forEach(function(inp){ if(inp.value!=='') d[inp.id]=inp.value; });
+            var nn=document.getElementById('rec-note-input'); if(nn&&nn.value) d.__note=nn.value;
+            if(Object.keys(d).length) localStorage.setItem(_draftKey(routeKey), JSON.stringify(d));
+            else localStorage.removeItem(_draftKey(routeKey));
+        }catch(e){}
+    }
+    function loadDraft(routeKey){ try{ return JSON.parse(localStorage.getItem(_draftKey(routeKey))||'null'); }catch(e){ return null; } }
+    function clearDraft(routeKey){ try{ localStorage.removeItem(_draftKey(routeKey)); }catch(e){} }
+    window.addEventListener('online', function(){ _updateOfflineBanner(); flushPendingReadings(); });
     window.addEventListener('offline', _updateOfflineBanner);
     document.addEventListener('DOMContentLoaded', _updateOfflineBanner);
     document.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { var t = e.target; if (t && t.getAttribute && (t.getAttribute('role') === 'button' || t.getAttribute('role') === 'tab') && t.tagName !== 'BUTTON') { e.preventDefault(); t.click(); } } });
@@ -1015,11 +1182,6 @@
     // ============================================================
     // SORT & FILTER
     // ============================================================
-    function filterTable(tableId, filterId) {
-        const q=document.getElementById(filterId).value.toLowerCase();
-        const table=document.getElementById(tableId);if(!table)return;
-        table.querySelectorAll('tbody tr').forEach(row=>{row.style.display=row.textContent.toLowerCase().includes(q)?'':'none';});
-    }
     let sortState={};
     function sortTable(tableId, colIdx) {
         const table=document.getElementById(tableId);if(!table)return;
@@ -1147,18 +1309,6 @@
         showToast('Fill in details and click Save Changes', 'success');
     }
 
-function clearForm() {
-        const activeSection=document.querySelector('.section.active');if(!activeSection)return;
-        activeSection.querySelectorAll('input[type="text"],input[type="number"],input[type="file"],textarea').forEach(el=>{el.value='';});
-        activeSection.querySelectorAll('select').forEach(el=>{el.selectedIndex=0;});
-        activeSection.querySelectorAll('.img-preview').forEach(el=>{el.style.display='none';el.src='';});
-        const wpC=activeSection.querySelector('#waypoints-container');if(wpC)wpC.innerHTML='';
-        const ti=activeSection.querySelector('#thermal-items');if(ti)ti.innerHTML='';
-        const tsb=activeSection.querySelector('#thermal-save-btn');if(tsb)tsb.style.display='none';
-        const sr=activeSection.querySelector('#search-results');if(sr)sr.innerHTML='';
-        activeSection.querySelectorAll('[id$="-preview"]').forEach(el=>{if(el.tagName!=='IMG')el.style.display='none';});
-    }
-
     // ============================================================
     // DATA MIGRATION & CLEANUP
     // ============================================================
@@ -1223,6 +1373,8 @@ function clearForm() {
     }
 
     async function searchAll() {
+        clearTimeout(_liveSearchTimer);
+        var _dd0=document.getElementById('main-search-dropdown');if(_dd0)_dd0.style.display='none';
         const query=document.getElementById('search-conveyor').value.trim();
         if(!query){showToast('Enter a search term','error');return;}
         if(!checkFirebase())return;
@@ -1242,7 +1394,7 @@ function clearForm() {
                 showParts?getPartsCache():Promise.resolve({}),
                 showRoutes?getRoutesCache():Promise.resolve({})
             ]);
-            let html='<div class="card"><h2>Results for: '+query+'</h2>';
+            let html='<div class="card"><h2>Results for: '+escapeHtml(query)+'</h2>__SUMMARY__';
             let hasResults=false;
 
             // --- ROUTES (check type search first) ---
@@ -1314,13 +1466,13 @@ function clearForm() {
                 if(routeResults.length>0){
                     hasResults=true;
                     html+='<div class="search-result-section"><h3>CBM Routes ('+routeResults.length+' results)</h3>';
-                    html+='<table><thead><tr><th>Route</th><th>Type</th><th>Equipment Description</th><th>Start</th><th>End</th><th>Actions</th></tr></thead><tbody>';
+                    html+='<table class="rtable"><thead><tr><th>Route</th><th>Type</th><th>Equipment Description</th><th>Start</th><th>End</th><th>Actions</th></tr></thead><tbody>';
                     routeResults.forEach(item=>{
                         var r=item.data;
-                        html+='<tr><td><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(r.routeNumber)+'</a></td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.notes||'\u2014')+'</td><td>'+escapeHtml(r.startPoint)+'</td><td>'+escapeHtml(r.endPoint||'\u2014')+'</td>';
+                        html+='<tr><td data-label="Route"><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(r.routeNumber)+'</a>'+(routeReadingRequired(r)?' <span class="rspark" data-rk="'+item.key+'"></span>':'')+'</td><td data-label="Type">'+escapeHtml(r.type)+'</td><td data-label="Equipment">'+escapeHtml(r.notes||'\u2014')+'</td><td data-label="Start">'+escapeHtml(r.startPoint)+'</td><td data-label="End">'+escapeHtml(r.endPoint||'\u2014')+'</td>';
                         if(routeReadingRequired(r)){
-                            html+='<td><a class="search-link" href="#" onclick="goRecordThermal(\x27'+r.routeNumber+'\x27);return false;" style="font-size:12px;">🌡 Record</a></td>';
-                        } else { html+='<td></td>'; }
+                            html+='<td data-label="Action"><a class="search-link" href="#" onclick="goRecordThermal(\x27'+r.routeNumber+'\x27);return false;" style="font-size:12px;">🌡 Record</a></td>';
+                        } else { html+='<td data-label="Action"></td>'; }
                         html+='</tr>';
                     });
                     html+='</tbody></table></div>';
@@ -1405,14 +1557,14 @@ function clearForm() {
                 if(partResults.length>0){
                     hasResults=true;
                     html+='<div class="search-result-section"><h3>Parts ('+partResults.length+' results)</h3>';
-                    html+='<table><thead><tr><th>APN</th><th>Description</th><th>Class</th><th>Bin</th><th>Criticality</th></tr></thead><tbody>';
+                    html+='<table class="rtable"><thead><tr><th>APN</th><th>Description</th><th>Class</th><th>Bin</th><th>Criticality</th></tr></thead><tbody>';
                     partResults.slice(0,10).forEach(item=>{
                         var p=item.data;
                         var cc='#6b7280';
                         if((p.criticality||'').includes('HIGH'))cc='#dc2626';
                         else if((p.criticality||'').includes('MED'))cc='#d97706';
                         else if((p.criticality||'').includes('LOW'))cc='#16a34a';
-                        html+='<tr><td><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td><td>'+escapeHtml(p.partDescription||p.notes||'\u2014')+'</td><td><span style="font-size:11px;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:8px;">'+escapeHtml(p.partClass||p.partType||'\u2014')+'</span></td><td style="font-weight:600;">'+escapeHtml(p.binLocation||p.location||'\u2014')+'</td><td><span style="color:'+cc+';font-size:11px;">'+escapeHtml(p.criticality||'')+'</span></td></tr>';
+                        html+='<tr><td data-label="APN"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td><td data-label="Description">'+escapeHtml(p.partDescription||p.notes||'\u2014')+'</td><td data-label="Class"><span style="font-size:11px;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:8px;">'+escapeHtml(p.partClass||p.partType||'\u2014')+'</span></td><td data-label="Bin" style="font-weight:600;">'+escapeHtml(p.binLocation||p.location||'\u2014')+'</td><td data-label="Criticality"><span style="color:'+cc+';font-size:11px;">'+escapeHtml(p.criticality||'')+'</span></td></tr>';
                     });
                     if(partResults.length>10){
                         html+='<tbody id="parts-more-items" style="display:none;">';
@@ -1422,7 +1574,7 @@ function clearForm() {
                             if((p.criticality||'').includes('HIGH'))cc='#dc2626';
                             else if((p.criticality||'').includes('MED'))cc='#d97706';
                             else if((p.criticality||'').includes('LOW'))cc='#16a34a';
-                            html+='<tr><td><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td><td>'+escapeHtml(p.partDescription||p.notes||'\u2014')+'</td><td><span style="font-size:11px;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:8px;">'+escapeHtml(p.partClass||p.partType||'\u2014')+'</span></td><td style="font-weight:600;">'+escapeHtml(p.binLocation||p.location||'\u2014')+'</td><td><span style="color:'+cc+';font-size:11px;">'+escapeHtml(p.criticality||'')+'</span></td></tr>';
+                            html+='<tr><td data-label="APN"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td><td data-label="Description">'+escapeHtml(p.partDescription||p.notes||'\u2014')+'</td><td data-label="Class"><span style="font-size:11px;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:8px;">'+escapeHtml(p.partClass||p.partType||'\u2014')+'</span></td><td data-label="Bin" style="font-weight:600;">'+escapeHtml(p.binLocation||p.location||'\u2014')+'</td><td data-label="Criticality"><span style="color:'+cc+';font-size:11px;">'+escapeHtml(p.criticality||'')+'</span></td></tr>';
                         });
                         html+='</tbody>';
                     }
@@ -1464,29 +1616,42 @@ function clearForm() {
             }
             html+='</div>';
             
+            var _sumParts=[];
+            if(typeof eqResults!=='undefined'&&eqResults.length)_sumParts.push(eqResults.length+' position'+(eqResults.length===1?'':'s'));
+            if(typeof partResults!=='undefined'&&partResults.length)_sumParts.push(partResults.length+' part'+(partResults.length===1?'':'s'));
+            if(typeof routeResults!=='undefined'&&routeResults.length)_sumParts.push(routeResults.length+' route'+(routeResults.length===1?'':'s'));
+            html=html.replace('__SUMMARY__', _sumParts.length?'<div style="font-size:13px;color:#6b7280;margin:-4px 0 14px;font-weight:600;">Found '+_sumParts.join(' &middot; ')+'</div>':'');
             lastSearchResultCount = (document.querySelectorAll ? html.split('onclick="openDetail').length - 1 : 0);
             container.innerHTML=html;
+            renderSparklines(container);
         }catch(e){showToast('Error: '+e.message,'error');}
         hideLoading();
     }
 
     function goRecordThermal(routeNum) {
-        // Show recording form inside the detail overlay
+        // Record form (v1.10): baseline hints, live tint, drafts, sticky save bar, step-through mode
         if (!checkFirebase()) return;
         var key = sanitizeKey(routeNum);
+        _recRouteKey = key; _recRouteNum = routeNum;
         showLoading();
-        db.ref('routes/' + key).once('value').then(function(snap) {
-            var route = snap.val();
+        Promise.all([
+            db.ref('routes/' + key).once('value'),
+            db.ref('readings/' + key).limitToLast(10).once('value')
+        ]).then(function(res) {
+            var route = res[0].val();
+            var histVal = res[1].val();
             if (!route || !route.motors || route.motors.length === 0) {
                 hideLoading();
                 showToast('No motors/gearboxes found for this route', 'error');
                 return;
             }
+            _recStats = {}; _recTotal = 0; _stepMode = false; _stepIdx = 0; _stepActiveField = null;
             document.getElementById('detail-title').textContent = 'Record Readings: ' + routeNum;
-            var html = '<div class="card"><h2>Thermal Readings — Route ' + escapeHtml(routeNum) + '</h2>';
-            html += '<p style="font-size:12px;color:#6b7280;margin-bottom:16px;">' + escapeHtml(route.notes || '') + '</p>';
-            
-            // Group motors by point (Motor then Gearbox)
+            var html = '<div class="card"><h2>Thermal Readings \u2014 Route ' + escapeHtml(routeNum) + '</h2>';
+            if (route.notes) html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">' + escapeHtml(route.notes) + '</p>';
+            html += '<div class="rec-toolbar"><button type="button" class="btn btn-secondary btn-sm" id="rec-step-toggle" onclick="enterStepMode()">Step-by-step &#9654;</button></div>';
+            html += '<div id="rec-points">';
+
             var points = {};
             route.motors.forEach(function(m, idx) {
                 var isMotor = m.endsWith(' Motor');
@@ -1496,31 +1661,460 @@ function clearForm() {
                 if (isMotor) { points[ptName].motor = m; points[ptName].motorIdx = idx; }
                 else if (isGB) { points[ptName].gearbox = m; points[ptName].gbIdx = idx; }
             });
-            
+
             Object.entries(points).forEach(function(entry) {
                 var ptName = entry[0], pt = entry[1];
-                html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:10px;">';
-                html += '<div style="font-weight:600;color:#2563eb;margin-bottom:8px;">' + escapeHtml(ptName) + '</div>';
-                if (pt.motor) {
-                    html += '<div class="thermal-item-row"><span>Motor</span><input type="number" inputmode="decimal" id="rec-' + pt.motorIdx + '" data-component="' + escapeHtml(pt.motor) + '" placeholder="°C" step="0.1"></div>';
-                }
-                if (pt.gearbox) {
-                    html += '<div class="thermal-item-row"><span>Gearbox</span><input type="number" inputmode="decimal" id="rec-' + pt.gbIdx + '" data-component="' + escapeHtml(pt.gearbox) + '" placeholder="°C" step="0.1"></div>';
-                }
+                html += '<div class="rec-point-group"><div class="rec-point-title">' + escapeHtml(ptName) + '</div>';
+                if (pt.motor) html += _recFieldHtml(pt.motor, pt.motorIdx, 'Motor', histVal, key);
+                if (pt.gearbox) html += _recFieldHtml(pt.gearbox, pt.gbIdx, 'Gearbox', histVal, key);
                 html += '</div>';
             });
-            
-            html += '<div class="form-group" style="margin-top:12px;"><label>Notes (optional)</label>';
-            html += '<input type="text" id="rec-note-input" maxlength="500" placeholder="Add observation notes..." onkeyup="if(event.key===\x27Enter\x27)saveRecordedReadings(\x27' + key + '\x27,\x27' + routeNum + '\x27)"></div>';
-            html += '<button class="btn btn-primary" style="margin-top:12px;" onclick="saveRecordedReadings(\x27' + key + '\x27,\x27' + routeNum + '\x27)">Save Readings</button>';
-            html += '<button class="btn btn-secondary" style="margin-top:12px;margin-left:8px;" onclick="openDetail(\x27route\x27,\x27' + key + '\x27)">Cancel</button>';
             html += '</div>';
-            
+
+            html += '<div class="form-group" style="margin-top:12px;"><label>Notes (optional)</label>';
+            html += '<input type="text" id="rec-note-input" maxlength="500" placeholder="Add observation notes..." oninput="saveDraft(\x27' + key + '\x27)" onkeyup="if(event.key===\x27Enter\x27)saveRecordedReadings(\x27' + key + '\x27,\x27' + routeNum + '\x27)"></div>';
+            html += '</div>';
+
+            html += '<div class="rec-savebar" id="rec-savebar"><span class="rec-counter" id="rec-counter">0 of ' + _recTotal + ' readings entered</span>';
+            html += '<div class="rec-savebar-btns"><button class="btn btn-secondary btn-sm" onclick="openDetail(\x27route\x27,\x27' + key + '\x27)">Cancel</button>';
+            html += '<button class="btn btn-primary btn-sm" onclick="saveRecordedReadings(\x27' + key + '\x27,\x27' + routeNum + '\x27)">Save Readings</button></div></div>';
+
+            html += '<div class="rec-stepbar" id="rec-stepbar" style="display:none;">';
+            html += '<div class="rec-progress"><div class="rec-progress-fill" id="rec-progress-fill" style="width:0%;"></div></div>';
+            html += '<div class="rec-step-label" id="rec-step-label"></div>';
+            html += '<div class="rec-pad">';
+            ['7','8','9','4','5','6','1','2','3','.','0','del'].forEach(function(k){
+                var lbl = (k === 'del') ? '&#9003;' : k;
+                html += '<button type="button" onclick="padKey(\x27' + k + '\x27)">' + lbl + '</button>';
+            });
+            html += '</div>';
+            html += '<div id="rec-step-counter" style="text-align:center;font-size:12px;color:#6b7280;margin-bottom:8px;"></div>';
+            html += '<div class="rec-stepnav">';
+            html += '<button type="button" class="btn btn-secondary" id="rec-step-prev" onclick="stepNav(-1)">&#9666; Prev</button>';
+            html += '<button type="button" class="btn btn-secondary" onclick="exitStepMode()">Show all</button>';
+            html += '<button type="button" class="btn btn-primary" id="rec-step-next" onclick="stepNav(1)">Next &#9656;</button>';
+            html += '</div></div>';
+
             document.getElementById('detail-content').innerHTML = html;
             document.getElementById('detail-overlay').classList.add('active');
+
+            var d = loadDraft(key);
+            if (d) {
+                var restored = 0;
+                Object.keys(d).forEach(function(fld){
+                    if (fld === '__note') { var ni = document.getElementById('rec-note-input'); if (ni && d.__note) ni.value = d.__note; }
+                    else { var el = document.getElementById(fld); if (el && d[fld] != null && d[fld] !== '') { el.value = d[fld]; restored++; } }
+                });
+                document.querySelectorAll('#rec-points input[type="number"]').forEach(function(inp){ recTint(inp); });
+                if (restored > 0) showToast('Draft restored \u2014 ' + restored + ' reading' + (restored === 1 ? '' : 's'), 'success');
+            }
+            updateRecCounter();
             hideLoading();
+        }).catch(function(e){ hideLoading(); showToast('Error loading route: ' + e.message, 'error'); });
+    }
+
+    // ---- Record-form helpers (v1.10) ----
+    var _recStats = {}, _recTotal = 0, _recRouteKey = '', _recRouteNum = '';
+    var _stepMode = false, _stepIdx = 0, _stepActiveField = null, _stepFields = [];
+    function _rtemp(n){ return Math.round(n * 10) / 10; }
+    function componentStats(historyVal, compKey){
+        var out = {values: [], count: 0, last: null, avg: null};
+        if (!historyVal) return out;
+        var entries = Object.keys(historyVal).map(function(k){ return historyVal[k]; });
+        entries.sort(function(a, b){ var ta = (a && a.timestamp) ? a.timestamp : ''; var tb = (b && b.timestamp) ? b.timestamp : ''; return ta < tb ? -1 : (ta > tb ? 1 : 0); });
+        entries.forEach(function(e){ if (e && e.readings && e.readings[compKey] != null){ var v = parseFloat(e.readings[compKey]); if (!isNaN(v)) out.values.push(v); } });
+        out.count = out.values.length;
+        if (out.count){ out.last = out.values[out.values.length - 1]; out.avg = out.values.reduce(function(a, b){ return a + b; }, 0) / out.count; }
+        return out;
+    }
+    function _recFieldHtml(component, idx, label, histVal, routeKey){
+        var st = componentStats(histVal, sanitizeKey(component));
+        _recTotal++;
+        _recStats['rec-' + idx] = {avg: st.avg, last: st.last, count: st.count};
+        var hint;
+        if (st.count > 0){
+            hint = 'last ' + _rtemp(st.last) + '\u00b0C';
+            if (st.count >= 2) hint += ' \u00b7 avg ' + _rtemp(st.avg) + '\u00b0C';
+            hint += ' \u00b7 n=' + st.count;
+            if (st.count < 3) hint += ' (3+ for alerts)';
+        } else { hint = 'no history yet'; }
+        var h = '<div class="rec-point" data-idx="' + idx + '">';
+        h += '<div class="rec-point-row"><span class="rec-label">' + label + '</span>';
+        h += '<input type="number" inputmode="decimal" id="rec-' + idx + '" data-component="' + escapeHtml(component) + '" placeholder="\u00b0C" step="0.1" oninput="recTint(this);saveDraft(\x27' + routeKey + '\x27);updateRecCounter();" onfocus="recFieldFocus(this)"></div>';
+        h += '<div class="rec-hint" id="hint-' + idx + '">' + hint + '</div>';
+        h += '</div>';
+        return h;
+    }
+    function recTint(inp){
+        var st = _recStats[inp.id];
+        inp.classList.remove('rec-ok', 'rec-warn', 'rec-alert');
+        if (!inp.value || inp.value.trim() === '') return;
+        var v = parseFloat(inp.value); if (isNaN(v)) return;
+        if (!st || st.avg === null || st.count < 3){ inp.classList.add('rec-ok'); return; }
+        var dev = Math.abs(v - st.avg);
+        if (dev >= 10) inp.classList.add('rec-alert');
+        else if (dev >= 7) inp.classList.add('rec-warn');
+        else inp.classList.add('rec-ok');
+    }
+    function updateRecCounter(){
+        var filled = 0;
+        document.querySelectorAll('#rec-points input[type="number"]').forEach(function(inp){ if (inp.value && inp.value.trim() !== '') filled++; });
+        var c = document.getElementById('rec-counter'); if (c) c.textContent = filled + ' of ' + _recTotal + ' reading' + (_recTotal === 1 ? '' : 's') + ' entered';
+        var sc = document.getElementById('rec-step-counter'); if (sc) sc.textContent = filled + ' of ' + _recTotal + ' entered so far';
+    }
+    function enterStepMode(){
+        _stepFields = Array.prototype.slice.call(document.querySelectorAll('#rec-points input[type="number"]'));
+        if (_stepFields.length === 0){ showToast('No reading points on this route', 'error'); return; }
+        _stepMode = true; _stepIdx = 0;
+        var sb = document.getElementById('rec-savebar'); if (sb) sb.style.display = 'none';
+        var tg = document.getElementById('rec-step-toggle'); if (tg) tg.style.display = 'none';
+        var stepbar = document.getElementById('rec-stepbar'); if (stepbar) stepbar.style.display = 'block';
+        _stepFields.forEach(function(inp){ inp.setAttribute('readonly', 'readonly'); });
+        _renderStep();
+    }
+    function exitStepMode(){
+        _stepMode = false;
+        (_stepFields || []).forEach(function(inp){ inp.removeAttribute('readonly'); inp.classList.remove('rec-active'); });
+        document.querySelectorAll('.rec-point-group').forEach(function(g){ g.classList.remove('rec-hidden'); });
+        var sb = document.getElementById('rec-savebar'); if (sb) sb.style.display = '';
+        var tg = document.getElementById('rec-step-toggle'); if (tg) tg.style.display = '';
+        var stepbar = document.getElementById('rec-stepbar'); if (stepbar) stepbar.style.display = 'none';
+        _stepActiveField = null;
+        updateRecCounter();
+    }
+    function _renderStep(){
+        var inp = _stepFields[_stepIdx]; if (!inp) return;
+        var activeGroup = inp.closest('.rec-point-group');
+        document.querySelectorAll('.rec-point-group').forEach(function(g){ if (g === activeGroup) g.classList.remove('rec-hidden'); else g.classList.add('rec-hidden'); });
+        _stepFields.forEach(function(f){ f.classList.remove('rec-active'); });
+        inp.classList.add('rec-active');
+        _stepActiveField = inp;
+        try { inp.scrollIntoView({block: 'center'}); } catch(e) {}
+        var pct = Math.round(((_stepIdx + 1) / _stepFields.length) * 100);
+        var pf = document.getElementById('rec-progress-fill'); if (pf) pf.style.width = pct + '%';
+        var lbl = document.getElementById('rec-step-label'); if (lbl) lbl.textContent = 'Reading ' + (_stepIdx + 1) + ' of ' + _stepFields.length + ' \u2014 ' + (inp.dataset.component || '');
+        var nb = document.getElementById('rec-step-next'); if (nb) nb.innerHTML = (_stepIdx === _stepFields.length - 1) ? 'Save' : 'Next &#9656;';
+        var pb = document.getElementById('rec-step-prev'); if (pb) pb.disabled = (_stepIdx === 0);
+        updateRecCounter();
+    }
+    function stepNav(dir){
+        if (!_stepMode) return;
+        if (dir > 0 && _stepIdx === _stepFields.length - 1){ exitStepMode(); saveRecordedReadings(_recRouteKey, _recRouteNum); return; }
+        _stepIdx = Math.max(0, Math.min(_stepFields.length - 1, _stepIdx + dir));
+        _renderStep();
+    }
+    function recFieldFocus(inp){ if (_stepMode){ var i = _stepFields.indexOf(inp); if (i >= 0){ _stepIdx = i; _renderStep(); } } }
+    function padKey(k){
+        if (!_stepActiveField){ if (_stepFields && _stepFields.length) _stepActiveField = _stepFields[_stepIdx]; else return; }
+        var inp = _stepActiveField, v = inp.value || '';
+        if (k === 'del') v = v.slice(0, -1);
+        else if (k === '.'){ if (v.indexOf('.') === -1) v += (v === '' ? '0.' : '.'); }
+        else v += k;
+        inp.value = v; recTint(inp); saveDraft(_recRouteKey); updateRecCounter();
+    }
+
+    // Trend sparklines (v1.10): hand-drawn inline SVG, no library
+    var _sparkCache = {};
+    function sparklineSvg(values, w, h){
+        w = w || 66; h = h || 18;
+        if (!values || values.length < 2) return '';
+        var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+        var range = (max - min) || 1, pad = 2, n = values.length;
+        var pts = values.map(function(v, i){
+            var x = pad + (i / (n - 1)) * (w - 2 * pad);
+            var y = pad + (1 - (v - min) / range) * (h - 2 * pad);
+            return x.toFixed(1) + ',' + y.toFixed(1);
+        });
+        var avg = values.reduce(function(a, b){ return a + b; }, 0) / n, last = values[n - 1];
+        var stroke = '#10b981';
+        if (last > avg + 10) stroke = '#ef4444'; else if (last > avg + 7) stroke = '#f59e0b';
+        var lastX = pad + (w - 2 * pad), lastY = pad + (1 - (last - min) / range) * (h - 2 * pad);
+        return '<svg class="spark-svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">'
+            + '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + stroke + '" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>'
+            + '<circle cx="' + lastX.toFixed(1) + '" cy="' + lastY.toFixed(1) + '" r="1.8" fill="' + stroke + '"/></svg>';
+    }
+    function _getSparkValues(rk){
+        var c = _sparkCache[rk], now = Date.now();
+        if (c && (now - c.ts) < 90000) return Promise.resolve(c.vals);
+        return db.ref('readings/' + rk).limitToLast(12).once('value').then(function(snap){
+            var hv = snap.val(), vals = [];
+            if (hv){
+                var entries = Object.keys(hv).map(function(k){ return hv[k]; });
+                entries.sort(function(a, b){ var ta = (a && a.timestamp) ? a.timestamp : ''; var tb = (b && b.timestamp) ? b.timestamp : ''; return ta < tb ? -1 : (ta > tb ? 1 : 0); });
+                entries.forEach(function(e){
+                    if (e && e.readings){
+                        var rs = Object.keys(e.readings).map(function(k){ return parseFloat(e.readings[k]); }).filter(function(x){ return !isNaN(x); });
+                        if (rs.length) vals.push(rs.reduce(function(a, b){ return a + b; }, 0) / rs.length);
+                    }
+                });
+            }
+            _sparkCache[rk] = { ts: now, vals: vals };
+            return vals;
         });
     }
+    function renderSparklines(root){
+        root = root || document;
+        var spots = root.querySelectorAll('.rspark[data-rk]:not([data-done])');
+        for (var i = 0; i < spots.length; i++){
+            (function(el){
+                var rk = el.getAttribute('data-rk');
+                el.setAttribute('data-done', '1');
+                if (!rk || !firebaseReady) return;
+                _getSparkValues(rk).then(function(vals){
+                    if (vals && vals.length >= 2){ var svg = sparklineSvg(vals); if (svg){ el.innerHTML = svg; el.title = 'Last ' + vals.length + ' readings'; } }
+                }).catch(function(){});
+            })(spots[i]);
+        }
+    }
+
+    // ============================================================
+    // OPEN ALERTS (v1.10): routes whose latest reading breaches the 10 C baseline
+    // ============================================================
+    var _thermalScan = null, _thermalScanTime = 0, _ALERTS_TTL = 120000;
+    function invalidateAlertsCache(){ _thermalScan = null; _thermalScanTime = 0; }
+    async function _runThermalScan(force){
+        if (!firebaseReady) return { alerts: [], due: [] };
+        var now = Date.now();
+        if (!force && _thermalScan && (now - _thermalScanTime) < _ALERTS_TTL) return _thermalScan;
+        var routes = await getRoutesCache();
+        var keys = [];
+        Object.keys(routes).forEach(function(k){
+            var r = routes[k];
+            if (r && r.active !== false && routeReadingRequired(r) && r.motors && r.motors.length) keys.push(k);
+        });
+        var snaps = await Promise.all(keys.map(function(k){
+            return db.ref('readings/' + k).limitToLast(15).once('value')
+                .then(function(sn){ return {k: k, v: sn.val()}; })
+                .catch(function(){ return {k: k, v: null}; });
+        }));
+        var alerts = [], due = [], STALE_MS = 7 * 24 * 60 * 60 * 1000;
+        snaps.forEach(function(pair){
+            var r = routes[pair.k]; if (!r || !r.motors) return;
+            var hv = pair.v;
+            var entries = hv ? Object.keys(hv).map(function(id){ return hv[id]; }) : [];
+            entries.sort(function(a, b){ var ta = (a && a.timestamp) ? a.timestamp : ''; var tb = (b && b.timestamp) ? b.timestamp : ''; return ta < tb ? -1 : (ta > tb ? 1 : 0); });
+            var latest = entries.length ? entries[entries.length - 1] : null;
+            var lastWhen = (latest && latest.timestamp) ? latest.timestamp : null;
+            var ageMs = lastWhen ? (now - new Date(lastWhen).getTime()) : Infinity;
+            if (lastWhen && ageMs > STALE_MS){
+                due.push({ routeKey: pair.k, routeNumber: r.routeNumber || pair.k, lastWhen: lastWhen, ageMs: ageMs });
+            }
+            if (entries.length >= 4 && latest && latest.readings){
+                var prior = entries.slice(0, entries.length - 1);
+                var routeAlerts = [];
+                r.motors.forEach(function(m){
+                    var sk = sanitizeKey(m);
+                    var lv = latest.readings[sk];
+                    if (lv == null) return;
+                    var a = _detectAnomaly(sk, lv, prior, m);
+                    if (a) routeAlerts.push(a);
+                });
+                if (routeAlerts.length){
+                    var maxDiff = Math.max.apply(null, routeAlerts.map(function(a){ return parseFloat(a.diff); }));
+                    alerts.push({ routeKey: pair.k, routeNumber: r.routeNumber || pair.k, when: lastWhen || '', alerts: routeAlerts, maxDiff: maxDiff });
+                }
+            }
+        });
+        alerts.sort(function(a, b){ return b.maxDiff - a.maxDiff; });
+        due.sort(function(a, b){ return b.ageMs - a.ageMs; });
+        _thermalScan = { alerts: alerts, due: due }; _thermalScanTime = now;
+        return _thermalScan;
+    }
+    async function scanOpenAlerts(force){ return (await _runThermalScan(force)).alerts; }
+    async function scanThermalDue(force){ return (await _runThermalScan(force)).due; }
+    function refreshAlertsBadge(){
+        if (!firebaseReady) return;
+        scanOpenAlerts(false).then(function(alerts){
+            var b = document.getElementById('burger-alerts-badge');
+            if (b){ if (alerts.length){ b.textContent = alerts.length; b.style.display = ''; } else { b.style.display = 'none'; b.textContent = ''; } }
+        }).catch(function(){});
+    }
+    async function renderDashboard(){
+        var host = document.getElementById('search-results'); if (!host) return;
+        var inp = document.getElementById('search-conveyor');
+        if (inp && inp.value.trim().length) return; // a search is active, don't clobber
+        var pending = document.querySelectorAll('#work-list .work-card:not(.done)').length;
+        var today = new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
+        var html = '<div id="dash-root">';
+        html += '<div class="dash-hero"><div><div class="dash-hello">Hi' + (currentUser ? ', ' + escapeHtml(currentUser) : '') + '</div><div class="dash-date">' + escapeHtml(today) + '</div></div>';
+        html += '<button class="dash-scan" onclick="openScanner()" aria-label="Scan a barcode or QR code">&#128247; Scan</button></div>';
+        html += '<div class="dash-tiles">';
+        html += '<div class="dash-tile" role="button" tabindex="0" onclick="switchTab(\x27work\x27)"><div class="dash-num" id="dash-pending">' + pending + '</div><div class="dash-lbl">Pending jobs</div></div>';
+        html += '<div class="dash-tile dash-alert" role="button" tabindex="0" onclick="openAlertsView()"><div class="dash-num" id="dash-alerts">\u2014</div><div class="dash-lbl">Open alerts</div></div>';
+        html += '<div class="dash-tile dash-due" role="button" tabindex="0" onclick="openAlertsView()"><div class="dash-num" id="dash-due">\u2014</div><div class="dash-lbl">Due for reading</div></div>';
+        html += '</div>';
+        html += '<div id="dash-attention"></div>';
+        html += '<div class="dash-hint">Search above, or scan a route to record a reading.</div>';
+        html += '</div>';
+        host.innerHTML = html;
+        if (!firebaseReady) return;
+        try {
+            var scan = await _runThermalScan(false);
+            var aEl = document.getElementById('dash-alerts');
+            if (aEl){ aEl.textContent = scan.alerts.length; if (scan.alerts.length) aEl.parentElement.classList.add('on'); }
+            var dEl = document.getElementById('dash-due');
+            if (dEl){ dEl.textContent = scan.due.length; if (scan.due.length) dEl.parentElement.classList.add('on'); }
+            var att = document.getElementById('dash-attention');
+            if (att && scan.alerts.length){
+                var top = scan.alerts.slice(0, 3);
+                var h = '<div class="dash-att-h">Needs attention</div>';
+                top.forEach(function(rr){
+                    var a0 = rr.alerts[0];
+                    h += '<div class="dash-att" onclick="openDetail(\x27route\x27,\x27' + rr.routeKey + '\x27)">'
+                       + '<span class="dash-att-dot"></span>'
+                       + '<span class="dash-att-route">Route ' + escapeHtml(String(rr.routeNumber)) + '</span>'
+                       + '<span class="dash-att-detail">' + escapeHtml(a0.disp) + ' ' + a0.dirSign + a0.diff + '\u00b0C</span></div>';
+                });
+                if (scan.alerts.length > 3) h += '<div class="dash-att-more" onclick="openAlertsView()">+ ' + (scan.alerts.length - 3) + ' more \u2192</div>';
+                att.innerHTML = h;
+            }
+        } catch(e){}
+    }
+
+    async function openAlertsView(){
+        if (!checkFirebase()) return;
+        var bm = document.getElementById('burger-menu'); var bb = document.getElementById('burger-backdrop');
+        if (bm) bm.style.display = 'none'; if (bb) bb.style.display = 'none';
+        showLoading();
+        try {
+            var scan = await _runThermalScan(true);
+            var alerts = scan.alerts, due = scan.due;
+            var b = document.getElementById('burger-alerts-badge');
+            if (b){ if (alerts.length){ b.textContent = alerts.length; b.style.display = ''; } else { b.style.display = 'none'; } }
+            var html = '<div class="card"><h2>Open Thermal Alerts</h2>';
+            html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Routes whose most recent reading is more than 10\u00b0C from that component\x27s own baseline (ISO 13373). Needs at least 3 earlier readings per component.</p>';
+            if (!alerts.length){
+                html += '<div class="empty-state">&#9989; No open alerts \u2014 every recorded route is within range.</div>';
+            } else {
+                html += '<div style="font-size:13px;color:#374151;margin-bottom:10px;">' + alerts.length + ' route' + (alerts.length === 1 ? '' : 's') + ' need attention:</div>';
+                alerts.forEach(function(rr){
+                    html += '<div style="border:1px solid #fecaca;border-left:4px solid #ef4444;border-radius:8px;padding:12px;margin-bottom:10px;background:#fff;">';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">';
+                    html += '<div><div style="font-weight:700;font-size:15px;color:#111827;">Route ' + escapeHtml(String(rr.routeNumber)) + '</div>';
+                    var whenTxt = rr.when ? formatWorkTime(rr.when) : '';
+                    if (whenTxt) html += '<div style="font-size:12px;color:#6b7280;">last recorded ' + escapeHtml(whenTxt) + '</div>';
+                    html += '</div>';
+                    html += '<span style="flex:0 0 auto;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:700;">' + rr.alerts.length + ' alert' + (rr.alerts.length === 1 ? '' : 's') + '</span>';
+                    html += '</div>';
+                    rr.alerts.forEach(function(a){
+                        var col = a.isHot ? '#b91c1c' : '#1d4ed8';
+                        html += '<div style="margin-top:8px;font-size:13px;color:#374151;"><span style="color:' + col + ';font-weight:700;">' + (a.isHot ? '\u25b2' : '\u25bc') + '</span> ' + escapeHtml(a.disp) + ' \u2014 <strong>' + a.val + '\u00b0C</strong> vs avg <strong>' + a.avg.toFixed(1) + '\u00b0C</strong> (<strong style="color:' + col + ';">' + a.dirSign + a.diff + '\u00b0C</strong>, n=' + a.count + ')</div>';
+                    });
+                    html += '<div style="display:flex;gap:8px;margin-top:10px;">';
+                    html += '<button class="btn btn-secondary btn-sm" onclick="openDetail(\x27route\x27,\x27' + rr.routeKey + '\x27)">View route</button>';
+                    html += '<button class="btn btn-primary btn-sm" onclick="goRecordThermal(\x27' + rr.routeNumber + '\x27)">&#127777; Record reading</button>';
+                    html += '</div></div>';
+                });
+            }
+            html += '</div>';
+            html += '<div class="card"><h2>Due for a Reading</h2>';
+            html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Thermal routes recorded before but not in the last 7 days.</p>';
+            if (!due.length){
+                html += '<div class="empty-state">&#9989; Nothing overdue \u2014 all previously-recorded routes are current.</div>';
+            } else {
+                due.forEach(function(dd){
+                    var days = Math.floor(dd.ageMs / 86400000);
+                    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:8px;margin-bottom:8px;background:#fff;">';
+                    html += '<div><div style="font-weight:700;font-size:14px;color:#111827;">Route ' + escapeHtml(String(dd.routeNumber)) + '</div>';
+                    html += '<div style="font-size:12px;color:#92400e;">last recorded ' + days + ' day' + (days === 1 ? '' : 's') + ' ago</div></div>';
+                    html += '<button class="btn btn-primary btn-sm" onclick="goRecordThermal(\x27' + dd.routeNumber + '\x27)">&#127777; Record</button>';
+                    html += '</div>';
+                });
+            }
+            html += '</div>';
+            document.getElementById('detail-content').innerHTML = html;
+            document.getElementById('detail-title').textContent = 'Alerts & Due Routes';
+            document.getElementById('detail-overlay').classList.add('active');
+        } catch(e){ showToast('Error scanning alerts: ' + e.message, 'error'); }
+        hideLoading();
+    }
+
+    // ============================================================
+    // ROUTE REPORT (v1.10): printable / PDF via browser print, no library
+    // ============================================================
+    async function printRouteReport(routeKey){
+        if (!checkFirebase()) return;
+        showLoading();
+        try {
+            var rs = await db.ref('routes/' + routeKey).once('value');
+            var data = rs.val();
+            if (!data){ hideLoading(); showToast('Route not found', 'error'); return; }
+            var isThermal = routeReadingRequired(data);
+            var histVal = null;
+            if (isThermal){ var hs = await db.ref('readings/' + routeKey).limitToLast(12).once('value'); histVal = hs.val(); }
+            var notesSnap = await db.ref('notes/routes/' + routeKey).once('value');
+            var notesVal = notesSnap.val();
+            var now = new Date();
+            var h = '<div class="pr-report">';
+            h += '<div class="pr-head"><div class="pr-title">RME CBM Route Report</div><div class="pr-sub">LCY2 Tilbury \u00b7 Reliability (Condition-Based Monitoring)</div></div>';
+            h += '<table class="pr-meta"><tbody>';
+            h += '<tr><td>Route</td><td><strong>' + escapeHtml(String(data.routeNumber || routeKey)) + '</strong></td><td>Type</td><td>' + escapeHtml(data.type || '\u2014') + '</td></tr>';
+            h += '<tr><td>Generated</td><td>' + escapeHtml(now.toLocaleString('en-GB')) + '</td><td>By</td><td>' + escapeHtml(currentUser || '\u2014') + '</td></tr>';
+            h += '</tbody></table>';
+            if (data.notes) h += '<div class="pr-section"><div class="pr-h">Equipment / Description</div><div class="pr-p">' + escapeHtml(data.notes) + '</div></div>';
+            var allPts = [data.startPoint];
+            if (data.waypoints) allPts = allPts.concat(data.waypoints);
+            if (data.endPoint && data.endPoint !== data.startPoint) allPts.push(data.endPoint);
+            allPts = allPts.filter(function(p){ return p; });
+            if (allPts.length){
+                h += '<div class="pr-section"><div class="pr-h">Route Points (' + allPts.length + ')</div><ol class="pr-pts">';
+                allPts.forEach(function(p){ h += '<li>' + escapeHtml(p) + '</li>'; });
+                h += '</ol></div>';
+            }
+            if (isThermal && histVal){
+                var entries = Object.keys(histVal).map(function(id){ return histVal[id]; });
+                entries.sort(function(a, b){ var ta = (a && a.timestamp) ? a.timestamp : ''; var tb = (b && b.timestamp) ? b.timestamp : ''; return ta > tb ? -1 : (ta < tb ? 1 : 0); }); // newest first
+                var chrono = entries.slice().reverse(); // oldest -> newest
+                var recent = chrono.slice(-6);
+                var comps = (data.motors || []).slice();
+                h += '<div class="pr-section"><div class="pr-h">Thermal Readings (last ' + recent.length + ' of ' + entries.length + ')</div>';
+                if (comps.length && recent.length){
+                    h += '<table class="pr-tbl"><thead><tr><th>Component</th>';
+                    recent.forEach(function(e){ var d = e.timestamp ? new Date(e.timestamp).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit'}) : '?'; h += '<th>' + escapeHtml(d) + '</th>'; });
+                    h += '<th>Avg</th></tr></thead><tbody>';
+                    comps.forEach(function(c){
+                        var sk = sanitizeKey(c);
+                        h += '<tr><td>' + escapeHtml(c) + '</td>';
+                        recent.forEach(function(e){ var v = (e.readings && e.readings[sk] != null) ? parseFloat(e.readings[sk]) : null; h += '<td>' + ((v == null || isNaN(v)) ? '\u2014' : (v + '\u00b0')) + '</td>'; });
+                        var st = componentStats(histVal, sk);
+                        h += '<td>' + (st.avg != null ? _rtemp(st.avg) + '\u00b0' : '\u2014') + '</td></tr>';
+                    });
+                    h += '</tbody></table>';
+                } else {
+                    h += '<div class="pr-p">No readings recorded yet.</div>';
+                }
+                if (entries.length >= 4){
+                    var latest = entries[0], prior = entries.slice(1), al = [];
+                    comps.forEach(function(c){ var sk = sanitizeKey(c); var lv = latest.readings ? latest.readings[sk] : null; if (lv == null) return; var a = _detectAnomaly(sk, lv, prior, c); if (a) al.push(a); });
+                    if (al.length){
+                        h += '<div class="pr-alert"><strong>' + al.length + ' anomaly flag' + (al.length === 1 ? '' : 's') + ' on the latest reading (more than 10\u00b0C vs baseline):</strong><ul>';
+                        al.forEach(function(a){ h += '<li>' + escapeHtml(a.disp) + ': ' + a.val + '\u00b0C vs avg ' + a.avg.toFixed(1) + '\u00b0C (' + a.dirSign + a.diff + '\u00b0C)</li>'; });
+                        h += '</ul></div>';
+                    }
+                }
+                h += '</div>';
+            }
+            if (notesVal){
+                var ne = Object.keys(notesVal).map(function(id){ return notesVal[id]; });
+                ne.sort(function(a, b){ var ta = (a && a.createdAt) ? a.createdAt : ''; var tb = (b && b.createdAt) ? b.createdAt : ''; return ta > tb ? -1 : (ta < tb ? 1 : 0); });
+                h += '<div class="pr-section"><div class="pr-h">Route Notes (' + ne.length + ')</div>';
+                ne.slice(0, 30).forEach(function(n){
+                    var d = n.createdAt ? new Date(n.createdAt).toLocaleString('en-GB') : '';
+                    h += '<div class="pr-note"><span class="pr-note-meta">' + escapeHtml(d) + (n.author ? ' \u00b7 ' + escapeHtml(n.author) : '') + '</span><div>' + escapeHtml(n.text || '') + '</div></div>';
+                });
+                h += '</div>';
+            }
+            h += '<div class="pr-foot">Generated by the RME CBM Reliability App \u00b7 ' + escapeHtml(now.toLocaleString('en-GB')) + '</div></div>';
+            var root = document.getElementById('print-root');
+            root.innerHTML = h;
+            hideLoading();
+            document.body.classList.add('printing');
+            var _cleanup = function(){ document.body.classList.remove('printing'); root.innerHTML = ''; window.removeEventListener('afterprint', _cleanup); };
+            window.addEventListener('afterprint', _cleanup);
+            setTimeout(function(){ try { window.print(); } catch(e){} setTimeout(_cleanup, 2000); }, 80);
+        } catch(e){ hideLoading(); showToast('Print error: ' + e.message, 'error'); }
+    }
+
     async function goRecordThermalFromWork(routeKey, routeNum) {
         goRecordThermal(routeNum);
     }
@@ -1573,20 +2167,6 @@ function clearForm() {
         showToast('Editing position','success');
         window.scrollTo({top:0,behavior:'smooth'});
         switchTabDirect('equipment');
-    }
-    function loadEquipmentList() {
-        if(!firebaseReady)return;
-        db.ref('equipment').on('value', function(snap){ try {
-            const container=document.getElementById('equipment-list');if(!container)return;const data=snap.val();
-            if(!data){container.innerHTML='<div class="empty-state">No equipment saved yet</div>';return;}
-            let html='<table id="equipment-table"><thead><tr><th onclick="sortTable(\'equipment-table\',0)">Position</th><th onclick="sortTable(\'equipment-table\',1)">Type</th><th onclick="sortTable(\'equipment-table\',2)">Description</th><th onclick="sortTable(\'equipment-table\',3)">Img</th><th>Action</th></tr></thead><tbody>';
-            Object.entries(data).forEach(([key,eq])=>{
-                html+='<tr><td>'+escapeHtml(eq.conveyorNumber)+'</td><td>'+escapeHtml(eq.type)+'</td><td>'+escapeHtml(eq.description||eq.notes||'\u2014')+'</td><td>'+(eq.imageUrl?'Yes':'\u2014')+'</td>';
-                html+='<td><button class="btn btn-secondary btn-sm" onclick="editEquipment(\''+key+'\')">&#9998;</button></td></tr>';
-            });
-            html+='</tbody></table>';container.innerHTML=html;
-            } catch(e) { console.error('Position list error:', e); }
-        }, function(err){ console.warn('Position listener error:', err); });
     }
 
     // Parts popup from Equipment tab
@@ -1728,21 +2308,6 @@ function clearForm() {
     async function editPart(key){
         // Redirect to the detail edit page
         detailEdit('part', key);
-    }
-    function loadPartsList(){
-        if(!firebaseReady)return;
-        db.ref('parts').on('value', function(snap){ try {
-            const container=document.getElementById('parts-list');if(!container)return;const data=snap.val();
-            if(!data){container.innerHTML='<div class="empty-state">No parts saved yet</div>';return;}
-            let html='<table id="parts-table"><thead><tr><th onclick="sortTable(\'parts-table\',0)">APN</th><th onclick="sortTable(\'parts-table\',1)">Type</th><th onclick="sortTable(\'parts-table\',2)">Location</th><th onclick="sortTable(\'parts-table\',3)">Positions</th><th onclick="sortTable(\'parts-table\',4)">Description</th><th>Action</th></tr></thead><tbody>';
-            Object.entries(data).forEach(([key,p])=>{
-                var convs=p.conveyors?p.conveyors.join(', '):(p.conveyorNumber||'');
-                html+='<tr><td>'+escapeHtml(p.apn)+'</td><td>'+escapeHtml(p.partType||'\u2014')+'</td><td>'+escapeHtml(p.location)+'</td><td>'+escapeHtml(convs)+'</td><td>'+escapeHtml(p.notes||'\u2014')+'</td>';
-                html+='<td><button class="btn btn-secondary btn-sm" onclick="editPart(\''+key+'\')">✎</button></td></tr>';
-            });
-            html+='</tbody></table>';container.innerHTML=html;
-            } catch(e) { console.error('Parts list error:', e); }
-        }, function(err){ console.warn('Parts listener error:', err); });
     }
 
     // ============================================================
@@ -2431,154 +2996,13 @@ function clearForm() {
         switchTabDirect('routes');window.scrollTo({top:0,behavior:'smooth'});
     }
 
-    function loadRoutesList(){
-        if(!firebaseReady)return;
-        db.ref('routes').on('value',snap=>{
-            try{
-                const container=document.getElementById('routes-list');if(!container)return;const data=snap.val();
-                if(!data){container.innerHTML='<div class="empty-state">No routes saved yet</div>';return;}
-                let html='<table id="routes-table"><thead><tr><th onclick="sortTable(\'routes-table\',0)">Route</th><th onclick="sortTable(\'routes-table\',1)">Type</th><th onclick="sortTable(\'routes-table\',2)">Start</th><th onclick="sortTable(\'routes-table\',3)">End</th><th onclick="sortTable(\'routes-table\',4)">Description</th><th>Action</th></tr></thead><tbody>';
-                Object.entries(data).forEach(([key,r])=>{
-                    html+='<tr><td>'+escapeHtml(r.routeNumber)+'</td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.startPoint)+'</td><td>'+escapeHtml(r.endPoint||'\u2014')+'</td><td>'+escapeHtml(r.notes||'\u2014')+'</td>';
-                    html+='<td><button class="btn btn-secondary btn-sm" onclick="editRoute(\''+key+'\')">✎</button></td></tr>';
-                });
-                html+='</tbody></table>';container.innerHTML=html;
-            }catch(e){console.error('Routes list error:',e);}
-        },function(err){console.warn('Routes listener error:',err);});
-    }
 
-
-    function relinkRoute(routeNumber){
-        // Close detail, switch to routes tab, pre-fill route number
-        closeDetail();
-        switchTabDirect('routes');
-        document.getElementById('route-number').value=routeNumber;
-        showToast('Upload a new checklist to update route '+routeNumber+' points','success');
-        window.scrollTo({top:document.getElementById('route-drop-zone').offsetTop-100,behavior:'smooth'});
-    }
 
 
     // ============================================================
     // THERMAL READINGS
     // ============================================================
     let currentThermalRoute='',currentThermalItems=[],thermalChart=null,thermalHistoryData=[];
-    async function loadThermalRoute(){
-        if(!checkFirebase())return;
-        const routeNum=document.getElementById('thermal-route').value.trim();if(!routeNum)return;
-        const key=sanitizeKey(routeNum);
-        showLoading();
-        try {
-            const snap=await db.ref('routes/'+key).once('value');const route=snap.val();
-            if(!route||!route.motors||route.motors.length===0){
-                document.getElementById('thermal-items').innerHTML='<div class="empty-state">No motors/gearboxes found for this route.</div>';
-                document.getElementById('thermal-save-btn').style.display='none';
-                hideLoading();return;
-            }
-            currentThermalRoute=key;currentThermalItems=route.motors;
-            // Show route location image
-            let locationHtml='';
-            if(route.routeImageUrl)locationHtml='<div style="margin-bottom:12px;"><p style="font-size:12px;color:#6b7280;">Route Location:</p><img src="'+route.routeImageUrl+'" class="img-preview" style="display:block;"></div>';
-            else{
-                const startSnap=await db.ref('equipment/'+sanitizeKey(route.startPoint)).once('value');
-                const sEq=startSnap.val();
-                if(sEq&&sEq.imageUrl)locationHtml+='<div style="margin-bottom:8px;"><p style="font-size:12px;color:#6b7280;">Start ('+route.startPoint+'):</p><img src="'+sEq.imageUrl+'" class="img-preview" style="display:block;"></div>';
-                if(route.endPoint){
-                    const endSnap=await db.ref('equipment/'+sanitizeKey(route.endPoint)).once('value');
-                    const eEq=endSnap.val();
-                    if(eEq&&eEq.imageUrl)locationHtml+='<div style="margin-bottom:8px;"><p style="font-size:12px;color:#6b7280;">End ('+route.endPoint+'):</p><img src="'+eEq.imageUrl+'" class="img-preview" style="display:block;"></div>';
-                }
-            }
-            // Recording form — Motor above Gearbox (vertical layout)
-            let html='';
-            const allPts=route.endPoint?[route.startPoint,...(route.waypoints||[]),route.endPoint]:[route.startPoint,...(route.waypoints||[])];
-            if(routeReadingRequired(route)) {
-                // Temperature recording required
-                allPts.forEach((pt,pIdx)=>{
-                    const mIdx=pIdx*2,gIdx=pIdx*2+1;
-                    html+='<div style="background:#f1f5f9;border-radius:8px;padding:12px;margin-bottom:12px;">';
-                    html+='<div style="font-size:13px;font-weight:600;color:#00A8E1;margin-bottom:8px;">'+pt+'</div>';
-                    html+='<div class="thermal-item-row"><span>Motor</span><input type="number" inputmode="decimal" step="0.1" id="reading-'+mIdx+'" placeholder="\u00b0C"></div>';
-                    html+='<div class="thermal-item-row"><span>Gearbox</span><input type="number" inputmode="decimal" step="0.1" id="reading-'+gIdx+'" placeholder="\u00b0C"></div>';
-                    html+='</div>';
-                });
-                document.getElementById('thermal-items').innerHTML=locationHtml+html;
-                document.getElementById('thermal-save-btn').style.display='block';document.getElementById('thermal-notes-section').style.display='block';
-            } else {
-                // Location verification only — no temperature inputs
-                allPts.forEach((pt)=>{
-                    html+='<div style="background:#f1f5f9;border-radius:8px;padding:12px;margin-bottom:12px;">';
-                    html+='<div style="font-size:13px;font-weight:600;color:#00A8E1;margin-bottom:4px;">'+pt+'</div>';
-                    html+='<div style="font-size:12px;color:#6b7280;">Location verification only — no recording required</div>';
-                    html+='</div>';
-                });
-                document.getElementById('thermal-items').innerHTML=locationHtml+'<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:12px;margin-bottom:12px;text-align:center;font-size:13px;color:#065f46;font-weight:500;">\u2714 This route does not require temperature recording</div>'+html;
-                document.getElementById('thermal-save-btn').style.display='none';
-            }
-        }catch(e){showToast('Error: '+e.message,'error');}
-        hideLoading();
-    }
-
-    async function saveThermalReadings(){ if(!requireWrite())return;
-        if(_saveReadingsCooldown){showToast('Please wait a moment before saving again','error');return;}
-        if(!checkFirebase())return;
-        if(!currentThermalRoute||currentThermalItems.length===0)return;
-        const readings={};const _labels={};let hasData=false;
-        let _badTemp=null;
-        currentThermalItems.forEach((motor,idx)=>{const val=document.getElementById('reading-'+idx)?.value;if(val&&val.trim()!==''){const _n=validTemp(val);if(_n===null){if(!_badTemp)_badTemp=motor;}else{readings[sanitizeKey(motor)]=_n;_labels[sanitizeKey(motor)]=motor;hasData=true;}}});
-        if(_badTemp){showToast('Invalid reading for '+_badTemp+'. Enter a number between '+TEMP_MIN+' and '+TEMP_MAX+' \u00b0C.','error');return;}
-        if(!hasData){showToast('Enter at least one reading','error');return;}
-        showLoading();
-        try {
-            // Check anomalies BEFORE saving so the baseline average excludes this reading (Bug/Domain audit)
-            var _tinputs=document.querySelectorAll('#thermal-items input[type="number"]');
-            var _histSnap1=await db.ref('readings/'+currentThermalRoute).limitToLast(10).once('value');
-            var _histVal1=_histSnap1.val();
-            for(var _ti=0;_ti<_tinputs.length;_ti++){
-                var _tinp=_tinputs[_ti];
-                if(_tinp.value){
-                    var _tidx=parseInt((_tinp.id||'').replace('reading-',''),10);
-                    var _tcomp=(!isNaN(_tidx)&&currentThermalItems[_tidx])?currentThermalItems[_tidx]:(_tinp.dataset.component||_tinp.id);
-                    await checkThermalAnomaly(currentThermalRoute,sanitizeKey(_tcomp),_tinp.value,_histVal1,_tcomp);
-                }
-            }
-            await db.ref('readings/'+currentThermalRoute).push({readings,labels:_labels,timestamp:new Date().toISOString(),recordedBy:currentUser||'Unknown'});
-            showToast('Readings saved!');
-            _saveReadingsCooldown=true; setTimeout(function(){_saveReadingsCooldown=false;},5000);
-            // Auto-add route to Work Assigned - DIRECT WRITE (no complex queries)
-            var _routeDisplay=document.getElementById('thermal-route').value.trim();
-            try {
-                var waAll = await getWorkAssignedData();
-                var alreadyExists = false;
-                Object.values(waAll).forEach(function(j) {
-                    if ((j.routeNumber === _routeDisplay || j.equipment === _routeDisplay) && (j.assignedTo||'').toLowerCase() === currentUser.toLowerCase()) alreadyExists = true;
-                });
-                if (!alreadyExists && currentUser) {
-                    await db.ref('workAssigned').push({
-                        workType: 'CBM',
-                        cbmType: 'Thermal',
-                        routeNumber: _routeDisplay,
-                        equipment: _routeDisplay,
-                        assignedTo: currentUser.toLowerCase(),
-                        status: 'pending',
-                        createdAt: new Date().toISOString()
-                    });
-                    showToast('Route added to Work Assigned!', 'success');
-                    updateWorkCount();
-                } else if (!currentUser) {
-                    showToast('Not logged in - cannot add to Work Assigned', 'error');
-                }
-            } catch(e) { showToast('Work Assigned error: ' + e.message, 'error'); }
-            // Handle thermal notes (if any)
-            var thermalNote=document.getElementById('thermal-note-input');
-            if(thermalNote&&thermalNote.value.trim()){
-                try { await addThermalNoteToWork(currentThermalRoute,_routeDisplay,thermalNote.value.trim()); } catch(e) { showToast('Note error: ' + e.message, 'error'); }
-                thermalNote.value='';
-            }
-            // (Anomaly check now runs before save - see top of try block)
-            currentThermalItems.forEach((_,idx)=>{const el=document.getElementById('reading-'+idx);if(el)el.value='';});
-        }catch(e){showToast('Error: '+e.message,'error');}
-        hideLoading();
-    }
 
     function renderThermalHistory(routeKey, containerEl) {
         if(!firebaseReady)return;
@@ -2649,19 +3073,6 @@ function clearForm() {
         thermalChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:component+' (\u00b0C)',data:values,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.1)',fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true}},scales:{y:{title:{display:true,text:'Temperature (\u00b0C)'}},x:{title:{display:true,text:'Date'}}}}});
     }
 
-    function printBlankSheet(){
-        if(!currentThermalRoute||currentThermalItems.length===0){showToast('Load a route first','error');return;}
-        const routeNum=document.getElementById('thermal-route').value.trim();
-        const allPoints=[];
-        for(let i=0;i<currentThermalItems.length;i+=2){allPoints.push(currentThermalItems[i].replace(' Motor',''));}
-        const pw=window.open('','_blank');
-        pw.document.write('<html><head><title>Thermal Route '+routeNum+'</title><style>body{font-family:sans-serif;padding:20px;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #333;padding:10px;text-align:center;}th{background:#e0e0e0;font-size:13px;}td{font-size:13px;height:40px;}h2{margin-bottom:5px;}</style></head><body>');
-        pw.document.write('<h2>Thermal Readings - Route '+routeNum+'</h2><p style="font-size:13px;color:#555;">Date: ______________ &nbsp; Login ID: ______________</p>');
-        pw.document.write('<table><thead><tr><th>Position</th><th>Motor (\u00b0C)</th><th>Gearbox (\u00b0C)</th></tr></thead><tbody>');
-        allPoints.forEach(eq=>{pw.document.write('<tr><td>'+eq+'</td><td></td><td></td></tr>');});
-        pw.document.write('</tbody></table></body></html>');pw.document.close();pw.print();
-    }
-
     // ============================================================
     // WORK ASSIGNED
     // ============================================================
@@ -2675,7 +3086,9 @@ function clearForm() {
         getWorkAssignedData().then(data=>{
             if(!data)return;
             Object.entries(data).forEach(([key,item])=>{
-                if(new Date(item.createdAt)<cutoff)db.ref('workAssigned/'+key).remove();
+                // Only clear jobs already COMPLETED before the cutoff.
+                // Uncompleted jobs carry over to the next day and show as overdue.
+                if(item&&item.status==='done'&&new Date(item.completedAt||item.createdAt)<cutoff)db.ref('workAssigned/'+key).remove();
             });
         });
         } catch(e) { console.error('Cleanup error:', e); }
@@ -2689,13 +3102,20 @@ function clearForm() {
             _waData = data || {};
             if(!data){container.innerHTML='<div class="empty-state">No work assigned yet</div>';return;}
             // Filter to current user's work
-            const items=Object.entries(data).filter(([k,v])=>(v.assignedTo||'').toLowerCase()===currentUser.toLowerCase()).sort((a,b)=>{var aD=a[1].status==='done'?1:0,bD=b[1].status==='done'?1:0;if(aD!==bD)return aD-bD;return new Date(b[1].createdAt)-new Date(a[1].createdAt);});
+            var _savedOrder=[]; try{ _savedOrder=JSON.parse(localStorage.getItem('work_order_'+currentUser)||'[]'); if(!Array.isArray(_savedOrder))_savedOrder=[]; }catch(e){ _savedOrder=[]; }
+            function _ordIdx(k){ var i=_savedOrder.indexOf(k); return i<0?1e9:i; }
+            const items=Object.entries(data).filter(([k,v])=>(v.assignedTo||'').toLowerCase()===currentUser.toLowerCase()).sort((a,b)=>{var aD=a[1].status==='done'?1:0,bD=b[1].status==='done'?1:0;if(aD!==bD)return aD-bD;var ai=_ordIdx(a[0]),bi=_ordIdx(b[0]);if(ai!==bi)return ai-bi;return new Date(b[1].createdAt)-new Date(a[1].createdAt);});
             if(items.length===0){container.innerHTML='<div class="empty-state">No work assigned to you today</div>';return;}
+            var _wn=new Date();var _w4=new Date(_wn.getFullYear(),_wn.getMonth(),_wn.getDate(),4,0,0);
+            var _workCutoff=_wn.getHours()<4?new Date(_w4.getTime()-86400000):_w4;
             let html='';
             items.forEach(([key,item])=>{
                 if(!item||!item.workType)return;
-                html+='<div class="work-card'+(item.status==='done'?' done':'')+'" onclick="expandWorkCard(this)" data-key="'+key+'" data-status="'+(item.status||'pending')+'">';
+                var _isOverdue=item.status!=='done'&&item.createdAt&&new Date(item.createdAt)<_workCutoff;
+                html+='<div class="work-card'+(item.status==='done'?' done':'')+(_isOverdue?' overdue':'')+'" '+(item.status!=='done'?'draggable="true" ':'')+'onclick="expandWorkCard(this)" data-key="'+key+'" data-status="'+(item.status||'pending')+'">';
+                if(item.status!=='done')html+='<div class="work-reorder"><button type="button" title="Move up" onclick="event.stopPropagation();moveJob(\x27'+key+'\x27,-1)">\u25b2</button><button type="button" title="Move down" onclick="event.stopPropagation();moveJob(\x27'+key+'\x27,1)">\u25bc</button></div>';
                 html+='<span class="work-type '+escapeHtml((item.workType||'').toLowerCase())+'">'+escapeHtml(item.workType)+'</span>';
+                if(_isOverdue)html+='<span class="overdue-badge">OVERDUE</span>';
                 html+='<div class="work-equipment">';
                 if(item.workType==='CBM'&&item.routeNumber){
                     html+='<a class="search-link" href="#" onclick="event.stopPropagation();openDetail(\x27route\x27,\x27'+sanitizeKey(item.routeNumber)+'\x27);return false;">Route '+escapeHtml(item.routeNumber)+' ('+escapeHtml(item.cbmType)+')</a>';
@@ -2704,8 +3124,9 @@ function clearForm() {
                     html+='<a class="search-link" href="#" onclick="event.stopPropagation();openDetail(\x27equipment\x27,\x27'+sanitizeKey(item.equipment||'')+'\x27);return false;">'+escapeHtml(item.equipment)+'</a>';
                 }
                 html+='</div>';
+                if(item.cbmType==='Thermal'&&item.routeNumber)html+='<div class="work-details" style="display:flex;align-items:center;gap:6px;margin-top:6px;"><span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.3px;">trend</span><span class="rspark" data-rk="'+sanitizeKey(item.routeNumber)+'"></span></div>';
                 if(item.parts&&item.parts.length>0)html+='<div class="work-details">Parts: '+item.parts.map(p=>escapeHtml(p.apn)+' ('+escapeHtml(p.partType)+')').join(', ')+'</div>';
-                html+='<div class="work-details" style="font-size:11px;color:#6b7280;">Added '+new Date(item.createdAt).toLocaleTimeString()+'</div>';
+                html+='<div class="work-details" style="font-size:11px;color:#6b7280;">Added '+formatWorkTime(item.createdAt)+'</div>';
                 html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">';
                 html+='<span style="font-size:12px;color:#6b7280;">'+(item.status==='done'?'Completed \u2714':'Mark as done')+'</span>';
                 html+='<label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;" onclick="event.stopPropagation();">';
@@ -2718,7 +3139,7 @@ function clearForm() {
                 html+='<button class="btn btn-primary btn-sm" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();saveWorkJobNote(this.previousElementSibling)">Add</button></div>';
                 if(item.jobNotes){
                     Object.values(item.jobNotes).forEach(function(n){
-                        html+='<div style="margin-top:6px;padding:6px 8px;background:#f8fafc;border-radius:4px;font-size:11px;"><strong>'+escapeHtml(n.author)+':</strong> '+escapeHtml(n.text)+'<span style="color:#6b7280;margin-left:8px;">'+new Date(n.createdAt).toLocaleTimeString()+'</span></div>';
+                        html+='<div style="margin-top:6px;padding:6px 8px;background:#f8fafc;border-radius:4px;font-size:11px;"><strong>'+escapeHtml(n.author)+':</strong> '+escapeHtml(n.text)+'<span style="color:#6b7280;margin-left:8px;">'+formatWorkTime(n.createdAt)+'</span></div>';
                     });
                 }
                 html+='</div>';
@@ -2728,6 +3149,7 @@ function clearForm() {
                 html+='</div></div>';
             });
             container.innerHTML=html;
+            renderSparklines(container);
             } catch(e) { console.error('Work list error:', e); }
         }, function(err){ console.warn('Work listener error:', err); showToast('Lost connection to Work Assigned — refresh to retry.', 'error'); });
     }
@@ -2895,7 +3317,7 @@ function clearForm() {
             workData.cbmType=cbmType;workData.routeNumber=route;
             if(!rSnap.val()){
                 const addRoute=await showModal('Route not found','Route '+route+' is not registered. Would you like to add it now?');
-                if(addRoute){closeModal();switchTabDirect('routes');document.getElementById('route-number').value=route;return;}
+                if(addRoute){closeModal();openAddForm('route');var _rn=document.getElementById('new-route-num');if(_rn)_rn.value=route;return;}
             }
         }
         if(_editWorkKey){
@@ -2954,6 +3376,7 @@ function clearForm() {
             // Delete button moved to bottom of page
             var _waAll = await getWorkAssignedData();
             var _itemName = data.conveyorNumber||data.routeNumber||data.apn||'';
+            try{pushRecent(type,key,_itemName);}catch(e){}
             var _isInWork = Object.values(_waAll).some(function(j){ return j && (j.assignedTo||'').toLowerCase()===currentUser.toLowerCase() && ((j.routeNumber&&j.routeNumber===_itemName)||(j.equipment&&j.equipment===_itemName)); });
             if(type!=='part'){
                 if(!_isInWork){html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="addToWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">+ Add to Work</button>';}
@@ -3101,6 +3524,9 @@ function clearForm() {
                 else{html+='<div class="detail-field" id="quick-ss-container"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27route\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Route screenshot missing \u2014 click to add</a></div>';}
                 html+='</div>';
 
+                // Route report (v1.10): print / save as PDF via the browser print dialog
+                html+='<div style="margin:0 0 12px 0;"><button class="btn btn-secondary btn-sm no-print" onclick="printRouteReport(\x27'+key+'\x27)">&#128424; Print / Save PDF</button></div>';
+
                 // Historical Readings + Record New + Trend (moved here from thermal tab)
                 if(routeReadingRequired(data)){
                     html+='<div class="card"><h2>Thermal History</h2>';
@@ -3127,36 +3553,13 @@ function clearForm() {
             // Load thermal history if route
             if(type==='route'&&routeReadingRequired(data)){
                 const histEl=document.getElementById('detail-thermal-history');
-                if(histEl){currentThermalItems=data.motors||[];renderThermalHistory(key,histEl);}
+                if(histEl){currentThermalRoute=data.routeNumber||key;currentThermalItems=data.motors||[];renderThermalHistory(key,histEl);}
             }
             hideLoading();
         }catch(e){showToast('Error: '+e.message,'error');hideLoading();}
     }
 
     // Remove/Replace Picture
-    async function removePicture(key){ if(!requireWrite())return;
-        const confirmed=await showModal('Remove Picture','Are you sure you want to delete this SCADA location picture?');
-        if(!confirmed)return;
-        await db.ref('equipment/'+key+'/imageUrl').set(null);
-        invalidateEquipmentCache();
-        showToast('Picture removed');openDetail('equipment',key);
-    }
-    async function replacePicture(key){ if(!requireWrite())return;
-        const bodyHtml='<div class="file-upload" onclick="document.getElementById(\'replace-img-file\').click()" style="padding:12px;"><input type="file" id="replace-img-file" accept="image/*" onchange="previewImage(this,\'replace-img-preview\')"><p>\u2b07 Upload new picture</p></div><img id="replace-img-preview" class="img-preview" style="display:none;max-height:200px;">';
-        const result=await showCustomModal('Replace Picture',bodyHtml,[
-            {label:'Cancel',class:'btn-secondary',value:'cancel'},
-            {label:'Replace',class:'btn-primary',value:'replace'}
-        ]);
-        if(result!=='replace')return;
-        const file=document.getElementById('replace-img-file')?.files[0];
-        if(!file){showToast('No new image selected','error');return;}
-        showLoading();
-        const newImg=await fileToBase64(file);
-        await db.ref('equipment/'+key+'/imageUrl').set(newImg);
-        invalidateEquipmentCache();
-        hideLoading();showToast('Picture replaced!');openDetail('equipment',key);
-    }
-
     // Detail Edit/Delete
     async function detailEdit(type, key) {
         if(!requireWrite())return;
@@ -3454,6 +3857,7 @@ function clearForm() {
                 // Sort by score descending, then show top 8
                 results.sort(function(a,b){return b._score-a._score;});
                 results=results.slice(0,8);
+                _suggestList=results.map(function(r){return {type:r.type,key:r.key};});_suggestIndex=-1;
                 var typeStyle={equipment:'background:#eff6ff;color:#1d4ed8;',part:'background:#f0fdf4;color:#15803d;',route:'background:#fff7ed;color:#c2410c;'};
                 var typeLabel={equipment:'Position',part:'Part',route:'Route'};
                 var html='';
@@ -3472,6 +3876,223 @@ function clearForm() {
         var dd=document.getElementById('main-search-dropdown');var inp=document.getElementById('search-conveyor');
         if(dd&&inp&&!dd.contains(e.target)&&e.target!==inp)dd.style.display='none';
     });
+
+    // ============================================================
+    // SEARCH INPUT UX: clear button, keyboard nav, recently-viewed
+    // ============================================================
+    var _suggestList=[],_suggestIndex=-1;
+    function updateSearchClear(){
+        var inp=document.getElementById('search-conveyor'),b=document.getElementById('search-clear-btn');
+        if(b&&inp)b.style.display=inp.value?'block':'none';
+    }
+    function clearSearchInput(){
+        var inp=document.getElementById('search-conveyor');if(inp){inp.value='';inp.focus();}
+        var dd=document.getElementById('main-search-dropdown');if(dd)dd.style.display='none';
+        _suggestList=[];_suggestIndex=-1;updateSearchClear();
+        try{renderDashboard();}catch(e){}
+    }
+    function handleSearchKey(e){
+        var dd=document.getElementById('main-search-dropdown');
+        var open=dd&&dd.style.display!=='none';
+        if(e.key==='ArrowDown'){if(open){e.preventDefault();moveSuggest(1);}}
+        else if(e.key==='ArrowUp'){if(open){e.preventDefault();moveSuggest(-1);}}
+        else if(e.key==='Enter'){
+            e.preventDefault();
+            if(open&&_suggestIndex>=0&&_suggestList[_suggestIndex]){openSuggestAt(_suggestIndex);}
+            else{var inp=document.getElementById('search-conveyor');if(inp)inp.blur();searchAll();}
+        }
+        else if(e.key==='Escape'){if(dd)dd.style.display='none';_suggestIndex=-1;}
+    }
+    function moveSuggest(dir){
+        var dd=document.getElementById('main-search-dropdown');if(!dd)return;
+        var items=dd.querySelectorAll('.autocomplete-item');if(!items.length)return;
+        if(_suggestIndex>=0&&items[_suggestIndex])items[_suggestIndex].classList.remove('active');
+        _suggestIndex+=dir;
+        if(_suggestIndex<0)_suggestIndex=items.length-1;
+        if(_suggestIndex>=items.length)_suggestIndex=0;
+        items[_suggestIndex].classList.add('active');
+        try{items[_suggestIndex].scrollIntoView({block:'nearest'});}catch(e){}
+    }
+    function openSuggestAt(idx){
+        var it=_suggestList[idx];if(!it)return;
+        var dd=document.getElementById('main-search-dropdown');if(dd)dd.style.display='none';
+        var inp=document.getElementById('search-conveyor');if(inp)inp.blur();
+        openDetail(it.type,it.key);
+    }
+    function getRecents(){try{return JSON.parse(localStorage.getItem('rmeRecent')||'[]');}catch(e){return [];}}
+    function pushRecent(type,key,label){
+        try{
+            var arr=getRecents().filter(function(x){return !(x.type===type&&x.key===key);});
+            arr.unshift({type:type,key:key,label:(label||'').toString()});
+            if(arr.length>6)arr=arr.slice(0,6);
+            localStorage.setItem('rmeRecent',JSON.stringify(arr));
+        }catch(e){}
+    }
+    function onSearchFocus(){
+        var inp=document.getElementById('search-conveyor');
+        if(inp&&inp.value.trim().length>=2){liveSearchSuggest(inp.value);return;}
+        renderRecents();
+    }
+    function renderRecents(){
+        var dd=document.getElementById('main-search-dropdown');if(!dd)return;
+        var recents=getRecents();
+        if(!recents.length){dd.style.display='none';return;}
+        var typeStyle={equipment:'background:#eff6ff;color:#1d4ed8;',part:'background:#f0fdf4;color:#15803d;',route:'background:#fff7ed;color:#c2410c;'};
+        var typeLabel={equipment:'Position',part:'Part',route:'Route'};
+        var html='<div style="padding:6px 14px;font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Recently viewed</div>';
+        recents.forEach(function(r){
+            html+='<div class="autocomplete-item" onclick="document.getElementById(\x27main-search-dropdown\x27).style.display=\x27none\x27;openDetail(\x27'+r.type+'\x27,\x27'+r.key+'\x27)">';
+            html+='<span style="font-size:10px;padding:1px 6px;border-radius:8px;margin-right:6px;'+(typeStyle[r.type]||'')+'">'+(typeLabel[r.type]||'')+'</span>';
+            html+='<strong>'+escapeHtml(r.label||'')+'</strong>';
+            html+='</div>';
+        });
+        dd.innerHTML=html;dd.style.display='block';
+        _suggestList=recents.map(function(r){return {type:r.type,key:r.key};});_suggestIndex=-1;
+    }
+    function saveSearchFilters(){
+        try{
+            var eq=document.getElementById('filter-equipment'),pt=document.getElementById('filter-parts'),rt=document.getElementById('filter-routes');
+            var f={e:!eq||eq.checked,p:!pt||pt.checked,r:!rt||rt.checked};
+            localStorage.setItem('rmeFilters',JSON.stringify(f));
+        }catch(e){}
+    }
+    function restoreSearchFilters(){
+        try{
+            var raw=localStorage.getItem('rmeFilters'); if(!raw)return;
+            var f=JSON.parse(raw);
+            var eq=document.getElementById('filter-equipment'); if(eq&&typeof f.e==='boolean')eq.checked=f.e;
+            var pt=document.getElementById('filter-parts'); if(pt&&typeof f.p==='boolean')pt.checked=f.p;
+            var rt=document.getElementById('filter-routes'); if(rt&&typeof f.r==='boolean')rt.checked=f.r;
+        }catch(e){}
+    }
+    // ============================================================
+    // BARCODE / QR SCANNER (search)
+    // ============================================================
+    var _scanStream=null,_scanActive=false,_scanTimer=null,_scanReader=null,_scanTorchOn=false;
+    var ZXING_CDN='https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js';
+    async function openScanner(){
+        if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+            showToast('Camera not available on this device','error');
+            return;
+        }
+        var overlay=document.getElementById('qr-scanner-overlay');
+        if(!overlay){
+            overlay=document.createElement('div');
+            overlay.id='qr-scanner-overlay';
+            overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+            overlay.innerHTML='<div style="color:#fff;font-size:15px;margin-bottom:12px;text-align:center;max-width:420px;">Point the camera at a barcode or QR code</div>'
+                +'<div style="position:relative;width:100%;max-width:420px;">'
+                +'<video id="qr-video" playsinline autoplay muted style="width:100%;border-radius:12px;background:#000;display:block;"></video>'
+                +'<div style="position:absolute;top:50%;left:8%;right:8%;height:2px;background:#22c55e;box-shadow:0 0 10px #22c55e;"></div>'
+                +'</div>'
+                +'<div id="qr-scan-status" style="color:#d1d5db;font-size:13px;margin-top:12px;min-height:18px;">Starting camera...</div>'
+                +'<div style="display:flex;gap:10px;margin-top:14px;">'
+                +'<button id="qr-torch-btn" class="btn btn-secondary" onclick="toggleScanTorch()" style="display:none;min-width:110px;">🔦 Torch</button>'
+                +'<button class="btn btn-secondary" onclick="closeScanner()" style="min-width:130px;">Cancel</button>'
+                +'</div>';
+            document.body.appendChild(overlay);
+        }
+        overlay.style.display='flex';
+        var video=document.getElementById('qr-video'),status=document.getElementById('qr-scan-status');
+        if(status)status.textContent='Starting camera...';
+        _scanActive=true;_scanTorchOn=false;
+        if('BarcodeDetector' in window){
+            try{
+                _scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+                video.srcObject=_scanStream;await video.play();
+            }catch(err){closeScanner();showToast('Camera permission denied or unavailable','error');return;}
+            if(!_scanActive)return;
+            _setupScanTorch();
+            var detector;
+            try{
+                var wanted=['qr_code','code_128','code_39','code_93','ean_13','ean_8','upc_a','upc_e','codabar','itf','data_matrix','aztec','pdf417'];
+                var supported=await BarcodeDetector.getSupportedFormats();
+                var fmts=wanted.filter(function(f){return supported.indexOf(f)>=0;});
+                if(!fmts.length)fmts=supported;
+                detector=new BarcodeDetector({formats:fmts});
+            }catch(e){try{detector=new BarcodeDetector();}catch(e2){closeScanner();showToast('Barcode scanning not supported here','error');return;}}
+            if(status)status.textContent='Scanning...';
+            async function tick(){
+                if(!_scanActive)return;
+                try{
+                    var codes=await detector.detect(video);
+                    if(codes&&codes.length){var val=(codes[0].rawValue||'').trim();if(val){onScanResult(val);return;}}
+                }catch(e){}
+                _scanTimer=setTimeout(tick,200);
+            }
+            tick();
+        }else{
+            if(status)status.textContent='Loading scanner...';
+            try{await loadScriptOnce(ZXING_CDN);}catch(e){closeScanner();showToast('Could not load the scanner (offline?). Reconnect and try again.','error');return;}
+            if(!_scanActive)return;
+            if(typeof ZXing==='undefined'||!ZXing.BrowserMultiFormatReader){closeScanner();showToast('Scanner failed to load','error');return;}
+            try{
+                _scanReader=new ZXing.BrowserMultiFormatReader();
+                await _scanReader.decodeFromConstraints({video:{facingMode:{ideal:'environment'}}},video,function(result,err){
+                    if(result&&_scanActive){var v=result.getText?result.getText():(result.text||'');if(v)onScanResult(v);}
+                });
+                if(!_scanActive){closeScanner();return;}
+                _scanStream=video.srcObject||null;
+                _setupScanTorch();
+                if(status)status.textContent='Scanning...';
+            }catch(err){closeScanner();showToast('Camera permission denied or unavailable','error');return;}
+        }
+    }
+    function _setupScanTorch(){
+        var btn=document.getElementById('qr-torch-btn');if(!btn)return;
+        try{
+            var track=_scanStream&&_scanStream.getVideoTracks?_scanStream.getVideoTracks()[0]:null;
+            var caps=track&&track.getCapabilities?track.getCapabilities():{};
+            btn.style.display=(caps&&caps.torch)?'inline-block':'none';
+        }catch(e){btn.style.display='none';}
+    }
+    async function toggleScanTorch(){
+        if(!_scanStream)return;
+        try{
+            var track=_scanStream.getVideoTracks()[0];
+            _scanTorchOn=!_scanTorchOn;
+            await track.applyConstraints({advanced:[{torch:_scanTorchOn}]});
+            var btn=document.getElementById('qr-torch-btn');
+            if(btn){btn.textContent=_scanTorchOn?'🔦 Torch On':'🔦 Torch';btn.style.background=_scanTorchOn?'#f59e0b':'';btn.style.color=_scanTorchOn?'#fff':'';}
+        }catch(e){showToast('Torch not available on this camera','error');}
+    }
+    async function onScanResult(val){
+        val=(val||'').toString().trim();
+        if(!val)return;
+        try{if(navigator.vibrate)navigator.vibrate(80);}catch(e){}
+        closeScanner();
+        try{
+            if(firebaseReady){
+                var caches=await Promise.all([getRoutesCache(),getEquipmentCache(),getPartsCache()]);
+                var rts=caches[0],eq=caches[1],pts=caches[2];
+                var vl=val.toLowerCase();
+                var rk=null,rn=null;
+                Object.entries(rts).forEach(function(pair){var k=pair[0],r=pair[1];if(rk||r.active===false)return;if(r.routeNumber&&r.routeNumber.toString().toLowerCase()===vl){rk=k;rn=r.routeNumber;}});
+                if(rk){showToast('Scanned route '+rn+' — recording','success');goRecordThermal(rn);return;}
+                var ek=null;
+                Object.entries(eq).forEach(function(pair){var k=pair[0],e=pair[1];if(ek||e.active===false)return;if(e.conveyorNumber&&e.conveyorNumber.toString().toLowerCase()===vl){ek=k;}});
+                if(ek){showToast('Scanned: '+val,'success');openDetail('equipment',ek);return;}
+                var pk=null;
+                Object.entries(pts).forEach(function(pair){var k=pair[0],p=pair[1];if(pk||p.active===false)return;if(p.apn&&p.apn.toString().toLowerCase()===vl){pk=k;}});
+                if(pk){showToast('Scanned: '+val,'success');openDetail('part',pk);return;}
+            }
+        }catch(e){}
+        var inp=document.getElementById('search-conveyor');
+        if(inp)inp.value=val;
+        if(typeof updateSearchClear==='function')updateSearchClear();
+        showToast('Scanned: '+val,'success');
+        searchAll();
+    }
+    function closeScanner(){
+        _scanActive=false;
+        if(_scanTimer){clearTimeout(_scanTimer);_scanTimer=null;}
+        if(_scanReader){try{_scanReader.reset();}catch(e){}_scanReader=null;}
+        if(_scanStream){try{_scanStream.getTracks().forEach(function(t){t.stop();});}catch(e){}_scanStream=null;}
+        _scanTorchOn=false;
+        var tb=document.getElementById('qr-torch-btn');if(tb){tb.style.display='none';tb.textContent='🔦 Torch';tb.style.background='';tb.style.color='';}
+        var video=document.getElementById('qr-video');if(video){try{video.pause();}catch(e){}video.srcObject=null;}
+        var overlay=document.getElementById('qr-scanner-overlay');if(overlay)overlay.style.display='none';
+    }
     // ============================================================
     // RECENTLY DELETED
     // ============================================================
@@ -3610,38 +4231,6 @@ function clearForm() {
         }catch(e){hideLoading();showToast('Error: '+e.message,'error');}
         hideLoading();
     }
-    async function detailDelete(type,key){ if(!requireAdmin())return;
-        if(!checkFirebase())return;
-        var label=type==='equipment'?'equipment':type==='part'?'part':'route';
-        var confirmed=await showModal('Delete '+label,'Are you sure you want to delete this '+label+'? It will be moved to Recently Deleted.');
-        if(!confirmed)return;
-        showLoading();
-        try {
-            var refPath=type==='equipment'?'equipment/'+key:type==='part'?'parts/'+key:'routes/'+key;
-            const snap=await db.ref(refPath).once('value');const data=snap.val();
-            var _trashCol=type==='part'?'parts':type==='route'?'routes':'equipment';
-            if(data)await db.ref('trash/'+_trashCol+'/'+key).set({...data,deletedAt:new Date().toISOString()});
-            await db.ref(refPath).remove();
-            if(type==='equipment')invalidateEquipmentCache();else if(type==='part')invalidatePartsCache();else invalidateRoutesCache();
-            showToast(label+' deleted!');closeDetail();setTimeout(function(){var _q=document.getElementById('search-conveyor');if(_q&&_q.value.trim())searchAll();},200);
-        }catch(e){showToast('Error: '+e.message,'error');}
-        hideLoading();
-    }
-    async function deleteEntry(collection,key){ if(!requireAdmin())return;
-        if(!checkFirebase())return;
-        const confirmed=await showModal('Delete Entry','Are you sure? It will be moved to Recently Deleted for 7 days.');
-        if(!confirmed)return;
-        showLoading();
-        try {
-            const snap=await db.ref(collection+'/'+key).once('value');const data=snap.val();
-            if(data)await db.ref('trash/'+collection+'/'+key).set({...data,deletedAt:new Date().toISOString()});
-            await db.ref(collection+'/'+key).remove();
-            if(collection==='equipment')invalidateEquipmentCache();else if(collection==='parts')invalidatePartsCache();else if(collection==='routes')invalidateRoutesCache();
-            showToast('Entry deleted.');
-        }catch(e){showToast('Error: '+e.message,'error');}
-        hideLoading();
-    }
-
     // ============================================================
     // DATA BACKUP
     // ============================================================
@@ -3664,16 +4253,6 @@ function clearForm() {
     // ============================================================
     // QR SCANNER
     // ============================================================
-    let qrStream=null;
-    async function startQRScan(){
-        const container=document.getElementById('qr-scanner-container');const video=document.getElementById('qr-video');
-        container.style.display='block';
-        try{qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});video.srcObject=qrStream;video.play();
-            if('BarcodeDetector' in window){const detector=new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13']});const scanLoop=async()=>{if(!qrStream)return;try{const barcodes=await detector.detect(video);if(barcodes.length>0){document.getElementById('eq-conveyor').value=barcodes[0].rawValue;showToast('Scanned: '+barcodes[0].rawValue);stopQRScan();return;}}catch(e){}requestAnimationFrame(scanLoop);};requestAnimationFrame(scanLoop);}
-            else showToast('QR not supported. Try Chrome on mobile.','error');
-        }catch(e){showToast('Camera access denied.','error');container.style.display='none';}
-    }
-    function stopQRScan(){if(qrStream){qrStream.getTracks().forEach(t=>t.stop());qrStream=null;}document.getElementById('qr-scanner-container').style.display='none';}
 
     // ============================================================
     // PASTE IMAGE
@@ -3934,66 +4513,61 @@ function clearForm() {
     // ============================================================
     // THERMAL ANOMALY DETECTION
     // ============================================================
-    async function checkThermalAnomaly(routeKey, component, currentValue, _sharedHistory, displayLabel) {
-        if (currentValue === null || currentValue === undefined || currentValue === '' || isNaN(parseFloat(currentValue))) return;
+    // Thermal anomaly detection (v1.10): pure detector + ONE aggregate summary modal
+    function _detectAnomaly(component, currentValue, sharedHistory, displayLabel){
+        if (currentValue === null || currentValue === undefined || currentValue === '' || isNaN(parseFloat(currentValue))) return null;
         var val = parseFloat(currentValue);
-        var _disp = displayLabel || component;
-        try {
-            var readings;
-            if (_sharedHistory !== undefined) {
-                readings = _sharedHistory;
-            } else {
-                var snap = await db.ref('readings/' + routeKey).limitToLast(10).once('value');
-                readings = snap.val();
+        var readings = sharedHistory;
+        if (!readings) return null;
+        var hv = [];
+        Object.values(readings).forEach(function(entry){ if (entry.readings && entry.readings[component] != null){ var v = parseFloat(entry.readings[component]); if (!isNaN(v) && v >= TEMP_MIN) hv.push(v); } });
+        if (hv.length < 3) return null;
+        var avg = hv.reduce(function(a, b){ return a + b; }, 0) / hv.length;
+        var threshold = 10; // 10 C deviation from baseline = investigate (ISO 13373)
+        var isHot = val > avg + threshold, isCold = val < avg - threshold;
+        if (!isHot && !isCold) return null;
+        var diff = Math.abs(val - avg).toFixed(1);
+        return { component: component, disp: displayLabel || component, val: val, avg: avg, count: hv.length, diff: diff, isHot: isHot, dirWord: isHot ? 'above' : 'below', dirSign: isHot ? '+' : '-' };
+    }
+    async function showAnomalySummary(routeKey, anomalies){
+        if (!anomalies || anomalies.length === 0) return;
+        var n = anomalies.length;
+        showToast(n + ' thermal alert' + (n === 1 ? '' : 's') + ' detected \u2014 review before closing', 'error');
+        var body = '<div style="font-size:13px;color:#374151;margin-bottom:10px;">' + n + ' reading' + (n === 1 ? '' : 's') + ' beyond the 10\u00b0C baseline threshold (ISO 13373):</div>';
+        anomalies.forEach(function(a){
+            var alertColor = a.isHot ? '#b91c1c' : '#1d4ed8';
+            var alertBg = a.isHot ? '#fef2f2' : '#eff6ff';
+            var alertBorder = a.isHot ? '#fecaca' : '#bfdbfe';
+            body += '<div style="margin-bottom:10px;padding:10px 12px;background:' + alertBg + ';border:1px solid ' + alertBorder + ';border-radius:8px;">'
+                + '<div style="font-weight:700;color:' + alertColor + ';font-size:13px;">' + (a.isHot ? '\u25b2 Over-temperature' : '\u25bc Under-temperature') + '</div>'
+                + '<div style="font-size:13px;color:#111827;margin-top:2px;">' + escapeHtml(a.disp) + '</div>'
+                + '<div style="font-size:12px;color:#374151;margin-top:4px;">Reading <strong>' + a.val + '\u00b0C</strong> &middot; avg (last ' + a.count + ') <strong>' + a.avg.toFixed(1) + '\u00b0C</strong> &middot; <strong style="color:' + alertColor + ';">' + a.dirSign + a.diff + '\u00b0C</strong></div>'
+                + '</div>';
+        });
+        body += '<div class="form-group"><label>Add a note to this route (optional \u2014 applies to all alerts above)</label>'
+            + '<textarea id="anomaly-note-input" rows="3" placeholder="Describe what you observed..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></textarea></div>';
+        var res = await showCustomModal(n + ' Thermal Anomal' + (n === 1 ? 'y' : 'ies') + ' Detected', body, [
+            { label: 'Save Note', class: 'btn-primary', value: 'save' },
+            { label: 'Dismiss', class: 'btn-secondary', value: 'dismiss' }
+        ]);
+        if (res === 'save'){
+            var noteEl = document.getElementById('anomaly-note-input');
+            var userNote = (noteEl && noteEl.value.trim()) ? noteEl.value.trim() : '';
+            for (var i = 0; i < anomalies.length; i++){
+                var a = anomalies[i];
+                var line = '[THERMAL ALERT] ' + a.component + ': ' + a.val + '\u00b0C (avg ' + a.avg.toFixed(1) + '\u00b0C, ' + a.dirSign + a.diff + '\u00b0C)';
+                if (userNote) line += ' \u2014 ' + userNote;
+                try { await db.ref('notes/routes/' + routeKey).push({ text: line, author: currentUser, createdAt: new Date().toISOString() }); } catch(e){}
             }
-            if (!readings) return;
-            var historicalValues = [];
-            Object.values(readings).forEach(function(entry) {
-                if (entry.readings && entry.readings[component]) {
-                    var v = parseFloat(entry.readings[component]);
-                    if (!isNaN(v) && v >= TEMP_MIN) historicalValues.push(v);
-                }
-            });
-            if (historicalValues.length < 3) return; // Need at least 3 readings for a baseline
-            var avg = historicalValues.reduce(function(a, b) { return a + b; }, 0) / historicalValues.length;
-            var threshold = 10; // 10°C deviation from baseline = investigate (ISO 13373)
-            var isHot = val > avg + threshold;
-            var isCold = val < avg - threshold;
-            if (isHot || isCold) {
-                var diff = Math.abs(val - avg).toFixed(1);
-                var dirWord = isHot ? 'above' : 'below';
-                var dirSign = isHot ? '+' : '-';
-                var alertColor = isHot ? '#b91c1c' : '#1d4ed8';
-                var alertBg = isHot ? '#fef2f2' : '#eff6ff';
-                var alertBorder = isHot ? '#fecaca' : '#bfdbfe';
-                showToast(_disp + ': ' + val + '\u00B0C is ' + diff + '\u00B0C ' + dirWord + ' average \u2014 ALERT', 'error');
-                var noteBody = '<div style="margin-bottom:12px;padding:12px;background:' + alertBg + ';border:1px solid ' + alertBorder + ';border-radius:8px;">'
-                    + '<div style="font-weight:700;color:' + alertColor + ';margin-bottom:4px;">\u26a0\ufe0f Thermal Alert (' + (isHot?'Over-temperature':'Under-temperature') + ')</div>'
-                    + '<div style="font-size:13px;color:#374151;">' + _disp + '</div>'
-                    + '<div style="font-size:13px;margin-top:6px;">'
-                    + 'Reading: <strong>' + val + '\u00B0C</strong> &nbsp;|&nbsp; '
-                    + 'Avg (last ' + historicalValues.length + '): <strong>' + avg.toFixed(1) + '\u00B0C</strong> &nbsp;|&nbsp; '
-                    + (isHot?'Excess':'Deficit') + ': <strong style="color:' + alertColor + ';">' + dirSign + diff + '\u00B0C</strong>'
-                    + '</div></div>'
-                    + '<div class="form-group"><label>Add a note to this route (optional)</label>'
-                    + '<textarea id="anomaly-note-input" rows="3" placeholder="Describe what you observed..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></textarea></div>';
-                var _anomResult = await showCustomModal('Thermal Anomaly Detected', noteBody, [
-                    { label: 'Save Note', class: 'btn-primary', value: 'save' },
-                    { label: 'Dismiss', class: 'btn-secondary', value: 'dismiss' }
-                ]);
-                if (_anomResult === 'save') {
-                    var noteText = document.getElementById('anomaly-note-input');
-                    if (noteText && noteText.value.trim()) {
-                            await db.ref('notes/routes/' + routeKey).push({
-                                text: '[THERMAL ALERT] ' + component + ': ' + val + '\u00B0C (avg ' + avg.toFixed(1) + '\u00B0C, ' + dirSign + diff + '\u00B0C) \u2014 ' + noteText.value.trim(),
-                                author: currentUser,
-                                createdAt: new Date().toISOString()
-                            });
-                            showToast('Thermal alert note saved to route.');
-                    }
-                }
-            }
-        } catch(e) { console.error('Anomaly check error:', e); }
+            showToast('Thermal alert note' + (anomalies.length === 1 ? '' : 's') + ' saved to route.');
+        }
+    }
+    async function checkThermalAnomaly(routeKey, component, currentValue, _sharedHistory, displayLabel){
+        // Back-compat single-component wrapper (routes through the aggregate summary modal)
+        var readings = _sharedHistory;
+        if (readings === undefined){ try { var snap = await db.ref('readings/' + routeKey).limitToLast(10).once('value'); readings = snap.val(); } catch(e){ return; } }
+        var a = _detectAnomaly(component, currentValue, readings, displayLabel);
+        if (a) await showAnomalySummary(routeKey, [a]);
     }
 
     // ============================================================
@@ -4027,47 +4601,31 @@ function clearForm() {
         localStorage.setItem('work_order_' + currentUser, JSON.stringify(order));
     }
 
-    async function markJobDone(jobId) {
-        if(!requireWrite())return;
-        if (!firebaseReady || !currentUser) return;
-        await db.ref('workAssigned/' + jobId).update({
-            status: 'done', completedAt: new Date().toISOString(), completedBy: currentUser
-        });
-        // Log to permanent work log
-        var snap = await db.ref('workAssigned/' + jobId).once('value');
-        var jobData = snap.val();
-        if (jobData) {
-            await db.ref('workLog/' + currentUser).push({
-                job: jobData, status: 'completed', loggedAt: new Date().toISOString()
-            });
+    function formatWorkTime(iso){
+        if(!iso) return '';
+        var d = new Date(iso), now = new Date();
+        var ms = now - d; if(ms < 0) ms = 0;
+        if(ms < 60000) return 'just now';
+        if(ms < 3600000) return Math.floor(ms/60000) + 'm ago';
+        var hhmm = d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+        var startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        if(d >= startToday) return hhmm;
+        if(d >= new Date(startToday.getTime() - 86400000)) return 'Yesterday ' + hhmm;
+        return d.toLocaleDateString('en-GB') + ' ' + hhmm;
+    }
+    function moveJob(key, dir){
+        var container = document.getElementById('work-list');
+        if(!container) return;
+        var card = container.querySelector('.work-card[data-key="' + key + '"]');
+        if(!card) return;
+        if(dir < 0){
+            var prev = card.previousElementSibling;
+            if(prev && prev.classList.contains('work-card') && !prev.classList.contains('done')) container.insertBefore(card, prev);
+        } else {
+            var next = card.nextElementSibling;
+            if(next && next.classList.contains('work-card') && !next.classList.contains('done')) container.insertBefore(next, card);
         }
-        loadWorkAssigned();
-        showToast('Job marked as done!');
-    }
-
-    async function deleteJob(jobId) { if(!requireWrite())return;
-        if (!firebaseReady || !currentUser) return;
-        var confirmed = await showModal('Delete Job', 'Remove this job from your work queue?');
-        if (!confirmed) return;
-        await db.ref('workAssigned/' + jobId).remove();
-        loadWorkAssigned();
-        showToast('Job removed!');
-    }
-
-    async function clearAllJobs() {
-        if(!requireWrite())return;
-        if (!firebaseReady || !currentUser) return;
-        var confirmed = await showModal('Clear All Jobs', 'Remove ALL jobs from your work queue? This cannot be undone.');
-        if (!confirmed) return;
-        // Remove only current user's jobs
-        var allClearJobs = await getWorkAssignedData();
-        var clearJobs = {}; Object.entries(allClearJobs).forEach(function(e){ if((e[1].assignedTo||'').toLowerCase()===currentUser.toLowerCase()) clearJobs[e[0]]=e[1]; });
-        var clearUpdates = {};
-        Object.keys(clearJobs).forEach(function(k) { clearUpdates['workAssigned/' + k] = null; });
-        if (Object.keys(clearUpdates).length > 0) await db.ref().update(clearUpdates);
-        localStorage.removeItem('work_order_' + currentUser);
-        loadWorkAssigned();
-        showToast('Work queue cleared!');
+        saveJobOrder();
     }
 
     async function addToWorkFromSearch(type, key, title) { if(!requireWrite())return;
@@ -4130,35 +4688,6 @@ function clearForm() {
         }
     }
 
-    function checkOverdueJobs() {
-        var cards = document.querySelectorAll('.work-card');
-        var now = new Date();
-        cards.forEach(function(card) {
-            var createdAt = card.dataset.createdAt;
-            if (!createdAt) return;
-            var created = new Date(createdAt);
-            var hours = (now - created) / 3600000;
-            if (hours >= 12 && !card.classList.contains('done')) {
-                card.classList.add('overdue');
-                if (!card.querySelector('.overdue-badge')) {
-                    var badge = document.createElement('span');
-                    badge.className = 'overdue-badge';
-                    badge.textContent = 'OVERDUE';
-                    var titleEl = card.querySelector('.job-title');
-                    if (titleEl) titleEl.appendChild(badge);
-                }
-                // Log overdue to permanent work log
-                var jobId = card.dataset.key;
-                if (jobId && !card.dataset.loggedOverdue) {
-                    card.dataset.loggedOverdue = 'true';
-                    db.ref('workLog/' + currentUser).push({
-                        jobId: jobId, status: 'overdue', loggedAt: new Date().toISOString()
-                    });
-                }
-            }
-        });
-    }
-
     // Drag and drop for job reordering
     var draggedJob = null;
     function initJobDragDrop() {
@@ -4206,34 +4735,12 @@ function clearForm() {
     // ============================================================
     // WORK ASSIGNED: ADD NOTE TO JOB + PROMPT TO SAVE TO ENTITY
     // ============================================================
-    async function addWorkNote(jobId, entityType, entityKey) { if(!requireWrite())return;
-        var _body = '<div class="form-group"><label>Add a note</label><textarea id="add-work-note-input" rows="3" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;"></textarea></div>';
-        var _r = await showCustomModal('Add Note', _body, [{ label: 'Cancel', class: 'btn-secondary', value: 'cancel' }, { label: 'Add', class: 'btn-primary', value: 'add' }]);
-        if (_r !== 'add') return;
-        var _el = document.getElementById('add-work-note-input');
-        var noteText = _el ? _el.value : '';
-        if (!noteText || !noteText.trim()) return;
-        // Save to job entry
-        await db.ref('workAssigned/' + jobId + '/notes').push({
-            text: noteText.trim(), author: currentUser, createdAt: new Date().toISOString()
-        });
-        // Prompt to save to entity
-        var saveToEntity = (await showCustomModal('Save to ' + entityType + ' page?', '<p style="font-size:14px;color:#374151;">Also save this note to the ' + entityType + ' page? It will stay permanently until you delete it.</p>', [{ label: 'No', class: 'btn-secondary', value: 'no' }, { label: 'Yes', class: 'btn-primary', value: 'yes' }])) === 'yes';
-        if (saveToEntity) {
-            await addNote(entityType === 'route' ? 'routes' : 'equipment', entityKey, noteText);
-            showToast('Note saved to ' + entityType + ' and job!');
-        } else {
-            showToast('Note saved to job!');
-        }
-        loadWorkAssigned();
-    }
-
     // ============================================================
     // THERMAL NOTES → AUTO-ADD TO WORK ASSIGNED
     // ============================================================
     async function addThermalNoteToWork(routeKey, routeNumber, noteText) { if(!requireWrite())return;
         if (!firebaseReady || !currentUser) return;
-        // Find the existing job (created by inline write in saveThermalReadings)
+        // Find the existing job (created by inline write in saveRecordedReadings)
         var jobs = await getWorkAssignedData();
         var existingJob = Object.entries(jobs).find(function(e) {
             var j = e[1];
@@ -4255,23 +4762,6 @@ function clearForm() {
         }
     }
 
-
-    async function addRouteToWork(routeKey, routeDisplay) { if(!requireWrite())return;
-        if (!firebaseReady || !currentUser) return;
-        // Check if already in work assigned (read all, filter client-side)
-        var allJobs = await getWorkAssignedData();
-        var myJobs = Object.values(allJobs).filter(function(j) { return (j.assignedTo||'').toLowerCase() === currentUser.toLowerCase(); });
-        var exists = myJobs.find(function(j) { return j.entityKey === routeKey; });
-        if (exists) return; // Already there
-        await db.ref('workAssigned').push({
-            workType: 'CBM', title: 'Route ' + routeDisplay + ' (Thermal)',
-            entityType: 'route', entityKey: routeKey,
-            assignedTo: currentUser.toLowerCase(),
-            status: 'pending', createdAt: new Date().toISOString()
-        });
-        updateWorkCount();
-        console.log('Route added to Work Assigned:', routeDisplay);
-    }
 
 
     async function editThermalReading(routeKey, readingKey) {
@@ -4397,15 +4887,27 @@ function clearForm() {
         });
         if (_badTemp) { showToast('Invalid reading for ' + _badTemp + '. Enter a number between ' + TEMP_MIN + ' and ' + TEMP_MAX + ' \u00b0C.', 'error'); return; }
         if (!hasData) { showToast('Enter at least one reading', 'error'); return; }
+        if(!_fbConnected || !navigator.onLine){
+            var _n0=document.getElementById('rec-note-input'); var _note0=(_n0&&_n0.value)?_n0.value.trim():'';
+            bufferReading({routeKey:routeKey, routeNum:routeNum, payload:{readings:readings, labels:_labels, timestamp:new Date().toISOString(), recordedBy: currentUser||'Unknown'}, note:_note0});
+            clearDraft(routeKey);
+            _saveReadingsCooldown=true; setTimeout(function(){_saveReadingsCooldown=false;},5000);
+            showToast('Saved offline \u2014 will sync when you\x27re back online','success');
+            setTimeout(function(){ openDetail('route', routeKey); }, 600);
+            return;
+        }
         showLoading();
         try {
             // Check anomalies BEFORE saving so the baseline average excludes this reading
             var _rk = Object.keys(readings);
             var _histSnap2 = await db.ref('readings/' + routeKey).limitToLast(10).once('value');
             var _histVal2 = _histSnap2.val();
+            var _anoms = [];
             for (var _ri = 0; _ri < _rk.length; _ri++) {
-                await checkThermalAnomaly(routeKey, _rk[_ri], readings[_rk[_ri]], _histVal2, _labels[_rk[_ri]]);
+                var _a = _detectAnomaly(_rk[_ri], readings[_rk[_ri]], _histVal2, _labels[_rk[_ri]]);
+                if (_a) _anoms.push(_a);
             }
+            if (_anoms.length) await showAnomalySummary(routeKey, _anoms);
             await db.ref('readings/' + routeKey).push({
                 readings: readings,
                 labels: _labels,
@@ -4413,6 +4915,7 @@ function clearForm() {
                 recordedBy: currentUser || 'Unknown'
             });
             showToast('Readings saved!', 'success');
+            invalidateAlertsCache(); if (typeof _sparkCache !== 'undefined') delete _sparkCache[routeKey];
             _saveReadingsCooldown=true; setTimeout(function(){_saveReadingsCooldown=false;},5000);
             
             // Auto-add to Work Assigned
@@ -4451,15 +4954,6 @@ function clearForm() {
     }
 
 
-    async function toggleRouteActive(routeKey, isActive) {
-        if(!requireAdmin())return;
-        if (!checkFirebase()) return;
-        try {
-            await db.ref('routes/' + routeKey + '/active').set(isActive);
-            showToast(isActive ? 'Route activated' : 'Route deactivated', 'success');
-        } catch(e) { showToast('Error: ' + e.message, 'error'); }
-    }
-
 
     // ============================================================
     // BURGER MENU
@@ -4470,6 +4964,7 @@ function clearForm() {
         var isOpen = menu.style.display !== 'none';
         menu.style.display = isOpen ? 'none' : 'block';
         backdrop.style.display = isOpen ? 'none' : 'block';
+        if (!isOpen) refreshAlertsBadge();
         // Update user display
         if (!isOpen && currentUser) {
             document.getElementById('burger-user').innerHTML = '&#128100; ' + escapeHtml(currentUser);
@@ -4482,7 +4977,7 @@ function clearForm() {
     // ADD FORM OVERLAY (from burger menu)
     // ============================================================
     function openAddForm(type) {
-        toggleBurgerMenu();
+        var _bm=document.getElementById('burger-menu');if(_bm&&_bm.style.display!=='none')toggleBurgerMenu();
         var title = '';
         var html = '<div class="card">';
         if (type === 'position') {
@@ -4643,58 +5138,6 @@ function clearForm() {
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
         hideLoading();
     }
-    async function saveNewRoute() { if(!requireWrite())return;
-        if (!checkFirebase()) return;
-        var num = document.getElementById('new-route-num').value.trim();
-        var type = document.getElementById('new-route-type').value;
-        var desc = document.getElementById('new-route-desc').value.trim();
-        var start = document.getElementById('new-route-start').value.trim();
-        var end = document.getElementById('new-route-end').value.trim();
-        if (!num || !type || !desc || !start) { showToast('Fill in required fields (Route Number, Type, Description, Start)', 'error'); return; }
-        var waypoints = [];
-        document.querySelectorAll('.new-wp-input').forEach(function(inp) { if(inp.value.trim()) waypoints.push(inp.value.trim()); });
-        var allPoints = [start].concat(waypoints);
-        if (end) allPoints.push(end);
-        var motors = [];
-        if (type === 'Thermal') { allPoints.forEach(function(pt) { motors.push(pt+' Motor'); motors.push(pt+' Gearbox'); }); }
-        showLoading();
-        try {
-            var key = sanitizeKey(num);
-            await db.ref('routes/' + key).set({
-                routeNumber: num, type: type, notes: desc, startPoint: start,
-                endPoint: end || '', waypoints: waypoints, motors: motors,
-                needsTemp: type === 'Thermal', readingRequired: type === 'Thermal', active: true,
-                routeImageUrl: null, createdAt: new Date().toISOString()
-            });
-            // Auto-create equipment entries
-            for (var i = 0; i < allPoints.length; i++) {
-                var pk = sanitizeKey(allPoints[i]);
-                var ex = await db.ref('equipment/' + pk).once('value');
-                if (!ex.val()) await db.ref('equipment/' + pk).set({conveyorNumber: allPoints[i], type: '', notes: '', imageUrl: null, updatedAt: new Date().toISOString()});
-            }
-            invalidateRoutesCache();
-            invalidateEquipmentCache();
-            showToast('Route saved!', 'success');
-            closeAddForm();
-        } catch(e) { showToast('Error: ' + e.message, 'error'); }
-        hideLoading();
-    }
-    function burgerBulkImport() {
-        toggleBurgerMenu();
-        // Show bulk import form in the add-form overlay
-        document.getElementById('add-form-title').textContent = 'Bulk Import (APM Checklist)';
-        var html = '<div class="card"><h2>Import Routes from APM Checklist</h2>';
-        html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Upload an APM Checklist export (.xlsx) or CSV file.</p>';
-        html += '<div class="file-upload" onclick="document.getElementById(\x27bulk-import-file\x27).click()" ondragover="event.preventDefault();this.style.borderColor=\x27#60a5fa\x27" ondragleave="this.style.borderColor=\x27#d1d5db\x27" ondrop="event.preventDefault();this.style.borderColor=\x27#d1d5db\x27;var f=event.dataTransfer.files[0];if(f){document.getElementById(\x27bulk-import-file\x27).files=event.dataTransfer.files;previewImport(document.getElementById(\x27bulk-import-file\x27));}">';
-        html += '<input type="file" id="bulk-import-file" accept=".csv,.xlsx,.xls" style="display:none" onchange="previewImport(this)">';
-        html += '<p>Drag & drop APM Checklist, or click to browse</p></div>';
-        html += '<div id="csv-preview" style="display:none;margin-top:12px;"></div>';
-        html += '<button id="csv-import-btn" class="btn btn-primary" style="display:none;margin-top:12px;" onclick="smartSaveRoute()">Import Routes</button>';
-        html += '</div>';
-        document.getElementById('add-form-content').innerHTML = html;
-        document.getElementById('add-form-overlay').classList.add('active');
-    }
-
     // ============================================================
     // QUICK SCREENSHOT UPLOAD (from detail page "Screenshot missing" link)
     // ============================================================
@@ -5043,11 +5486,24 @@ function clearForm() {
         if(!requireWrite())return;
         if (!checkFirebase()) return;
         try {
-            await db.ref('workAssigned/' + jobKey + '/status').set(isDone ? 'done' : 'pending');
             if (isDone) {
-                await db.ref('workAssigned/' + jobKey + '/completedAt').set(new Date().toISOString());
-                showToast('Job marked as done!', 'success');
+                // If this is an overdue carry-over (created before today's work-day cutoff), clear it on completion.
+                var _js = await db.ref('workAssigned/' + jobKey).once('value');
+                var _j = _js.val();
+                var _now = new Date();
+                var _t4 = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate(), 4, 0, 0);
+                var _cut = _now.getHours() < 4 ? new Date(_t4.getTime() - 86400000) : _t4;
+                var _overdue = _j && _j.createdAt && new Date(_j.createdAt) < _cut;
+                if (_overdue) {
+                    await db.ref('workAssigned/' + jobKey).remove();
+                    showToast('Overdue job completed and cleared', 'success');
+                } else {
+                    await db.ref('workAssigned/' + jobKey + '/status').set('done');
+                    await db.ref('workAssigned/' + jobKey + '/completedAt').set(new Date().toISOString());
+                    showToast('Job marked as done!', 'success');
+                }
             } else {
+                await db.ref('workAssigned/' + jobKey + '/status').set('pending');
                 await db.ref('workAssigned/' + jobKey + '/completedAt').remove();
                 showToast('Job reopened');
             }
@@ -5551,7 +6007,7 @@ function clearForm() {
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.07';
+    var APP_VERSION = '1.10';
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== APP_VERSION) {
@@ -5568,8 +6024,9 @@ function clearForm() {
         if (dot) dot.classList.remove('active');
         if (banner) banner.style.display = 'none';
     }
-    window.addEventListener('load', function() { setTimeout(checkWhatsNew, 500); });
+    window.addEventListener('load', function() { setTimeout(checkWhatsNew, 500); try{restoreSearchFilters();}catch(e){} });
 
 </script>
+    <div id="print-root" aria-hidden="true"></div>
 </body>
 </html>
