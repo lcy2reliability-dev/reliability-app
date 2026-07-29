@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.googleapis.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://*.googleapis.com https://www.gstatic.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.googleapis.com;">
     <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
     <title>RME App</title>
     <script>var _isPreview=false;try{_isPreview=(window.self!==window.top)}catch(e){_isPreview=true}</script>
@@ -952,9 +952,29 @@
         if(n>0){ el.style.display='block'; el.className='sync-status pending'; el.innerHTML='&#8635; '+n+' reading'+(n===1?'':'s')+' waiting to sync'; }
         else { el.style.display='none'; }
     }
+    var _offlineBannerTimer = null;
     function _updateOfflineBanner(){
-        var online = navigator.onLine && _fbConnected;
-        var b = document.getElementById('offline-banner'); if (b) b.style.display = online ? 'none' : 'block';
+        var b = document.getElementById('offline-banner');
+        if (!b) { updateSyncStatus(); return; }
+        if (!navigator.onLine) {
+            // Device-level offline is authoritative — show immediately.
+            clearTimeout(_offlineBannerTimer); _offlineBannerTimer = null;
+            b.style.display = 'block';
+        } else if (_fbConnected) {
+            // Online and Firebase connected — hide, cancel any pending show.
+            clearTimeout(_offlineBannerTimer); _offlineBannerTimer = null;
+            b.style.display = 'none';
+        } else {
+            // Online but Firebase reports disconnected. .info/connected fires
+            // false transiently on initial connect and on brief blips, so
+            // debounce to avoid a false "offline" flash on every page load.
+            if (!_offlineBannerTimer) {
+                _offlineBannerTimer = setTimeout(function(){
+                    _offlineBannerTimer = null;
+                    if (navigator.onLine && !_fbConnected) b.style.display = 'block';
+                }, 4000);
+            }
+        }
         updateSyncStatus();
     }
     var _flushingReadings=false;
@@ -963,17 +983,19 @@
         if(!firebaseReady || !_fbConnected || !navigator.onLine) return;
         var a=_getPendingReadings(); if(a.length===0) return;
         _flushingReadings=true;
-        var remaining=[];
+        var remaining=[], _syncedKeys={};
         for(var i=0;i<a.length;i++){
             var e=a[i];
             try{
                 await db.ref('readings/'+e.routeKey).push(e.payload);
+                _syncedKeys[e.routeKey]=1;
                 if(e.note){ try{ await addNote('routes', e.routeKey, e.note); }catch(_n){} }
             }catch(err){ remaining.push(e); }
         }
         _setPendingReadings(remaining);
         _flushingReadings=false;
         updateSyncStatus();
+        if(Object.keys(_syncedKeys).length){ invalidateAlertsCache(); if(typeof _sparkCache!=='undefined'){ Object.keys(_syncedKeys).forEach(function(k){ delete _sparkCache[k]; }); } }
         if(remaining.length===0 && a.length>0){
             var el=document.getElementById('sync-status');
             if(el){ el.style.display='block'; el.className='sync-status ok'; el.innerHTML='&#10003; All readings synced'; setTimeout(function(){ if(pendingReadingsCount()===0 && el){el.style.display='none';} },3000); }
@@ -4916,6 +4938,7 @@
             });
             showToast('Readings saved!', 'success');
             invalidateAlertsCache(); if (typeof _sparkCache !== 'undefined') delete _sparkCache[routeKey];
+            clearDraft(routeKey);
             _saveReadingsCooldown=true; setTimeout(function(){_saveReadingsCooldown=false;},5000);
             
             // Auto-add to Work Assigned
@@ -4923,7 +4946,7 @@
             var waAll = await getWorkAssignedData();
             var alreadyExists = false;
             Object.values(waAll).forEach(function(j) {
-                if ((j.routeNumber === _routeDisplay || j.equipment === _routeDisplay) && (j.assignedTo||'').toLowerCase() === currentUser.toLowerCase()) alreadyExists = true;
+                if ((j.routeNumber === _routeDisplay || j.equipment === _routeDisplay) && (j.assignedTo||'').toLowerCase() === (currentUser||'').toLowerCase()) alreadyExists = true;
             });
             if (!alreadyExists && currentUser) {
                 await db.ref('workAssigned').push({
