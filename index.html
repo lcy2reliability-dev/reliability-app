@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.googleapis.com;">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
     <title>RME App</title>
     <script>var _isPreview=false;try{_isPreview=(window.self!==window.top)}catch(e){_isPreview=true}</script>
     <script>if(!_isPreview)document.write('\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">\x3C/script>\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">\x3C/script>\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">\x3C/script>')</script>
@@ -243,7 +245,7 @@
             </div>
             <div id="login-new">
                 <label id="login-id-label" for="login-input" style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px;">Login ID</label>
-                <input type="text" id="login-input" placeholder="Login ID (e.g. vladesca)" autocomplete="username" onkeyup="if(event.key==='Enter')document.getElementById('login-pin').focus()">
+                <input type="text" id="login-input" placeholder="Login ID (e.g. vladesca)" maxlength="30" autocomplete="username" onkeyup="if(event.key==='Enter')document.getElementById('login-pin').focus()">
                 <label id="login-pin-label" for="login-pin" style="font-size:12px;color:#6b7280;display:block;margin-top:10px;margin-bottom:4px;">PIN</label>
                 <input type="password" id="login-pin" inputmode="numeric" maxlength="12" placeholder="PIN (6+ digits)" autocomplete="current-password" onkeyup="if(event.key==='Enter')submitLogin()">
                 <button class="btn btn-primary" onclick="submitLogin()" style="margin-top:12px;">Continue</button>
@@ -336,7 +338,7 @@
                 <div class="form-group">
                     <label>Search Position</label>
                     <div style="position:relative;">
-                        <input type="text" id="eq-conveyor" placeholder="Type to search (e.g. 703010, SLAM.314...)" style="width:100%;" oninput="autocompletePosition(this.value,'eq-autocomplete','eq-conveyor')" autocomplete="off">
+                        <input type="text" id="eq-conveyor" placeholder="Type to search (e.g. 703010, SLAM.314...)" maxlength="60" style="width:100%;" oninput="autocompletePosition(this.value,'eq-autocomplete','eq-conveyor')" autocomplete="off">
                         <div id="eq-autocomplete" class="autocomplete-dropdown" style="display:none;"></div>
                     </div>
                     <div id="eq-status-badge" style="margin-top:4px;font-size:12px;"></div>
@@ -364,7 +366,7 @@
                     </div>
                     <div class="form-group">
                         <label>Equipment Description</label>
-                        <input type="text" id="eq-description" placeholder="e.g. AFE 3.0, PACK, 05 (09-10)">
+                        <input type="text" id="eq-description" placeholder="e.g. AFE 3.0, PACK, 05 (09-10)" maxlength="300">
                     </div>
                     <div class="form-group">
                         <label>Notes <span style="font-size:11px;color:#6b7280;">(max 500 chars)</span></label>
@@ -418,7 +420,7 @@
                 </div>
                 <div class="form-group">
                     <label>APN (Asset Part Number)</label>
-                    <input type="text" id="part-apn" placeholder="Enter APN">
+                    <input type="text" id="part-apn" placeholder="Enter APN" maxlength="50">
                 </div>
                 <div class="form-group">
                     <label>Part Type</label>
@@ -433,11 +435,11 @@
                 </div>
                 <div class="form-group">
                     <label>Store Location</label>
-                    <input type="text" id="part-location" placeholder="e.g. C05-C-28">
+                    <input type="text" id="part-location" placeholder="e.g. C05-C-28" maxlength="100">
                 </div>
                 <div class="form-group">
                     <label>Description</label>
-                    <input type="text" id="part-notes" placeholder="e.g. V-BELT, GATES 'B' SEC D0005992 618\" LG">
+                    <input type="text" id="part-notes" maxlength="500" placeholder="e.g. V-BELT, GATES 'B' SEC D0005992 618\" LG">
                 </div>
                 <button class="btn btn-primary" onclick="savePart()">Save Part</button>
             </div>
@@ -454,7 +456,7 @@
                 <div id="route-manual-fields">
                     <div class="form-group">
                         <label>Route Number</label>
-                        <input type="text" id="route-number" placeholder="e.g. 42 (Ultrasound) or 542 (Thermal)">
+                        <input type="text" id="route-number" placeholder="e.g. 42 (Ultrasound) or 542 (Thermal)" maxlength="60">
                     </div>
                     <div class="form-group">
                         <label>Type</label>
@@ -475,11 +477,11 @@
                     </div>
                     <div class="form-group">
                         <label>Equipment Description <span style="color:#ef4444;">*</span></label>
-                        <input type="text" id="route-notes" placeholder="e.g. CBM, ULTS.SHP.DISCHARGE & RCRC">
+                        <input type="text" id="route-notes" maxlength="500" placeholder="e.g. CBM, ULTS.SHP.DISCHARGE & RCRC">
                     </div>
                     <div class="form-group">
                         <label>Starting Point <span style="color:#ef4444;">*</span></label>
-                        <input type="text" id="route-start" placeholder="e.g. 703010 or CB.SRT.01.ID11.01" onblur="loadRouteImage('route-start-img', this.value)">
+                        <input type="text" id="route-start" placeholder="e.g. 703010 or CB.SRT.01.ID11.01" maxlength="60" onblur="loadRouteImage('route-start-img', this.value)">
                         <img id="route-start-img" class="img-preview" style="display:none;">
                     </div>
                     <div class="form-group">
@@ -489,7 +491,7 @@
                     </div>
                     <div class="form-group">
                         <label>End Point <span style="font-size:11px;color:#6b7280;">— optional, leave blank if same as start</span></label>
-                        <input type="text" id="route-end" placeholder="e.g. 180050 (leave blank if same as start)" onblur="loadRouteImage('route-end-img', this.value)">
+                        <input type="text" id="route-end" placeholder="e.g. 180050 (leave blank if same as start)" maxlength="60" onblur="loadRouteImage('route-end-img', this.value)">
                         <img id="route-end-img" class="img-preview" style="display:none;">
                     </div>
                 </div>
@@ -542,7 +544,7 @@
         <div id="sec-work" class="section">
             <div class="card">
                 <h2>Work Assigned</h2>
-                <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Record your assigned jobs for the day. All entries auto-clear at 04:00 daily.</p>
+                <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Record your assigned jobs for the day.</p>
                 <button class="btn btn-primary" onclick="showAddWorkModal()">+ Add New Job</button>
                 <div id="work-list" style="margin-top:16px;"><div class="empty-state">No work assigned yet</div></div>
             </div>
@@ -625,6 +627,7 @@
     };
 
     let db = null, firebaseReady = false, currentUser = null, lastSearchResultCount = 0;
+    var _saveReadingsCooldown = false; // rate-limit: 5s cooldown between thermal saves
     var auth = null, currentUid = null, currentRole = 'viewer';
     (function initFirebase() {
         if (_isPreview) return;
@@ -886,8 +889,13 @@
         });
     }
     function closeModal() { document.getElementById('modal').classList.remove('active'); _closeModalA11y(); }
-    function sanitizeKey(str) { return str.replace(/[.#$\/\[\]]/g, '_').trim(); }
+    function sanitizeKey(str) { return str.replace(/[.#$\/\[\]'"]/g, '_').trim(); }
     function fileToBase64(file) { return new Promise((resolve, reject) => {
+        const _MAX_BYTES = 5 * 1024 * 1024; // 5 MB cap — protects Firebase storage quota
+        if (file.size > _MAX_BYTES) {
+            showToast('Image too large (' + (file.size/1024/1024).toFixed(1) + ' MB) — maximum is 5 MB', 'error');
+            reject(new Error('Image exceeds 5 MB limit')); return;
+        }
         const reader=new FileReader();
         reader.onload=()=>{
             const img=new Image();
@@ -1503,7 +1511,7 @@ function clearForm() {
             });
             
             html += '<div class="form-group" style="margin-top:12px;"><label>Notes (optional)</label>';
-            html += '<input type="text" id="rec-note-input" placeholder="Add observation notes..." onkeyup="if(event.key===\x27Enter\x27)saveRecordedReadings(\x27' + key + '\x27,\x27' + routeNum + '\x27)"></div>';
+            html += '<input type="text" id="rec-note-input" maxlength="500" placeholder="Add observation notes..." onkeyup="if(event.key===\x27Enter\x27)saveRecordedReadings(\x27' + key + '\x27,\x27' + routeNum + '\x27)"></div>';
             html += '<button class="btn btn-primary" style="margin-top:12px;" onclick="saveRecordedReadings(\x27' + key + '\x27,\x27' + routeNum + '\x27)">Save Readings</button>';
             html += '<button class="btn btn-secondary" style="margin-top:12px;margin-left:8px;" onclick="openDetail(\x27route\x27,\x27' + key + '\x27)">Cancel</button>';
             html += '</div>';
@@ -2511,6 +2519,7 @@ function clearForm() {
     }
 
     async function saveThermalReadings(){ if(!requireWrite())return;
+        if(_saveReadingsCooldown){showToast('Please wait a moment before saving again','error');return;}
         if(!checkFirebase())return;
         if(!currentThermalRoute||currentThermalItems.length===0)return;
         const readings={};const _labels={};let hasData=false;
@@ -2534,6 +2543,7 @@ function clearForm() {
             }
             await db.ref('readings/'+currentThermalRoute).push({readings,labels:_labels,timestamp:new Date().toISOString(),recordedBy:currentUser||'Unknown'});
             showToast('Readings saved!');
+            _saveReadingsCooldown=true; setTimeout(function(){_saveReadingsCooldown=false;},5000);
             // Auto-add route to Work Assigned - DIRECT WRITE (no complex queries)
             var _routeDisplay=document.getElementById('thermal-route').value.trim();
             try {
@@ -2772,9 +2782,27 @@ function clearForm() {
             container.innerHTML='<div class="form-group"><label>Position Number</label><input type="text" id="work-equipment" placeholder="e.g. 703010 or CB.SRT.01.ID11.01"></div>'+
                 '<div class="form-group"><label>Add SCADA location screenshot?</label><div class="file-upload" onclick="document.getElementById(\'work-img-file\').click()" style="padding:10px;"><input type="file" id="work-img-file" accept="image/*" onchange="previewImage(this,\'work-img-preview\')"><p style="font-size:12px;">Click to upload (optional)</p></div><img id="work-img-preview" class="img-preview" style="display:none;max-height:150px;"></div>';
         } else if(type==='CBM'){
-            container.innerHTML='<div class="form-group"><label>CBM Type</label><select id="work-cbm-type"><option>Ultrasound</option><option>Thermal</option><option>Other</option></select></div>'+
-                '<div class="form-group"><label>Route Number</label><input type="text" id="work-route" placeholder="e.g. 42"></div>';
+            container.innerHTML='<div class="form-group"><label>CBM Type</label><select id="work-cbm-type" onchange="populateRouteDatalist()"><option>Ultrasound</option><option>Thermal</option><option>Other</option></select></div>'+
+                '<div class="form-group"><label>Route Number</label><input type="text" id="work-route" list="work-route-list" placeholder="Start typing to search routes..." autocomplete="off"><datalist id="work-route-list"></datalist></div>';
+            populateRouteDatalist();
         } else { container.innerHTML=''; }
+    }
+    async function populateRouteDatalist(){
+        var dl=document.getElementById('work-route-list');
+        if(!dl)return;
+        try {
+            var routes=await getRoutesCache();
+            var cbmSel=document.getElementById('work-cbm-type');
+            var cbmType=cbmSel?(cbmSel.value||'').toLowerCase():'';
+            var items=Object.values(routes).filter(function(r){return r && r.active!==false && r.routeNumber;});
+            var filtered=items;
+            if(cbmType && cbmType!=='other'){
+                var byType=items.filter(function(r){return String(r.type||'').toLowerCase()===cbmType;});
+                if(byType.length)filtered=byType;
+            }
+            filtered.sort(function(a,b){return String(a.routeNumber).localeCompare(String(b.routeNumber),undefined,{numeric:true});});
+            dl.innerHTML=filtered.map(function(r){return '<option value="'+escapeHtml(String(r.routeNumber))+'">'+escapeHtml(String(r.notes||r.type||''))+'</option>';}).join('');
+        } catch(e){}
     }
     async function saveWork(){ if(!requireWrite())return;
         if(!checkFirebase())return;
@@ -2823,11 +2851,48 @@ function clearForm() {
             }
         } else if(type==='CBM'){
             const cbmType=document.getElementById('work-cbm-type').value;
-            const route=document.getElementById('work-route').value.trim();
+            let route=document.getElementById('work-route').value.trim();
             if(!route){showToast('Route number required','error');return;}
+            // Resolve route against the catalogue: exact sanitized key first, then a forgiving
+            // case-insensitive / routeNumber match so a differently-cased or picked entry still resolves.
+            let _rKey=sanitizeKey(route);
+            let rSnap=await db.ref('routes/'+_rKey).once('value');
+            if(!rSnap.val()){
+                try {
+                    const _allRoutes=await getRoutesCache();
+                    const _wantNum=route.toLowerCase();
+                    const _wantKey=_rKey.toLowerCase();
+                    let _match=null;
+                    Object.entries(_allRoutes).forEach(function(e){
+                        if(_match)return;
+                        const rk=e[0], rv=e[1]||{};
+                        if(rk.toLowerCase()===_wantKey) _match={key:rk,num:rv.routeNumber||route};
+                        else if(String(rv.routeNumber||'').trim().toLowerCase()===_wantNum) _match={key:rk,num:rv.routeNumber};
+                    });
+                    if(!_match){
+                        // Last resort: user typed just the route number (e.g. "575"); resolve by the
+                        // trailing segment of routeNumber, disambiguated by CBM type when needed.
+                        const _wantDigits=route.replace(/[^0-9]/g,'');
+                        let _cands=[];
+                        Object.entries(_allRoutes).forEach(function(e){
+                            const rk=e[0], rv=e[1]||{};
+                            if(!rv.routeNumber)return;
+                            const _seg=String(rv.routeNumber).split('.').pop();
+                            const _segDigits=_seg.replace(/[^0-9]/g,'');
+                            if(_seg.toLowerCase()===_wantNum || (_wantDigits && _segDigits && parseInt(_segDigits,10)===parseInt(_wantDigits,10)))
+                                _cands.push({key:rk,num:rv.routeNumber,type:String(rv.type||'').toLowerCase()});
+                        });
+                        const _cbmT=(cbmType||'').toLowerCase();
+                        if(_cands.length>1 && _cbmT && _cbmT!=='other'){
+                            const _typed=_cands.filter(function(x){return x.type===_cbmT;});
+                            if(_typed.length) _cands=_typed;
+                        }
+                        if(_cands.length===1) _match={key:_cands[0].key,num:_cands[0].num};
+                    }
+                    if(_match){ _rKey=_match.key; route=_match.num; rSnap=await db.ref('routes/'+_rKey).once('value'); }
+                } catch(_le){}
+            }
             workData.cbmType=cbmType;workData.routeNumber=route;
-            // Check if route exists
-            const rSnap=await db.ref('routes/'+sanitizeKey(route)).once('value');
             if(!rSnap.val()){
                 const addRoute=await showModal('Route not found','Route '+route+' is not registered. Would you like to add it now?');
                 if(addRoute){closeModal();switchTabDirect('routes');document.getElementById('route-number').value=route;return;}
@@ -2889,8 +2954,11 @@ function clearForm() {
             // Delete button moved to bottom of page
             var _waAll = await getWorkAssignedData();
             var _itemName = data.conveyorNumber||data.routeNumber||data.apn||'';
-            var _isInWork = Object.values(_waAll).some(function(j){ return (j.assignedTo||'').toLowerCase()===currentUser.toLowerCase() && ((j.routeNumber&&j.routeNumber===_itemName)||(j.equipment&&j.equipment===_itemName)); });
-            if(type!=='part'&&!_isInWork){html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="addToWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">+ Add to Work</button>';}
+            var _isInWork = Object.values(_waAll).some(function(j){ return j && (j.assignedTo||'').toLowerCase()===currentUser.toLowerCase() && ((j.routeNumber&&j.routeNumber===_itemName)||(j.equipment&&j.equipment===_itemName)); });
+            if(type!=='part'){
+                if(!_isInWork){html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="addToWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">+ Add to Work</button>';}
+                else{html+='<button class="btn btn-secondary btn-sm" style="background:#ef4444;color:white;border:none;" onclick="removeFromWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">\u2212 Remove from Work</button>';}
+            }
             
             html+='</div><div class="card">';
 
@@ -3070,6 +3138,7 @@ function clearForm() {
         const confirmed=await showModal('Remove Picture','Are you sure you want to delete this SCADA location picture?');
         if(!confirmed)return;
         await db.ref('equipment/'+key+'/imageUrl').set(null);
+        invalidateEquipmentCache();
         showToast('Picture removed');openDetail('equipment',key);
     }
     async function replacePicture(key){ if(!requireWrite())return;
@@ -3084,6 +3153,7 @@ function clearForm() {
         showLoading();
         const newImg=await fileToBase64(file);
         await db.ref('equipment/'+key+'/imageUrl').set(newImg);
+        invalidateEquipmentCache();
         hideLoading();showToast('Picture replaced!');openDetail('equipment',key);
     }
 
@@ -3484,6 +3554,15 @@ function clearForm() {
         showLoading();
         try {
             var snap=await db.ref('trash').once('value');var trash=snap.val()||{};
+            // Purge anything deleted more than 7 days ago (keeps the on-screen promise honest)
+            var _now=Date.now(), _purge={}, _purgeN=0;
+            ['equipment','parts','routes'].forEach(function(col){
+                Object.entries(trash[col]||{}).forEach(function(pair){
+                    var t=pair[1]&&pair[1].deletedAt?new Date(pair[1].deletedAt).getTime():NaN;
+                    if(!isNaN(t)&&(_now-t)>7*24*60*60*1000){_purge[col+'/'+pair[0]]=null;delete trash[col][pair[0]];_purgeN++;}
+                });
+            });
+            if(_purgeN>0){try{await db.ref('trash').update(_purge);}catch(_pe){}}
             var html='<div class="card"><h2>Recently Deleted</h2>';
             html+='<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Items are permanently removed after 7 days.</p>';
             var hasItems=false;
@@ -4023,8 +4102,31 @@ function clearForm() {
             await db.ref('workAssigned').push(jobData);
             updateWorkCount();
             showToast('Added to Work Assigned!', 'success');
+            openDetail(type, key); // re-render: button flips to Remove from Work
         } catch(e) {
             showToast('Error adding to Work: ' + e.message, 'error');
+        }
+    }
+
+    async function removeFromWorkFromSearch(type, key, itemName) { if(!requireWrite())return;
+        if (!firebaseReady) { showToast('Firebase not ready', 'error'); return; }
+        if (!currentUser) { showToast('Not logged in', 'error'); return; }
+        try {
+            var waAll = await getWorkAssignedData();
+            var updates = {};
+            Object.keys(waAll).forEach(function(id) { var j = waAll[id];
+                if (j && (j.assignedTo||'').toLowerCase() === currentUser.toLowerCase() &&
+                    ((j.routeNumber && j.routeNumber === itemName) || (j.equipment && j.equipment === itemName))) {
+                    updates['workAssigned/' + id] = null;
+                }
+            });
+            if (Object.keys(updates).length === 0) { showToast('Not in Work Assigned', 'error'); openDetail(type, key); return; }
+            await db.ref().update(updates);
+            updateWorkCount();
+            showToast('Removed from Work Assigned', 'success');
+            openDetail(type, key); // re-render: button flips back to Add to Work
+        } catch(e) {
+            showToast('Error removing from Work: ' + e.message, 'error');
         }
     }
 
@@ -4279,6 +4381,7 @@ function clearForm() {
 
 
     async function saveRecordedReadings(routeKey, routeNum) { if(!requireWrite())return;
+        if(_saveReadingsCooldown){showToast('Please wait a moment before saving again','error');return;}
         if (!checkFirebase()) return;
         var readings = {};
         var _labels = {};
@@ -4310,6 +4413,7 @@ function clearForm() {
                 recordedBy: currentUser || 'Unknown'
             });
             showToast('Readings saved!', 'success');
+            _saveReadingsCooldown=true; setTimeout(function(){_saveReadingsCooldown=false;},5000);
             
             // Auto-add to Work Assigned
             var _routeDisplay = routeNum;
@@ -4637,6 +4741,7 @@ function clearForm() {
             var imageUrl = await fileToBase64(file);
             var path = type === 'route' ? 'routes/' + key + '/routeImageUrl' : 'equipment/' + key + '/imageUrl';
             await db.ref(path).set(imageUrl);
+            if (type === 'route') invalidateRoutesCache(); else invalidateEquipmentCache();
             showToast('Screenshot saved!', 'success');
             // Refresh detail page
             openDetail(type === 'route' ? 'route' : 'equipment', key);
@@ -4997,7 +5102,7 @@ function clearForm() {
             html += '<hr style="margin:12px 0;border:none;border-top:1px solid #d1fae5;">';
             html += '<p style="font-size:13px;font-weight:600;">Link this part to ' + escapeHtml(conveyorNumber) + '?</p>';
             html += '<div class="form-group" style="margin-top:12px;"><label>Quantity at this position</label><input type="number" id="link-qty" placeholder="e.g. 2" min="1" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
-            html += '<div class="form-group"><label>Observations (optional)</label><input type="text" id="link-obs" placeholder="e.g. bearing size, notes..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
+            html += '<div class="form-group"><label>Observations (optional)</label><input type="text" id="link-obs" maxlength="300" placeholder="e.g. bearing size, notes..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
             html += '<button class="btn btn-primary" style="margin-top:8px;" onclick="confirmLinkPart(\x27' + foundKey + '\x27,\x27' + conveyorNumber + '\x27)">Confirm Link</button>';
             html += ' <button class="btn btn-secondary" style="margin-top:8px;" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(conveyorNumber) + '\x27)">Cancel</button>';
             html += '</div>';
@@ -5032,6 +5137,7 @@ function clearForm() {
             }
             try { var _apnSnap = await db.ref('parts/'+partKey+'/apn').once('value'); await _removeAssoc(sanitizeKey(conveyorNumber), _apnSnap.val()); } catch(_ce){}
             showToast('Part linked to ' + conveyorNumber + '!', 'success');
+            invalidatePartsCache();
             hideLoading();
             openDetail('equipment', sanitizeKey(conveyorNumber));
         } catch(e) { hideLoading(); showToast('Error: ' + e.message, 'error'); }
@@ -5084,12 +5190,24 @@ function clearForm() {
                 showToast('Link not found', 'error');
             }
             hideLoading();
-            var detailContent = document.getElementById('detail-content');
-            if (detailContent) {
-                if (detailContent.innerHTML.indexOf('Linked Parts') >= 0) {
-                    openDetail('equipment', sanitizeKey(conveyorNumber));
+            invalidatePartsCache();
+            var _editSec = document.getElementById('edit-linked-section');
+            if (_editSec) {
+                // Unlink is triggered from the Edit screen - refresh the list in place so the user stays put
+                if (_editSec.innerHTML.indexOf('Linked Positions') >= 0) {
+                    var _freshConv = (await db.ref('parts/' + partKey + '/conveyors').once('value')).val() || [];
+                    loadEditLinkedPositions(partKey, _freshConv);
                 } else {
-                    openDetail('part', partKey);
+                    loadEditLinkedParts(sanitizeKey(conveyorNumber), conveyorNumber);
+                }
+            } else {
+                var detailContent = document.getElementById('detail-content');
+                if (detailContent) {
+                    if (detailContent.innerHTML.indexOf('Linked Parts') >= 0) {
+                        openDetail('equipment', sanitizeKey(conveyorNumber));
+                    } else {
+                        openDetail('part', partKey);
+                    }
                 }
             }
         } catch(e) { hideLoading(); showToast('Error: ' + e.message, 'error'); }
@@ -5144,7 +5262,7 @@ function clearForm() {
         html += '<hr style="margin:12px 0;border:none;border-top:1px solid #d1fae5;">';
         html += '<div class="form-group"><label>Quantity at this position</label><input type="number" id="link-qty" min="1" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;" value="' + escapeHtml(String(entry.qty!=null?entry.qty:'')) + '"></div>';
         html += '<p style="font-size:11px;color:#6b7280;margin:-6px 0 8px;">Pre-filled from the import (' + escapeHtml(String(entry.qty!=null?entry.qty:'\u2014')) + ') \u2014 correct it if wrong.</p>';
-        html += '<div class="form-group"><label>Observations (optional)</label><input type="text" id="link-obs" placeholder="notes..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
+        html += '<div class="form-group"><label>Observations (optional)</label><input type="text" id="link-obs" maxlength="300" placeholder="notes..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
         html += '<button class="btn btn-primary" style="margin-top:8px;" onclick="confirmLinkAssociated(\x27'+conveyorNumber+'\x27,\x27'+String(entry.apn)+'\x27)">Confirm Link</button>';
         html += ' <button class="btn btn-secondary" style="margin-top:8px;" onclick="openDetail(\x27equipment\x27,\x27'+key+'\x27)">Cancel</button>';
         html += '</div></div>';

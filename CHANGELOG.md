@@ -17,8 +17,39 @@
 - **Login switch (dormant)** — `AUTH_ENABLED` flag; ships open, flip to secure later.
 - **Technician permissions** + **security-rules compatibility** groundwork (active only in secure mode).
 - **Fix: thermal readings failed to save on any dotted-name position** (SLAM, CB, AFE, ESTOP, etc.) — see below.
+- **Fix: unlinked/linked parts lingered until manual refresh** — stale cache; the list now updates instantly, see below.
+- **Add to Work ↔ Remove from Work toggle** — on a position/route detail page, once a job is added the green button becomes a red “Remove from Work” button (and flips back on removal). No more hunting through Work Assigned to undo a mis-tap.
 
 Full detail of each item below.
+
+
+## Feature — Add to Work / Remove from Work toggle (2026-07-28)
+**Status:** In working file, deploys with v1.07
+
+Previously, adding a position or route to Work Assigned from its detail page simply hid the “+ Add to Work” button; removing the job meant navigating to the Work Assigned tab. Now:
+
+- Clicking **+ Add to Work** adds the job and the button immediately becomes red **− Remove from Work**.
+- Clicking **− Remove from Work** deletes your matching job(s) and the button flips back — both with a confirmation toast.
+- Only your own jobs are affected (matched on login + route/position number). Completed jobs are untouched — they already move to the work log.
+
+
+## Fix — Recently Deleted now actually purges after 7 days (post-v1.07 scan)
+**Date:** 2026-07-28
+**Status:** Fixed in working file, deploys with v1.07
+
+The Recently Deleted screen has always said "Items are permanently removed after 7 days", but no purge code existed — trashed items from early June were still in the database. Opening the screen (admin) now deletes anything trashed more than 7 days ago before the list renders. Items without a valid `deletedAt` are left alone.
+
+## Database cleanup — full app + database scan (2026-07-28, no code change except the purge fix above)
+A record-by-record integrity scan of all Firebase nodes. App code came back clean (no ID collisions, no stale-cache paths, syntax OK). Database fixes applied directly:
+
+- **Orphaned thermal history recovered** — routes 506 and 888 had readings stored under legacy bare-number keys from before the APM rename; invisible to history/charts/anomaly baselines. Migrated to `CBM_THERMO_506` / `CBM_THERMO_888` (3 recording sessions) and the legacy keys removed.
+- **Ghost record deleted** — `equipment/undefined` (an orphaned 65 KB screenshot with no position data).
+- **Duplicate part removed** — APN 67846 existed twice (`parts/64846` was a key-typo duplicate); the correctly-keyed record kept.
+- **Unreachable trash item rescued** — an old code version wrote one deleted route to `trash/route` (singular), which the Recently Deleted screen never lists. Moved to `trash/routes`.
+- **Leftover TEST job deleted** from Work Assigned (created 03/07 during testing).
+- **13 orphaned import stubs deleted** (`VFD01`–`VFD11`, `SLAM116`, `284504`) — empty position records auto-created by the 06/07 route import and no longer referenced by any route, part link, catalogue entry or reading. The other 477 description-less stubs (e.g. `01`–`25`, `ALIGN`) ARE referenced by route waypoints/motors and the parts catalogue, so they were kept.
+
+Full pre-cleanup backup of every node: `Downloads/db_scan_backup_2026-07-28/`.
 
 
 ## Fix — thermal readings crash on dotted position names (post-v1.06)
@@ -34,6 +65,57 @@ Reading keys are now run through the existing `sanitizeKey()` (dots → undersco
 
 - **Backward compatible:** old readings (numeric positions) have no dots, so `sanitizeKey` is a no-op and the value lookups are identical; where a `labels` map is absent the code falls back to the key itself, which for old data equals the display name.
 - Touched: `saveThermalReadings`, `saveRecordedReadings`, `renderThermalHistory`, `renderChart`, `exportThermalExcel`, `editThermalReading`, `checkThermalAnomaly` (16 edits total).
+
+
+## Fix — linked/unlinked parts didn't update until manual refresh (post-v1.06)
+**Date:** 2026-07-16
+**Status:** Fixed in working file, not yet deployed
+**Trigger:** After unlinking a part from a position, it stayed in the Linked Parts list until the page was manually refreshed.
+
+### Cause
+Parts are cached in memory for 1 minute (`CACHE_TTL`). `unlinkPart` and `confirmLinkPart` wrote the change to Firebase but re-rendered from the still-valid cache, so the screen showed the old list. Linking from the Parts Associated card already refreshed correctly because it invalidated the cache.
+
+### Fix
+- `unlinkPart` and `confirmLinkPart` now invalidate the parts cache before re-rendering, so the list reflects the change immediately.
+- `unlinkPart` (only ever used on the Edit screen) now refreshes the Edit screen's linked list **in place** instead of jumping to the read-only Detail view, so you can unlink several parts in a row without losing your place.
+
+### Also covered (2026-07-16 follow-up)
+Audited every action that changes cached data and re-draws the screen. All now refresh instantly:
+- **SCADA screenshot** add / replace / remove (`confirmQuickSS`, `replacePicture`, `removePicture`) now invalidate the equipment/route cache so the search list and edit screen never show a stale image.
+- Verified already-correct: edit position/route/part, delete, decommission/reactivate, link from Parts Associated, remove from Parts Associated. No remaining gaps.
+
+
+## Fix — "Route not found" when adding a CBM job (post-v1.06)
+**Date:** 2026-07-20
+**Status:** Fixed in working file, not yet deployed
+**Trigger:** On Work Assigned, "+ Add New Job" > CBM would reject a valid route with "Route not found".
+
+### Cause
+The Route Number field was free text with a misleading placeholder ("e.g. 42"), but routes are stored under their full identifier (route `CBM.THERMO.575` is keyed `CBM_THERMO_575`, `routeNumber: "CBM.THERMO.575"`). The lookup only matched if you typed the exact full name, so a short number or different casing failed.
+
+### Fix
+- The Route Number field is now a **searchable picker** (datalist) listing the real routes, filtered by the selected CBM Type, so you choose an existing route instead of guessing its exact name.
+- The lookup is now **forgiving**: if the exact key misses, it falls back to a case-insensitive / `routeNumber` match against the route catalogue and uses the canonical route before ever showing "Route not found".
+- Typing **just the number** (e.g. `575`) now works: the lookup resolves it to the full route by matching the trailing number, disambiguated by the selected CBM Type when the same number exists under multiple types (verified: 575/897/850/875 unique; 42 disambiguated Thermal vs Ultrasound vs Ranger). Ambiguous cases fall back to the picker rather than guessing.
+
+
+## Security hardening — red-team items 3–8 (2026-07-28)
+**Status:** Applied in working file, ships with v1.07 deploy.
+Pre-rollout hardening ahead of the 60–70 user expansion. No functional behaviour changes for normal use.
+
+| # | Item | Change |
+|---|---|---|
+| 3 | **5 MB image cap** | `fileToBase64` now rejects files over 5 MB with a toast before reading — prevents quota exhaustion on Firebase free tier |
+| 4 | **sanitizeKey strips `'` and `"`** | Single and double quotes in position/route names can no longer break `onclick` attribute strings |
+| 5 | **CSP + X-Frame-Options** | Added `Content-Security-Policy` and `X-Frame-Options: SAMEORIGIN` meta tags — blocks clickjacking and limits script injection surface |
+| 6 | **Save cooldown** | 5-second cooldown after each thermal reading save (`saveThermalReadings`, `saveRecordedReadings`) — prevents accidental or malicious write flooding |
+| 7 | **Auto-clear label corrected** | Removed "All entries auto-clear at 04:00 daily" — the feature is not implemented; the misleading label is gone |
+| 8 | **`maxlength` on key inputs** | Added limits to all main text inputs: identifiers 30–60 chars, descriptions/notes 300–500 chars, observations 300 chars |
+
+**Remaining (require Firebase console / deploy decision):**
+- C1/C2: Lock Firebase security rules + enable Auth (`AUTH_ENABLED=true`) — see `SECURITY_SETUP.md`
+- C2: Restrict Firebase API key to your GitHub Pages origin in GCP Console
+- H1: `currentUser` spoof protection resolved automatically by locking rules + Auth
 
 ---
 
