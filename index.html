@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- RME App v1.10 - Updated 2026-07-29 -->
+<!-- RME App v1.11 - Updated 2026-07-31 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -215,9 +215,9 @@
         .work-job-actions button { font-size: 11px; padding: 4px 10px; }
         
         /* Fullscreen Image Viewer */
-        .img-viewer-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.95); z-index:100000; align-items:center; justify-content:center; cursor:pointer; }
+        .img-viewer-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.95); z-index:100000; align-items:center; justify-content:center; cursor:pointer; touch-action:none; }
         .img-viewer-overlay.active { display:flex; }
-        .img-viewer-overlay img { max-width:95vw; max-height:95vh; object-fit:contain; touch-action:pinch-zoom; user-select:none; }
+        .img-viewer-overlay img { max-width:95vw; max-height:95vh; object-fit:contain; touch-action:none; user-select:none; transform-origin:center center; will-change:transform; }
         .img-viewer-close { position:absolute; top:16px; right:16px; color:white; font-size:28px; cursor:pointer; z-index:100001; background:rgba(0,0,0,0.5); width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
     
         /* Guided Tour */
@@ -321,8 +321,6 @@
         .dash-hero { display:flex; align-items:center; justify-content:space-between; gap:12px; background:linear-gradient(135deg,#232F3E,#37475A); color:#fff; border-radius:14px; padding:16px 18px; margin-bottom:14px; }
         .dash-hello { font-size:18px; font-weight:700; }
         .dash-date { font-size:12px; color:#c7d0da; margin-top:2px; }
-        .dash-scan { background:#00A8E1; color:#fff; border:none; border-radius:12px; padding:12px 20px; font-size:16px; font-weight:700; cursor:pointer; min-height:48px; box-shadow:0 2px 8px rgba(0,168,225,0.4); white-space:nowrap; }
-        .dash-scan:active { transform:scale(0.97); }
         .dash-tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
         .dash-tile { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px 6px; text-align:center; cursor:pointer; transition:box-shadow .15s; min-height:82px; }
         .dash-tile:active { box-shadow:0 2px 8px rgba(0,0,0,0.12); }
@@ -340,7 +338,6 @@
         @media (max-width:640px){
             .dash-hero { padding:14px; }
             .dash-hello { font-size:16px; }
-            .dash-scan { padding:10px 14px; font-size:15px; }
             .dash-tile { padding:12px 4px; }
             .dash-num { font-size:22px; }
         }
@@ -418,7 +415,7 @@
     </div>
     <div class="tabs" role="tablist" aria-label="Main sections">
         <div class="tab active" role="tab" aria-selected="true" tabindex="0" onclick="switchTab('search')">Search</div>
-        <div class="tab" role="tab" aria-selected="false" tabindex="0" onclick="switchTab('work')">Work Assigned <span id="work-count" style="background:#2563eb;color:white;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;"></span></div>
+        <div class="tab" role="tab" aria-selected="false" tabindex="0" onclick="switchTab('work')">Assigned Jobs <span id="work-count" style="background:#2563eb;color:white;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;"></span></div>
     </div>
     <div id="setup-banner" class="setup-banner" style="display:none;">
         <strong>Firebase not configured.</strong> Add your Firebase config to enable data storage.
@@ -660,10 +657,10 @@
         <!-- WORK ASSIGNED -->
         <div id="sec-work" class="section">
             <div class="card">
-                <h2>Work Assigned</h2>
+                <h2>Assigned Jobs</h2>
                 <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Record your assigned jobs for the day.</p>
                 <button class="btn btn-primary" onclick="showAddWorkModal()">+ Add New Job</button>
-                <div id="work-list" style="margin-top:16px;"><div class="empty-state">No work assigned yet</div></div>
+                <div id="work-list" style="margin-top:16px;"><div class="empty-state">No jobs assigned yet</div></div>
             </div>
         </div>
     </div>
@@ -1155,6 +1152,7 @@
         event.currentTarget.classList.add('active');
         event.currentTarget.setAttribute('aria-selected','true');
         document.getElementById('sec-'+tab).classList.add('active');
+        if(tab==='search'){try{renderDashboard();}catch(e){}}
     }
     function switchTabDirect(tab) {
         // Clear all inputs
@@ -1172,6 +1170,7 @@
         document.getElementById('sec-'+tab).classList.add('active');
         var tabs = document.querySelectorAll('.tab');
         tabs.forEach(function(t) { if (t.textContent.toLowerCase().includes(tab.substring(0,4))) { t.classList.add('active'); t.setAttribute('aria-selected','true'); } });
+        if(tab==='search'){try{renderDashboard();}catch(e){}}
     }
 
     // Click image to view full size
@@ -1302,7 +1301,7 @@
         document.getElementById('eq-info-model').innerHTML = eq.model ? '<strong>Model:</strong> '+escapeHtml(eq.model) : '';
         document.getElementById('eq-info-serial').innerHTML = eq.serialNumber ? '<strong>Serial:</strong> '+escapeHtml(eq.serialNumber) : '';
         document.getElementById('eq-info-criticality').innerHTML = eq.criticality ? '<strong>Criticality:</strong> <span style="display:inline-block;padding:1px 8px;border-radius:8px;font-size:12px;font-weight:600;'+(eq.criticality.includes('HIGH')?'background:#fef2f2;color:#dc2626;':eq.criticality.includes('MED')?'background:#fffbeb;color:#d97706;':'background:#f0fdf4;color:#16a34a;')+'">' + escapeHtml(eq.criticality) + '</span>' : '';
-        if (eq.imageUrl) { document.getElementById('eq-preview').src = eq.imageUrl; document.getElementById('eq-preview').style.display = 'block'; }
+        var _selImg = await getEquipmentImage(key); if (_selImg) { document.getElementById('eq-preview').src = _selImg; document.getElementById('eq-preview').style.display = 'block'; }
         else { document.getElementById('eq-preview').style.display = 'none'; }
         editingEquipmentKey = key;
     }
@@ -1958,7 +1957,7 @@
         var today = new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
         var html = '<div id="dash-root">';
         html += '<div class="dash-hero"><div><div class="dash-hello">Hi' + (currentUser ? ', ' + escapeHtml(currentUser) : '') + '</div><div class="dash-date">' + escapeHtml(today) + '</div></div>';
-        html += '<button class="dash-scan" onclick="openScanner()" aria-label="Scan a barcode or QR code">&#128247; Scan</button></div>';
+        html += '</div>';
         html += '<div class="dash-tiles">';
         html += '<div class="dash-tile" role="button" tabindex="0" onclick="switchTab(\x27work\x27)"><div class="dash-num" id="dash-pending">' + pending + '</div><div class="dash-lbl">Pending jobs</div></div>';
         html += '<div class="dash-tile dash-alert" role="button" tabindex="0" onclick="openAlertsView()"><div class="dash-num" id="dash-alerts">\u2014</div><div class="dash-lbl">Open alerts</div></div>';
@@ -2157,9 +2156,8 @@
         showLoading();
         try {
             const existing=await db.ref('equipment/'+key).once('value');
-            let imageUrl=existing.val()?.imageUrl||null;
-            if(file)imageUrl=await fileToBase64(file);
-            const updateObj={conveyorNumber:conveyor,type,description,notes,imageUrl,updatedAt:new Date().toISOString()};
+            let imageUrl=file?await fileToBase64(file):await getEquipmentImage(key);
+            const updateObj={conveyorNumber:conveyor,type,description,notes,updatedAt:new Date().toISOString()};
             if(existing.val()){
                 const old=existing.val();
                 if(old.area)updateObj.area=old.area;
@@ -2169,6 +2167,7 @@
                 if(old.criticality)updateObj.criticality=old.criticality;
             }
             await db.ref('equipment/'+key).set(updateObj);
+            if(imageUrl)await db.ref('equipmentImages/'+key).set(imageUrl);
             invalidateEquipmentCache();
             showToast(editingEquipmentKey?'Position updated!':'Position saved!');
             editingEquipmentKey=null;
@@ -2251,8 +2250,8 @@
             for(const item of eqImportData){
                 const key=sanitizeKey(item.conveyorNumber);
                 const existing=await db.ref('equipment/'+key).once('value');
-                if(existing.val()&&existing.val().imageUrl){skipped++;continue;}
-                await db.ref('equipment/'+key).set({conveyorNumber:item.conveyorNumber,type:item.type,description:item.description,notes:bulkNotes,imageUrl:existing.val()?.imageUrl||null,updatedAt:new Date().toISOString()});
+                if(existing.val()){const _impImg=await getEquipmentImage(key);if(_impImg){skipped++;continue;}}
+                await db.ref('equipment/'+key).set({conveyorNumber:item.conveyorNumber,type:item.type,description:item.description,notes:bulkNotes,updatedAt:new Date().toISOString()});
                 imported++;
             }
             showToast(imported+' imported, '+skipped+' skipped.');
@@ -2354,9 +2353,8 @@
     async function loadRouteImage(imgId, position){
         if(!position||!firebaseReady)return;
         const pk=sanitizeKey(position.trim());
-        const snap=await db.ref('equipment/'+pk).once('value');
-        const eq=snap.val();const img=document.getElementById(imgId);
-        if(eq&&eq.imageUrl){img.src=eq.imageUrl;img.style.display='block';}
+        const eqimg=await getEquipmentImage(pk);const img=document.getElementById(imgId);
+        if(eqimg){img.src=eqimg;img.style.display='block';}
         else{img.style.display='none';}
     }
 
@@ -2817,7 +2815,8 @@
 
             const key=sanitizeKey(routeNum);
             const needsTemp=(type==='Thermal');
-            await db.ref('routes/'+key).set({routeNumber:routeNum,type,notes:row.Description||'',startPoint:start,endPoint:end,waypoints,motors,needsTemp,readingRequired:needsTemp,routeImageUrl,createdAt:new Date().toISOString()});
+            await db.ref('routes/'+key).set({routeNumber:routeNum,type,notes:row.Description||'',startPoint:start,endPoint:end,waypoints,motors,needsTemp,readingRequired:needsTemp,createdAt:new Date().toISOString()});
+            if(routeImageUrl)await db.ref('routeImages/'+key).set(routeImageUrl);
 
             // Auto-create missing equipment entries
             for(const pt of allPoints){
@@ -2859,14 +2858,16 @@
             const imgPreview=document.getElementById('route-img-preview');
             if(routeImgFile)routeImageUrl=await fileToBase64(routeImgFile);
             else if(imgPreview&&imgPreview.style.display!=='none'&&imgPreview.src)routeImageUrl=imgPreview.src;
-            else if(editingRouteKey){const ex=await db.ref('routes/'+sanitizeKey(routeNum)).once('value');routeImageUrl=ex.val()?.routeImageUrl||null;}
+            else if(editingRouteKey){routeImageUrl=await getRouteImage(sanitizeKey(routeNum));}
 
             const key=sanitizeKey(routeNum);
             if(editingRouteKey&&editingRouteKey!==key)await db.ref('routes/'+editingRouteKey).remove();
 
             var needsTemp=(type==='Thermal')?document.getElementById('route-needs-temp').checked:false;
 
-            await db.ref('routes/'+key).set({routeNumber:routeNum,type,notes,startPoint:start,endPoint:end,waypoints,motors,needsTemp,readingRequired:needsTemp,routeImageUrl,createdAt:new Date().toISOString()});
+            await db.ref('routes/'+key).set({routeNumber:routeNum,type,notes,startPoint:start,endPoint:end,waypoints,motors,needsTemp,readingRequired:needsTemp,createdAt:new Date().toISOString()});
+            if(editingRouteKey&&editingRouteKey!==key)await db.ref('routeImages/'+editingRouteKey).remove();
+            if(routeImageUrl)await db.ref('routeImages/'+key).set(routeImageUrl);
 
             // Auto-create missing equipment entries
             for(const pt of allPoints){
@@ -2908,8 +2909,7 @@
             else if(imgPreview&&imgPreview.style.display!=='none'&&imgPreview.src)routeImageUrl=imgPreview.src;
             else{
                 // Keep existing route image if re-importing
-                const exSnap=await db.ref('routes/'+sanitizeKey(rd.routeNumber)).once('value');
-                if(exSnap.val()&&exSnap.val().routeImageUrl)routeImageUrl=exSnap.val().routeImageUrl;
+                routeImageUrl=await getRouteImage(sanitizeKey(rd.routeNumber));
             }
 
             const key=sanitizeKey(rd.routeNumber);
@@ -2923,9 +2923,9 @@
                 motors,
                 needsTemp:rd.needsTemp,
                 readingRequired:rd.needsTemp,
-                routeImageUrl,
                 createdAt:new Date().toISOString()
             });
+            if(routeImageUrl)await db.ref('routeImages/'+key).set(routeImageUrl);
 
             // Handle equipment entries — create missing, update descriptions
             const descChecks=document.querySelectorAll('.desc-update-check');
@@ -3012,7 +3012,7 @@
             div.innerHTML='<input type="text" value="'+escapeHtml(wp)+'" class="waypoint-input"><button class="btn-remove" onclick="this.parentElement.remove()">×</button>';
             wpC.appendChild(div);
         });
-        if(d.routeImageUrl){document.getElementById('route-img-preview').src=d.routeImageUrl;document.getElementById('route-img-preview').style.display='block';}
+        var _edrimg=await getRouteImage(key);if(_edrimg){document.getElementById('route-img-preview').src=_edrimg;document.getElementById('route-img-preview').style.display='block';}
         showToast('Editing route '+d.routeNumber,'success');
         switchTabDirect('routes');window.scrollTo({top:0,behavior:'smooth'});
     }
@@ -3121,12 +3121,12 @@
         db.ref('workAssigned').on('value', function(snap){ try {
             const container=document.getElementById('work-list');const data=snap.val();
             _waData = data || {};
-            if(!data){container.innerHTML='<div class="empty-state">No work assigned yet</div>';return;}
+            if(!data){container.innerHTML='<div class="empty-state">No jobs assigned yet</div>';updateWorkCount();return;}
             // Filter to current user's work
             var _savedOrder=[]; try{ _savedOrder=JSON.parse(localStorage.getItem('work_order_'+currentUser)||'[]'); if(!Array.isArray(_savedOrder))_savedOrder=[]; }catch(e){ _savedOrder=[]; }
             function _ordIdx(k){ var i=_savedOrder.indexOf(k); return i<0?1e9:i; }
             const items=Object.entries(data).filter(([k,v])=>(v.assignedTo||'').toLowerCase()===currentUser.toLowerCase()).sort((a,b)=>{var aD=a[1].status==='done'?1:0,bD=b[1].status==='done'?1:0;if(aD!==bD)return aD-bD;var ai=_ordIdx(a[0]),bi=_ordIdx(b[0]);if(ai!==bi)return ai-bi;return new Date(b[1].createdAt)-new Date(a[1].createdAt);});
-            if(items.length===0){container.innerHTML='<div class="empty-state">No work assigned to you today</div>';return;}
+            if(items.length===0){container.innerHTML='<div class="empty-state">No jobs assigned to you today</div>';updateWorkCount();return;}
             var _wn=new Date();var _w4=new Date(_wn.getFullYear(),_wn.getMonth(),_wn.getDate(),4,0,0);
             var _workCutoff=_wn.getHours()<4?new Date(_w4.getTime()-86400000):_w4;
             let html='';
@@ -3171,24 +3171,35 @@
             });
             container.innerHTML=html;
             renderSparklines(container);
+            updateWorkCount();
+            Object.keys(_expandedJobs).forEach(function(k){
+                var card=container.querySelector('.work-card[data-key="'+k+'"]');
+                if(!card){delete _expandedJobs[k];return;}
+                var a=card.querySelector('.work-card-actions'); if(a)a.style.display='flex';
+                var nt=card.querySelector('.work-card-notes'); if(nt)nt.style.display='block';
+            });
             } catch(e) { console.error('Work list error:', e); }
-        }, function(err){ console.warn('Work listener error:', err); showToast('Lost connection to Work Assigned — refresh to retry.', 'error'); });
+        }, function(err){ console.warn('Work listener error:', err); showToast('Lost connection to Assigned Jobs — refresh to retry.', 'error'); });
     }
+    var _expandedJobs = {};
     function expandWorkCard(el){
         // Don't collapse if user clicked on an input, button, or textarea
         var target = event ? event.target : null;
         if (target && (target.tagName === 'INPUT' || target.tagName === 'BUTTON' || target.tagName === 'TEXTAREA' || target.tagName === 'A')) return;
         var actions = el.querySelector('.work-card-actions');
         var notes = el.querySelector('.work-card-notes');
-        actions.style.display = actions.style.display === 'none' ? 'flex' : 'none';
-        if (notes) notes.style.display = notes.style.display === 'none' ? 'block' : 'none';
+        var willShow = notes ? notes.style.display === 'none' : (actions && actions.style.display === 'none');
+        if (actions) actions.style.display = willShow ? 'flex' : 'none';
+        if (notes) notes.style.display = willShow ? 'block' : 'none';
+        var k = el.dataset.key;
+        if (k) { if (willShow) _expandedJobs[k] = true; else delete _expandedJobs[k]; }
     }
 
     var _editWorkKey=null;
     async function showAddWorkModal(prefill) {
         if(!prefill)_editWorkKey=null;
         const bodyHtml='<div class="form-group"><label>Type of Work</label><select id="work-type-select" onchange="workTypeChanged()"><option value="">Select...</option><option value="FWO">FWO</option><option value="PM">PM</option><option value="CBM">CBM</option></select></div><div id="work-dynamic-fields"></div>';
-        document.getElementById('modal-title').textContent=prefill?'Edit Work Assigned':'Add Work Assigned';
+        document.getElementById('modal-title').textContent=prefill?'Edit Job':'Add Job';
         document.getElementById('modal-message').textContent='';
         document.getElementById('modal-body').innerHTML=bodyHtml;
         document.getElementById('modal-actions').innerHTML='<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveWork()">Save</button>';
@@ -3290,7 +3301,8 @@
                 let imageUrl=null;
                 const imgFile=document.getElementById('work-img-file')?.files[0];
                 if(imgFile)imageUrl=await fileToBase64(imgFile);
-                await db.ref('equipment/'+eqKey).set({conveyorNumber:eq,type:'',description:'',notes:'',imageUrl,updatedAt:new Date().toISOString()});
+                await db.ref('equipment/'+eqKey).set({conveyorNumber:eq,type:'',description:'',notes:'',updatedAt:new Date().toISOString()});
+                if(imageUrl)await db.ref('equipmentImages/'+eqKey).set(imageUrl);
             }
         } else if(type==='CBM'){
             const cbmType=document.getElementById('work-cbm-type').value;
@@ -3346,14 +3358,14 @@
             workData.updatedAt=new Date().toISOString();
             await db.ref('workAssigned/'+_editWorkKey).update(workData);
             _editWorkKey=null;
-            closeModal();showToast('Work assigned updated!');
+            closeModal();showToast('Job updated!');
         } else {
             await db.ref('workAssigned').push(workData);
-            closeModal();showToast('Work assigned recorded!');
+            closeModal();showToast('Job added!');
         }
     }
     async function deleteWork(key){ if(!requireWrite())return;
-        const confirmed=await showModal('Delete Job','Remove this job from your work assigned?');
+        const confirmed=await showModal('Delete Job','Remove this job from your assigned jobs?');
         if(!confirmed)return;
         await db.ref('workAssigned/'+key).remove();showToast('Job removed');
     }
@@ -3417,7 +3429,7 @@
                 if(data.serialNumber)html+='<div class="detail-field"><label>Serial Number</label><div class="value">'+escapeHtml(data.serialNumber)+'</div></div>';
                 if(data.criticality)html+='<div class="detail-field"><label>Criticality</label><div class="value">'+escapeHtml(data.criticality)+'</div></div>';
                 html+='<div class="detail-field"><label>Notes</label><div class="value">'+escapeHtml(data.notes||'None')+'</div></div>';
-                if(data.imageUrl){html+='<div class="detail-field"><label>SCADA Screenshot</label><img src="'+data.imageUrl+'" class="img-preview" style="display:block;"></div>';}
+                var _eqDetImg=await getEquipmentImage(key);if(_eqDetImg){html+='<div class="detail-field"><label>SCADA Screenshot</label><img src="'+_eqDetImg+'" class="img-preview" style="display:block;"></div>';}
                 else{html+='<div class="detail-field" id="quick-ss-container" data-type="equipment" data-key="'+key+'"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27equipment\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Screenshot missing \u2014 click to add</a></div>';}
                 html+='</div>';
                 // Linked Parts
@@ -3541,7 +3553,7 @@
                     html+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">'+indicator+'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+ptKey+'\x27);return false;">'+escapeHtml(pt)+'</a><span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span></div>';
                 }
                 html+='</div></div>';
-                if(data.routeImageUrl){html+='<div class="detail-field"><label>Route Location</label><img src="'+data.routeImageUrl+'" class="img-preview" style="display:block;"></div>';}
+                var _rtDetImg=await getRouteImage(key);if(_rtDetImg){html+='<div class="detail-field"><label>Route Location</label><img src="'+_rtDetImg+'" class="img-preview" style="display:block;"></div>';}
                 else{html+='<div class="detail-field" id="quick-ss-container"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27route\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Route screenshot missing \u2014 click to add</a></div>';}
                 html+='</div>';
 
@@ -3587,7 +3599,7 @@
         if (!checkFirebase()) return;
         showLoading();
         var refPath = type === 'equipment' ? 'equipment/' + key : (type === 'route' ? 'routes/' + key : 'parts/' + key);
-        db.ref(refPath).once('value').then(function(snap) {
+        db.ref(refPath).once('value').then(async function(snap) {
             var data = snap.val();
             if (!data) { hideLoading(); showToast('Item not found', 'error'); return; }
             var title = 'Edit: ' + (data.conveyorNumber || data.routeNumber || data.apn || key);
@@ -3602,8 +3614,9 @@
                 html += '<div class="form-group"><label>Equipment Description</label><input type="text" id="edit-pos-desc" value="' + (data.description||data.notes||'').replace(/"/g,'&quot;') + '"></div>';
                 html += '<div class="form-group"><label>Notes</label><textarea id="edit-pos-notes" rows="3" maxlength="500">' + (data.notes||'') + '</textarea></div>';
                 // Screenshot
-                if (data.imageUrl) {
-                    html += '<div class="form-group"><label>SCADA Screenshot</label><img src="' + data.imageUrl + '" class="img-preview" style="display:block;margin-bottom:8px;">';
+                var _eqEditImg = await getEquipmentImage(key);
+                if (_eqEditImg) {
+                    html += '<div class="form-group"><label>SCADA Screenshot</label><img src="' + _eqEditImg + '" class="img-preview" style="display:block;margin-bottom:8px;">';
                     html += '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\x27edit-pos-file\x27).click()">Replace Screenshot</button>';
                     html += '<input type="file" id="edit-pos-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-pos-preview\x27)"><img id="edit-pos-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
                 } else {
@@ -3636,8 +3649,9 @@
                 html += '</div><button class="btn btn-add" onclick="addEditWaypoint()" style="margin-bottom:12px;">+ Add Waypoint</button>';
                 html += '<div class="form-group"><label>End Point</label><input type="text" id="edit-route-end" value="' + (data.endPoint||'') + '"></div>';
                                 // Route Screenshot
-                if (data.routeImageUrl) {
-                    html += '<div class="form-group" style="margin-top:12px;"><label>Route Screenshot</label><img src="' + data.routeImageUrl + '" class="img-preview" style="display:block;margin-bottom:8px;">';
+                var _rtEditImg = await getRouteImage(key);
+                if (_rtEditImg) {
+                    html += '<div class="form-group" style="margin-top:12px;"><label>Route Screenshot</label><img src="' + _rtEditImg + '" class="img-preview" style="display:block;margin-bottom:8px;">';
                     html += '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\x27edit-route-file\x27).click()">Replace Screenshot</button>';
                     html += '<input type="file" id="edit-route-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-route-preview\x27)">';
                     html += '<img id="edit-route-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
@@ -3817,6 +3831,8 @@
         catch(e) { return routesCache || {}; }
     }
     async function invalidateRoutesCache() { routesCache = null; routesCacheTime = 0; }
+    async function getRouteImage(key){ if(!firebaseReady||!key)return null; try{ var s=await db.ref('routeImages/'+key).once('value'); if(s.val())return s.val(); var l=await db.ref('routes/'+key+'/routeImageUrl').once('value'); return l.val()||null; }catch(e){ return null; } }
+    async function getEquipmentImage(key){ if(!firebaseReady||!key)return null; try{ var s=await db.ref('equipmentImages/'+key).once('value'); if(s.val())return s.val(); var l=await db.ref('equipment/'+key+'/imageUrl').once('value'); return l.val()||null; }catch(e){ return null; } }
     async function getWorkAssignedData() {
         if (_waData !== null) return _waData;
         try { const snap = await db.ref('workAssigned').once('value'); return snap.val() || {}; }
@@ -4661,7 +4677,7 @@
                        ((j.routeNumber && j.routeNumber === itemName) || (j.equipment && j.equipment === itemName));
             });
             if (isDuplicate) {
-                showToast('Already in Work Assigned!', 'error');
+                showToast('Already in Assigned Jobs!', 'error');
                 return;
             }
             var jobData = {
@@ -4680,7 +4696,7 @@
             }
             await db.ref('workAssigned').push(jobData);
             updateWorkCount();
-            showToast('Added to Work Assigned!', 'success');
+            showToast('Added to Assigned Jobs!', 'success');
             openDetail(type, key); // re-render: button flips to Remove from Work
         } catch(e) {
             showToast('Error adding to Work: ' + e.message, 'error');
@@ -4699,10 +4715,10 @@
                     updates['workAssigned/' + id] = null;
                 }
             });
-            if (Object.keys(updates).length === 0) { showToast('Not in Work Assigned', 'error'); openDetail(type, key); return; }
+            if (Object.keys(updates).length === 0) { showToast('Not in Assigned Jobs', 'error'); openDetail(type, key); return; }
             await db.ref().update(updates);
             updateWorkCount();
-            showToast('Removed from Work Assigned', 'success');
+            showToast('Removed from Assigned Jobs', 'success');
             openDetail(type, key); // re-render: button flips back to Add to Work
         } catch(e) {
             showToast('Error removing from Work: ' + e.message, 'error');
@@ -4777,9 +4793,9 @@
         var saveToRoute = (await showCustomModal('Save to Route page?', '<p style="font-size:14px;color:#374151;">Also save this note to the Route page?</p>', [{ label: 'No', class: 'btn-secondary', value: 'no' }, { label: 'Yes', class: 'btn-primary', value: 'yes' }])) === 'yes';
         if (saveToRoute) {
             await addNote('routes', routeKey, noteText);
-            showToast('Note saved to route and work assigned!');
+            showToast('Note saved to route and assigned jobs!');
         } else {
-            showToast('Note saved to work assigned!');
+            showToast('Note saved to assigned jobs!');
         }
     }
 
@@ -5110,8 +5126,9 @@
             if (file) imageUrl = await fileToBase64(file);
             await db.ref('equipment/' + key).set({
                 conveyorNumber: id, type: type, description: desc, notes: notes,
-                imageUrl: imageUrl, updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString()
             });
+            if (imageUrl) await db.ref('equipmentImages/' + key).set(imageUrl);
             invalidateEquipmentCache();
             showToast('Position saved!', 'success');
             closeAddForm();
@@ -5204,7 +5221,7 @@
         showLoading();
         try {
             var imageUrl = await fileToBase64(file);
-            var path = type === 'route' ? 'routes/' + key + '/routeImageUrl' : 'equipment/' + key + '/imageUrl';
+            var path = type === 'route' ? 'routeImages/' + key : 'equipmentImages/' + key;
             await db.ref(path).set(imageUrl);
             if (type === 'route') invalidateRoutesCache(); else invalidateEquipmentCache();
             showToast('Screenshot saved!', 'success');
@@ -5234,16 +5251,21 @@
         showLoading();
         try {
             var activeChecked = document.getElementById('edit-pos-active'); var updates = { conveyorNumber: id, type: type, description: desc, notes: notes, active: activeChecked ? activeChecked.checked : true, updatedAt: new Date().toISOString() };
-            if (file) updates.imageUrl = await fileToBase64(file);
+            var _posImg = file ? await fileToBase64(file) : null;
             var newKey = sanitizeKey(id);
             if (newKey !== key) {
                 // Position ID changed — move data
                 var existing = await db.ref('equipment/' + key).once('value');
                 var existingData = existing.val() || {};
+                delete existingData.imageUrl;
                 await db.ref('equipment/' + newKey).set(Object.assign(existingData, updates));
+                var _posOldImg = _posImg || await getEquipmentImage(key);
+                if (_posOldImg) await db.ref('equipmentImages/' + newKey).set(_posOldImg);
+                await db.ref('equipmentImages/' + key).remove();
                 await db.ref('equipment/' + key).remove();
             } else {
                 await db.ref('equipment/' + key).update(updates);
+                if (_posImg) await db.ref('equipmentImages/' + key).set(_posImg);
             }
             invalidateEquipmentCache();
             showToast('Position updated!', 'success');
@@ -5279,17 +5301,22 @@
                 readingRequired: _rrEdit,
                 updatedAt: new Date().toISOString()
             };
-            if (routeFile) { updates.routeImageUrl = await fileToBase64(routeFile); }
+            var _rEditImg = routeFile ? await fileToBase64(routeFile) : null;
             if (newKey !== key) {
                 var existing = await db.ref('routes/' + key).once('value');
                 var existingData = existing.val() || {};
+                delete existingData.routeImageUrl;
                 await db.ref('routes/' + newKey).set(Object.assign(existingData, updates));
                 // Move readings
                 var readSnap = await db.ref('readings/' + key).once('value');
                 if (readSnap.val()) { await db.ref('readings/' + newKey).set(readSnap.val()); await db.ref('readings/' + key).remove(); }
+                var _rOldImg = _rEditImg || await getRouteImage(key);
+                if (_rOldImg) await db.ref('routeImages/' + newKey).set(_rOldImg);
+                await db.ref('routeImages/' + key).remove();
                 await db.ref('routes/' + key).remove();
             } else {
                 await db.ref('routes/' + key).update(updates);
+                if (_rEditImg) await db.ref('routeImages/' + key).set(_rEditImg);
             }
             invalidateRoutesCache();
             showToast('Route updated!', 'success');
@@ -5492,13 +5519,43 @@
         if (e.target.classList.contains('img-preview') && e.target.src && e.target.src !== '') {
             document.getElementById('img-viewer-src').src = e.target.src;
             document.getElementById('img-viewer').classList.add('active');
+            _ivReset();
             // Prevent body scroll
             document.body.style.overflow = 'hidden';
         }
     });
+    // Custom pinch-zoom + pan for the fullscreen image viewer
+    // (native touch-action zoom is unreliable inside a fixed overlay on iOS Safari)
+    var _ivScale=1,_ivTx=0,_ivTy=0,_ivStartDist=0,_ivStartScale=1,_ivStartX=0,_ivStartY=0,_ivStartTx=0,_ivStartTy=0,_ivLastTap=0;
+    function _ivImgEl(){return document.getElementById('img-viewer-src');}
+    function _ivApply(){var i=_ivImgEl();if(i)i.style.transform='translate('+_ivTx+'px,'+_ivTy+'px) scale('+_ivScale+')';}
+    function _ivReset(){_ivScale=1;_ivTx=0;_ivTy=0;var i=_ivImgEl();if(i)i.style.transform='';}
+    function _ivDist(t){var dx=t[0].clientX-t[1].clientX,dy=t[0].clientY-t[1].clientY;return Math.sqrt(dx*dx+dy*dy);}
+    (function(){
+        var ov=document.getElementById('img-viewer');
+        if(!ov)return;
+        ov.addEventListener('touchstart',function(e){
+            if(e.touches.length===2){_ivStartDist=_ivDist(e.touches);_ivStartScale=_ivScale;e.preventDefault();return;}
+            if(e.touches.length===1){
+                var now=Date.now();
+                if(now-_ivLastTap<300){if(_ivScale>1){_ivReset();}else{_ivScale=2.5;_ivApply();}e.preventDefault();_ivLastTap=0;return;}
+                _ivLastTap=now;
+                if(_ivScale>1){_ivStartX=e.touches[0].clientX;_ivStartY=e.touches[0].clientY;_ivStartTx=_ivTx;_ivStartTy=_ivTy;e.preventDefault();}
+            }
+        },{passive:false});
+        ov.addEventListener('touchmove',function(e){
+            if(e.touches.length===2&&_ivStartDist>0){_ivScale=Math.min(5,Math.max(1,_ivStartScale*(_ivDist(e.touches)/_ivStartDist)));_ivApply();e.preventDefault();return;}
+            if(e.touches.length===1&&_ivScale>1){_ivTx=_ivStartTx+(e.touches[0].clientX-_ivStartX);_ivTy=_ivStartTy+(e.touches[0].clientY-_ivStartY);_ivApply();e.preventDefault();}
+        },{passive:false});
+        ov.addEventListener('touchend',function(e){
+            if(e.touches.length<2)_ivStartDist=0;
+            if(_ivScale<=1){_ivScale=1;_ivTx=0;_ivTy=0;_ivApply();}
+        },{passive:false});
+    })();
     function closeImageViewer(e) {
         if (e.target.id === 'img-viewer' || e.target.classList.contains('img-viewer-close') || e.target.parentElement.classList.contains('img-viewer-close')) {
             document.getElementById('img-viewer').classList.remove('active');
+            _ivReset();
             document.body.style.overflow = '';
         }
     }
@@ -5509,21 +5566,11 @@
         if (!checkFirebase()) return;
         try {
             if (isDone) {
-                // If this is an overdue carry-over (created before today's work-day cutoff), clear it on completion.
-                var _js = await db.ref('workAssigned/' + jobKey).once('value');
-                var _j = _js.val();
-                var _now = new Date();
-                var _t4 = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate(), 4, 0, 0);
-                var _cut = _now.getHours() < 4 ? new Date(_t4.getTime() - 86400000) : _t4;
-                var _overdue = _j && _j.createdAt && new Date(_j.createdAt) < _cut;
-                if (_overdue) {
-                    await db.ref('workAssigned/' + jobKey).remove();
-                    showToast('Overdue job completed and cleared', 'success');
-                } else {
-                    await db.ref('workAssigned/' + jobKey + '/status').set('done');
-                    await db.ref('workAssigned/' + jobKey + '/completedAt').set(new Date().toISOString());
-                    showToast('Job marked as done!', 'success');
-                }
+                // Overdue jobs complete like any other: mark done, keep it visible (greyed),
+                // then the 4am sweep (cleanupOldWork) deletes it on the next work-day.
+                await db.ref('workAssigned/' + jobKey + '/status').set('done');
+                await db.ref('workAssigned/' + jobKey + '/completedAt').set(new Date().toISOString());
+                showToast('Job marked as done!', 'success');
             } else {
                 await db.ref('workAssigned/' + jobKey + '/status').set('pending');
                 await db.ref('workAssigned/' + jobKey + '/completedAt').remove();
@@ -5810,7 +5857,7 @@
         {
             target: '.tabs',
             title: 'Navigation',
-            text: 'Two main tabs: Search (find and view items) and Work Assigned (your personal task queue with job counter).',
+            text: 'Two main tabs: Search (find and view items) and Assigned Jobs (your personal task queue with job counter).',
             position: 'bottom'
         },
         {
@@ -5833,7 +5880,7 @@
         },
         {
             target: '#sec-work',
-            title: 'Work Assigned',
+            title: 'Assigned Jobs',
             text: 'Your personal task queue. Add jobs from search results or routes. Toggle the switch to mark complete (moves to bottom). Add comments — you\'ll be asked if you want to save them permanently to the item. Overdue jobs (12h+) turn red.',
             position: 'bottom'
         },
@@ -5971,7 +6018,7 @@
         html += '</ul></div>';
 
         // Work Assigned
-        html += '<div class="card"><h2>📋 Work Assigned</h2>';
+        html += '<div class="card"><h2>📋 Assigned Jobs</h2>';
         html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
         html += '<li>Add jobs from search results (click "+ Add to Work" on a position or route)</li>';
         html += '<li>Tap a job card to expand — see actions, add comments</li>';
@@ -6029,7 +6076,7 @@
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.10';
+    var APP_VERSION = '1.11';
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== APP_VERSION) {

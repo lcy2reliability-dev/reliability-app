@@ -7,8 +7,23 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.11 — 2026-07-31
+
+**Status:** Not deployed yet.
+
+**Highlights:**
+- **Faster startup, especially on mobile data** — route and position photos are no longer bundled into the main data the app downloads on open. They now load on demand, only when you open that specific route or position. The core data pulled on startup drops from about 6.7 MB to 1.6 MB, so searching and browsing feel quicker on a phone in the building.
+
+**Detail:**
+
+### Image split (startup performance)
+- Route screenshots and position (SCADA) screenshots were previously stored inline inside the `routes` and `equipment` records. Because the app loads those records in bulk for search and matching, every screenshot was downloaded on startup even though a screenshot is only ever shown when you open one route or position. 89 route images (4.3 MB) and 14 position images (0.8 MB), about 5.1 MB in total, rode along on every load.
+- Images now live in separate `routeImages` / `equipmentImages` stores and are fetched individually when a detail or edit screen opens (each is roughly 50 KB, so it appears instantly). The `routes` data the app caches shrank from 4.9 MB to 0.6 MB.
+- No visible change to how you add, view, or replace a screenshot: same buttons, same screens. Existing images were migrated automatically, so there is nothing to re-upload.
+
+
 ## v1.10 — 2026-07-29
-**Status:** Not deployed yet. This upload folds every unreleased change into a single drag-drop: the v1.10 batch below plus the v1.09 items (iOS scanning, smart scan routing, search-box upgrades, results summary, code-audit fixes) and the older v1.07/v1.08 items still pending (Parts Associated, route audit, overnight-work fix, dead-code sweep, DB cleanup).
+**Status:** Deployed 2026-07-29; field-tested 2026-07-31. This upload folded every unreleased change into a single drag-drop: the v1.10 batch below plus the v1.09 items (iOS scanning, smart scan routing, search-box upgrades, results summary, code-audit fixes) and the older v1.07/v1.08 items still pending (Parts Associated, route audit, overnight-work fix, dead-code sweep, DB cleanup).
 
 **Highlights:**
 - **Home dashboard** — the Search tab now opens on a small dashboard: a greeting, today's date, a big Scan button, and three tap-through tiles (Pending jobs, Open alerts, Due for reading). If any routes need attention, the top three appear as red cards you can tap straight to the route.
