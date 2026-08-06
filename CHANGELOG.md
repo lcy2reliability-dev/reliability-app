@@ -7,9 +7,50 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
-## v1.11 — 2026-07-31
+## v1.12 — 2026-08-03
 
 **Status:** Not deployed yet.
+
+**Highlights:**
+- **Screenshot on the job card** — the Assigned Jobs list now shows the route (or position/SCADA) screenshot right on each job card, in the space beside the job title. Tap it to open fullscreen and pinch to zoom, the same as anywhere else in the app. Cards grow a little to fit the image while keeping its aspect ratio.
+- **Readings appear in the order that makes sense** — the Record Readings form now lists points in tag/number order (703245 before 703250, ID12.05 before ID13.01), so entering readings follows the physical walk. Reviewing a route's thermal history now always shows past readings in APM order (the order the components appear in the route), no matter what order they were recorded or edited in.
+- **Edit a linked part's quantity and observations** — when you edit a position, each linked part now shows its current quantity and observations and has an "Edit Qty/Obs" button next to Unlink. You can add or correct these at any time, not only when you first link the part.
+- **Parts Associated protected from accidental removal** — the remove (✕) button in the Parts Associated list is now hidden until you tap "Edit list" in that section. The "Link" button is always available; you can only remove an imported reference after deliberately entering edit mode.
+- **New app logo** — the header now shows the proper Amazon "amazon rme" wordmark with the real Amazon smile, in white, replacing the old hand-drawn arrow. It reads cleanly on the dark header.
+- **Security and quality hardening** (bundled with this release, no separate version bump) — text you type (descriptions, notes, waypoints, part/supplier fields) is now fully escaped everywhere it is shown, so it can never be treated as page code; the six external libraries the app loads (Firebase, Chart.js, XLSX, the barcode scanner) are pinned with integrity checks so a tampered copy is rejected; keyboard focus outlines and image alt text were added for accessibility; and an unused block of leftover styling was removed.
+
+**Detail:**
+
+### Assigned Jobs screenshot thumbnail
+- Each job card renders a thumbnail of the linked route screenshot (CBM route jobs) or position SCADA screenshot (equipment jobs), sized to fit within roughly 210×110 px on desktop and 120×78 px on mobile, aspect ratio preserved.
+- The image loads on demand using the same lazy-load path added in v1.11 (`routeImages` / `equipmentImages`), and is cached per session so re-rendering the list (e.g. ticking a job done) does not re-download it.
+- Tapping the thumbnail opens the existing fullscreen viewer with pinch-to-zoom / pan / double-tap, and does not expand the card.
+- Jobs with no screenshot simply show no thumbnail; the card layout is unchanged for those.
+
+### Reading order
+- The **Record Readings** input form now sorts reading points by tag using a natural sort, so `703245` comes before `703250` and `CB.SRT.01.ID12.05` before `CB.SRT.01.ID13.01` (and 9 before 10, not "10 before 9"). This matches the order you physically walk the route. Step-by-step mode follows the same order.
+- The **thermal history** on the route detail screen now shows each reading's components in APM order (the order they appear in the route's list), regardless of the order the reading was recorded or later edited in. This is a display-time ordering only: no stored data is changed and nothing is migrated. A component that is no longer in the route's current list is shown at the end rather than dropped, so nothing disappears from history.
+
+### Linked part quantity & observations
+- A part's quantity and observations for a position (stored as `conveyorNotes`) could previously only be entered at the moment you linked it. If you skipped them, or needed to correct them later, there was no way back in.
+- The position edit screen's "Linked Parts" list now shows each part's current Qty and observations inline, with an "Edit Qty/Obs" button that opens a small dialog pre-filled with the current values. Saving writes the updated note (`parts/<part>/conveyorNotes/<position>`); no other data is touched, and the list refreshes in place.
+
+### Parts Associated — remove hidden behind Edit mode
+- The Parts Associated list (the imported catalogue reference) showed a red ✕ to remove an entry, which was easy to hit by accident. That ✕ is now hidden by default and only appears after you tap "Edit list" in the section header (admin only). Tapping it again ("Done") hides the remove buttons. Linking a part is unaffected and always available.
+
+### New app logo
+- The header logo was replaced with the Amazon "amazon rme" wordmark using the correct Amazon smile. "amazon" is shown in white (reversed for the dark navy `#232F3E` header) with "rme" and the smile in the app cyan (`#00A8E1`). It is embedded inline as a PNG at 28 px height, in place of the previous hand-drawn SVG arrow, whose shape never looked quite right.
+
+### Security and quality hardening (bundled, no version bump)
+- **Cross-site-scripting cleanup.** Every place that displays text entered by users — equipment/route/part descriptions, notes, waypoints, APN, bin location, manufacturer and supplier fields, and thermal component names/values — now passes through the standard HTML-escaping helper, closing several XSS gaps that remained in the edit forms and thermal history. The note-edit button (which lives inside an `onclick` handler) uses a dedicated helper that also neutralises single quotes and backslashes so a note can't break out of the handler. The old partial `.replace(/"/g,'&quot;')` pattern (which missed `< > &`) was replaced throughout.
+- **Subresource Integrity (SRI).** The six external scripts loaded from CDNs — three Firebase 9.23.0 modules, Chart.js 4.4.0, XLSX 0.18.5, and the ZXing 0.19.1 barcode library — now carry SHA-384 `integrity` hashes and `crossorigin="anonymous"`, so the browser refuses to run them if the delivered file doesn't match the expected content.
+- **Keyboard focus visibility.** Added a `:focus-visible` outline for links, buttons, and form controls so keyboard users can see where they are (previously only text inputs had a focus style).
+- **Image alt text.** Added `alt` descriptions to the four SCADA/route detail-screen images.
+- **Dead CSS removed.** Deleted an orphaned `.work-job-card` style block (about 16 rules); the Assigned Jobs cards actually use `.work-card`, so this styling was never applied.
+
+## v1.11 — 2026-07-31
+
+**Status:** Deployed 2026-07-31; migration complete (cache 6.67 MB → 1.52 MB).
 
 **Highlights:**
 - **Faster startup, especially on mobile data** — route and position photos are no longer bundled into the main data the app downloads on open. They now load on demand, only when you open that specific route or position. The core data pulled on startup drops from about 6.7 MB to 1.6 MB, so searching and browsing feel quicker on a phone in the building.

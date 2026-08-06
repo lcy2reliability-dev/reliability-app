@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- RME App v1.11 - Updated 2026-07-31 -->
+<!-- RME App v1.12 - Updated 2026-08-03 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://*.googleapis.com https://www.gstatic.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://*.firebaseio.com https://*.firebasedatabase.app; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.googleapis.com https://www.gstatic.com https://cdn.jsdelivr.net;">
     <title>RME App</title>
     <script>var _isPreview=false;try{_isPreview=(window.self!==window.top)}catch(e){_isPreview=true}</script>
-    <script>if(!_isPreview)document.write('\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">\x3C/script>\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">\x3C/script>\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">\x3C/script>')</script>
+    <script>if(!_isPreview)document.write('\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" integrity="sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh" crossorigin="anonymous">\x3C/script>\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" integrity="sha384-f6/UpzjTjIXASlp20cArQsaRh1EvHVJd5kegy/gYR9W2D0a32TnEqUEiW4Zm/5O0" crossorigin="anonymous">\x3C/script>\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" integrity="sha384-xD1t9dGSVKobUztxDkv6xUI0H4AnFz0NxwlgDJJ7FDlblG9xxr1Z9iauCZuJYj6p" crossorigin="anonymous">\x3C/script>')</script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #232F3E; min-height: 100vh; }
@@ -106,6 +106,7 @@
         .login-card p { color:#6b7280; font-size:14px; margin-bottom:20px; }
         .login-card input { width:100%; padding:12px; border:1px solid #d1d5db; border-radius:8px; font-size:16px; margin-bottom:12px; text-align:center; }
         .login-card input:focus { outline:none; border-color:#60a5fa; }
+        a:focus-visible, button:focus-visible, [role="button"]:focus-visible, [tabindex]:focus-visible, .search-link:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
         .login-card .btn { width:100%; padding:14px; font-size:16px; }
         .work-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:14px; padding-right:44px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; position:relative; }
         .work-card:hover { border-color:#60a5fa; box-shadow:0 2px 8px rgba(37,99,235,0.1); }
@@ -126,6 +127,12 @@
         .work-reorder button { width:30px; height:22px; padding:0; font-size:11px; line-height:1; border:1px solid #d1d5db; background:#f9fafb; border-radius:5px; cursor:pointer; color:#374151; }
         .work-reorder button:hover { background:#eef2ff; border-color:#c7d2fe; }
         .work-reorder button:active { background:#e5e7eb; }
+        .work-card-body { display:flex; gap:12px; align-items:flex-start; }
+        .work-card-info { flex:1 1 auto; min-width:0; }
+        .work-scada { flex:0 0 auto; align-self:center; }
+        .work-scada .work-scada-thumb { display:block; max-height:110px; max-width:210px; width:auto; height:auto; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; cursor:zoom-in; }
+        .work-scada .work-scada-thumb:hover { border-color:#60a5fa; box-shadow:0 2px 8px rgba(37,99,235,0.12); }
+        @media (max-width:640px){ .work-scada .work-scada-thumb { max-height:78px; max-width:120px; } }
         .rspark { display:inline-flex; align-items:center; min-height:18px; vertical-align:middle; }
         .spark-svg { display:block; }
         .char-count { font-size:11px; color:#6b7280; text-align:right; margin-top:2px; }
@@ -177,8 +184,6 @@
             .empty-state { padding: 30px 16px; font-size: 13px; }
             .notes-display { font-size: 11px; }
             .toast { left: 10px; right: 10px; bottom: 10px; text-align: center; }
-            .work-job-card { padding: 12px !important; }
-            .work-job-card .job-number { font-size: 11px !important; }
         }
 
         .autocomplete-dropdown { position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #d1d5db; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:100; max-height:200px; overflow-y:auto; }
@@ -196,21 +201,6 @@
         .note-entry .note-actions button { font-size: 11px; padding: 2px 8px; margin-right: 4px; }
         .note-input-area { display: flex; gap: 8px; margin-top: 8px; }
         .note-input-area input { flex: 1; }
-        /* Work Assigned job cards */
-        .work-job-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 10px; position: relative; cursor: grab; transition: all 0.2s; }
-        .work-job-card:active { cursor: grabbing; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .work-job-card.dragging { opacity: 0.5; }
-        .work-job-card.drag-over { border-color: #2563eb; border-style: dashed; }
-        .work-job-card .job-number { position: absolute; top: 8px; right: 12px; font-size: 12px; color: #6b7280; font-weight: 600; }
-        .work-job-card .job-type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; color: white; }
-        .work-job-card .job-type-badge.fwo { background: #f59e0b; }
-        .work-job-card .job-type-badge.pm { background: #8b5cf6; }
-        .work-job-card .job-type-badge.cbm { background: #0ea5e9; }
-        .work-job-card .job-title { font-size: 15px; font-weight: 500; color: #1a1a2e; margin-top: 8px; }
-        .work-job-card .job-meta { font-size: 12px; color: #6b7280; margin-top: 4px; }
-        .work-job-card .job-notes { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1f5f9; }
-        .work-job-card.done { background: #f0fdf4; border-color: #86efac; }
-        .work-job-card.done .job-title { text-decoration: line-through; color: #6b7280; }
         .work-job-actions { display: flex; gap: 6px; margin-top: 10px; }
         .work-job-actions button { font-size: 11px; padding: 4px 10px; }
         
@@ -341,6 +331,8 @@
             .dash-tile { padding:12px 4px; }
             .dash-num { font-size:22px; }
         }
+        .assoc-remove-btn{display:none !important;}
+        .assoc-card.assoc-editing .assoc-remove-btn{display:inline-block !important;}
     </style>
 </head>
 <body>
@@ -368,12 +360,7 @@
 
     <div class="header" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;">
         <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="goHome()" title="Home">
-            <svg width="120" height="28" viewBox="0 0 200 48" xmlns="http://www.w3.org/2000/svg">
-                <text x="2" y="32" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#ffffff">amazon</text>
-                <path d="M18 38 Q60 48 108 38" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round"/>
-                <path d="M100 36 L108 38 L102 43" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                <text x="115" y="32" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#00A8E1">rme</text>
-            </svg>
+            <img src="data:image/png;base64,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" alt="amazon rme" style="height:28px;width:auto;display:block;">
         </div>
         <h1 class="header-title" style="font-size:20px;font-weight:600;position:absolute;left:50%;transform:translateX(-50%);">RME App</h1>
         <button onclick="toggleBurgerMenu()" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;padding:4px 8px;position:relative;" title="Menu">&#9776;<span class="whats-new-dot" id="whats-new-dot"></span></button>
@@ -384,8 +371,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.11)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; Faster startup on mobile data: route and position photos now load only when you open that specific route or position, instead of all downloading when the app starts.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.12)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; Assigned Jobs now show the route/position screenshot right on the job card. Tap it to view fullscreen and pinch to zoom.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -768,6 +755,7 @@
     var TEMP_MIN = -50, TEMP_MAX = 300;
     function validTemp(v){ var n = parseFloat(v); return (isFinite(n) && n >= TEMP_MIN && n <= TEMP_MAX) ? n : null; }
     function escapeHtml(s){ if(s===null||s===undefined)return ''; return String(s).replace(/[&<>\"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch];}); }
+    function escapeAttrArg(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,'\\x27').replace(/\r?\n/g,' ').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
     // ---- Round 2 Security: Login ID + PIN backed by Firebase Authentication ----
     // ============================================================
@@ -1113,11 +1101,12 @@
     // Lazy script loader: Chart.js and XLSX load on demand instead of blocking
     // initial page parse (they were previously in a render-blocking document.write).
     var _scriptPromises = {};
-    function loadScriptOnce(src) {
+    function loadScriptOnce(src, integrity) {
         if (_scriptPromises[src]) return _scriptPromises[src];
         _scriptPromises[src] = new Promise(function(resolve, reject) {
             if (_isPreview) { reject(new Error('preview')); return; }
             var s = document.createElement('script');
+            if(integrity){ s.integrity = integrity; s.crossOrigin = 'anonymous'; }
             s.src = src; s.async = true;
             s.onload = function() { resolve(); };
             s.onerror = function() { _scriptPromises[src] = null; reject(new Error('load failed: ' + src)); };
@@ -1125,8 +1114,8 @@
         });
         return _scriptPromises[src];
     }
-    function ensureChart() { return (typeof Chart !== 'undefined') ? Promise.resolve() : loadScriptOnce('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'); }
-    function ensureXLSX() { return (typeof XLSX !== 'undefined') ? Promise.resolve() : loadScriptOnce('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'); }
+    function ensureChart() { return (typeof Chart !== 'undefined') ? Promise.resolve() : loadScriptOnce('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js', 'sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g'); }
+    function ensureXLSX() { return (typeof XLSX !== 'undefined') ? Promise.resolve() : loadScriptOnce('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js', 'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw'); }
     function checkFirebase() { if (!firebaseReady) { showToast('Firebase not configured.', 'error'); return false; } return true; }
     function switchTab(tab) {
         // Clear ALL sections' inputs (not just active)
@@ -1648,6 +1637,8 @@
         hideLoading();
     }
 
+    function naturalCompare(a, b) { return String(a).localeCompare(String(b), undefined, {numeric:true, sensitivity:'base'}); }
+
     function goRecordThermal(routeNum) {
         // Record form (v1.10): baseline hints, live tint, drafts, sticky save bar, step-through mode
         if (!checkFirebase()) return;
@@ -1682,8 +1673,8 @@
                 else if (isGB) { points[ptName].gearbox = m; points[ptName].gbIdx = idx; }
             });
 
-            Object.entries(points).forEach(function(entry) {
-                var ptName = entry[0], pt = entry[1];
+            Object.keys(points).sort(naturalCompare).forEach(function(ptName) {
+                var pt = points[ptName];
                 html += '<div class="rec-point-group"><div class="rec-point-title">' + escapeHtml(ptName) + '</div>';
                 if (pt.motor) html += _recFieldHtml(pt.motor, pt.motorIdx, 'Motor', histVal, key);
                 if (pt.gearbox) html += _recFieldHtml(pt.gearbox, pt.gbIdx, 'Gearbox', histVal, key);
@@ -2639,7 +2630,7 @@
                 missingHtml+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;">
                     <strong>${m.number}</strong>
                     <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
-                        <input type="checkbox" class="create-position-check" data-position="${m.number}" data-desc="${(m.description||'').replace(/"/g,'&quot;')}" checked>
+                        <input type="checkbox" class="create-position-check" data-position="${m.number}" data-desc="${escapeHtml(m.description||'')}" checked>
                         <span>Create position</span>
                     </label>
                 </div>`;
@@ -3049,12 +3040,21 @@
                         else if(isGB)points[ptName].gearbox=entry.readings[k];
                         else points[ptName].motor=entry.readings[k];
                     });
-                    Object.entries(points).forEach(function(pt){
-                        var name=pt[0],vals=pt[1];
+                    var _apmIdx={};
+                    (currentThermalItems||[]).forEach(function(m,i){
+                        var _b=m.endsWith(' Motor')?m.slice(0,-6):(m.endsWith(' Gearbox')?m.slice(0,-8):m);
+                        if(!(_b in _apmIdx))_apmIdx[_b]=i;
+                    });
+                    Object.keys(points).sort(function(a,b){
+                        var ai=(a in _apmIdx)?_apmIdx[a]:Infinity, bi=(b in _apmIdx)?_apmIdx[b]:Infinity;
+                        if(ai===bi)return 0;
+                        return ai-bi;
+                    }).forEach(function(name){
+                        var vals=points[name];
                         html+='<div style="margin:6px 0 10px;">';
-                        html+='<div style="font-weight:700;color:#2563eb;font-size:13px;margin-bottom:3px;">'+name+'</div>';
-                        if(vals.motor!==null)html+='<div style="padding-left:8px;margin-bottom:2px;"><span class="reading-chip">Motor Temperature: '+vals.motor+'\u00B0C</span></div>';
-                        if(vals.gearbox!==null)html+='<div style="padding-left:8px;"><span class="reading-chip">Gearbox Temperature: '+vals.gearbox+'\u00B0C</span></div>';
+                        html+='<div style="font-weight:700;color:#2563eb;font-size:13px;margin-bottom:3px;">'+escapeHtml(name)+'</div>';
+                        if(vals.motor!==null)html+='<div style="padding-left:8px;margin-bottom:2px;"><span class="reading-chip">Motor Temperature: '+escapeHtml(String(vals.motor))+'\u00B0C</span></div>';
+                        if(vals.gearbox!==null)html+='<div style="padding-left:8px;"><span class="reading-chip">Gearbox Temperature: '+escapeHtml(String(vals.gearbox))+'\u00B0C</span></div>';
                         html+='</div>';
                     });
                 }
@@ -3115,6 +3115,36 @@
         } catch(e) { console.error('Cleanup error:', e); }
     }
 
+    var _scadaImgCache={};
+    function renderWorkThumbnails(container){
+        if(!container)return;
+        container.querySelectorAll('.work-scada[data-imgkey]').forEach(function(slot){
+            var type=slot.getAttribute('data-imgtype');
+            var key=slot.getAttribute('data-imgkey');
+            if(!key||slot.querySelector('img'))return;
+            var ck=type+':'+key;
+            function place(src){
+                if(!src)return;
+                var img=document.createElement('img');
+                img.className='img-preview work-scada-thumb';
+                img.src=src;
+                img.draggable=false;
+                img.alt=(type==='route'?'Route location screenshot':'SCADA location screenshot');
+                img.onclick=function(e){
+                    e.stopPropagation();
+                    var v=document.getElementById('img-viewer-src'); if(!v)return;
+                    v.src=img.src;
+                    document.getElementById('img-viewer').classList.add('active');
+                    if(typeof _ivReset==='function')_ivReset();
+                    document.body.style.overflow='hidden';
+                };
+                slot.appendChild(img);
+            }
+            if(_scadaImgCache[ck]!==undefined){ place(_scadaImgCache[ck]); return; }
+            var p=(type==='route')?getRouteImage(key):getEquipmentImage(key);
+            p.then(function(src){ _scadaImgCache[ck]=src||null; place(src); }).catch(function(){});
+        });
+    }
     function loadWorkAssigned() {
         if(!firebaseReady)return;
         db.ref('workAssigned').off('value');
@@ -3135,6 +3165,9 @@
                 var _isOverdue=item.status!=='done'&&item.createdAt&&new Date(item.createdAt)<_workCutoff;
                 html+='<div class="work-card'+(item.status==='done'?' done':'')+(_isOverdue?' overdue':'')+'" '+(item.status!=='done'?'draggable="true" ':'')+'onclick="expandWorkCard(this)" data-key="'+key+'" data-status="'+(item.status||'pending')+'">';
                 if(item.status!=='done')html+='<div class="work-reorder"><button type="button" title="Move up" onclick="event.stopPropagation();moveJob(\x27'+key+'\x27,-1)">\u25b2</button><button type="button" title="Move down" onclick="event.stopPropagation();moveJob(\x27'+key+'\x27,1)">\u25bc</button></div>';
+                var _wsType=(item.workType==='CBM'&&item.routeNumber)?'route':'equipment';
+                var _wsKey=_wsType==='route'?sanitizeKey(item.routeNumber):sanitizeKey(item.equipment||'');
+                html+='<div class="work-card-body"><div class="work-card-info">';
                 html+='<span class="work-type '+escapeHtml((item.workType||'').toLowerCase())+'">'+escapeHtml(item.workType)+'</span>';
                 if(_isOverdue)html+='<span class="overdue-badge">OVERDUE</span>';
                 html+='<div class="work-equipment">';
@@ -3148,6 +3181,9 @@
                 if(item.cbmType==='Thermal'&&item.routeNumber)html+='<div class="work-details" style="display:flex;align-items:center;gap:6px;margin-top:6px;"><span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.3px;">trend</span><span class="rspark" data-rk="'+sanitizeKey(item.routeNumber)+'"></span></div>';
                 if(item.parts&&item.parts.length>0)html+='<div class="work-details">Parts: '+item.parts.map(p=>escapeHtml(p.apn)+' ('+escapeHtml(p.partType)+')').join(', ')+'</div>';
                 html+='<div class="work-details" style="font-size:11px;color:#6b7280;">Added '+formatWorkTime(item.createdAt)+'</div>';
+                html+='</div>';
+                if(_wsKey)html+='<div class="work-scada" data-imgtype="'+_wsType+'" data-imgkey="'+escapeHtml(_wsKey)+'"></div>';
+                html+='</div>';
                 html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">';
                 html+='<span style="font-size:12px;color:#6b7280;">'+(item.status==='done'?'Completed \u2714':'Mark as done')+'</span>';
                 html+='<label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;" onclick="event.stopPropagation();">';
@@ -3171,6 +3207,7 @@
             });
             container.innerHTML=html;
             renderSparklines(container);
+            renderWorkThumbnails(container);
             updateWorkCount();
             Object.keys(_expandedJobs).forEach(function(k){
                 var card=container.querySelector('.work-card[data-key="'+k+'"]');
@@ -3429,7 +3466,7 @@
                 if(data.serialNumber)html+='<div class="detail-field"><label>Serial Number</label><div class="value">'+escapeHtml(data.serialNumber)+'</div></div>';
                 if(data.criticality)html+='<div class="detail-field"><label>Criticality</label><div class="value">'+escapeHtml(data.criticality)+'</div></div>';
                 html+='<div class="detail-field"><label>Notes</label><div class="value">'+escapeHtml(data.notes||'None')+'</div></div>';
-                var _eqDetImg=await getEquipmentImage(key);if(_eqDetImg){html+='<div class="detail-field"><label>SCADA Screenshot</label><img src="'+_eqDetImg+'" class="img-preview" style="display:block;"></div>';}
+                var _eqDetImg=await getEquipmentImage(key);if(_eqDetImg){html+='<div class="detail-field"><label>SCADA Screenshot</label><img src="'+_eqDetImg+'" alt="SCADA screenshot" class="img-preview" style="display:block;"></div>';}
                 else{html+='<div class="detail-field" id="quick-ss-container" data-type="equipment" data-key="'+key+'"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27equipment\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Screenshot missing \u2014 click to add</a></div>';}
                 html+='</div>';
                 // Linked Parts
@@ -3466,7 +3503,7 @@
                     _assoc = _assoc || [];
                     if (_assoc.length > 0) {
                         var _canL = canWrite(); var _isAdm = isAdmin();
-                        html += '<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Parts Associated <span style="font-size:12px;font-weight:400;color:#6b7280;">' + _assoc.length + ' imported</span></h2>';
+                        html += '<div class="card assoc-card"><h2 style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>Parts Associated <span style="font-size:12px;font-weight:400;color:#6b7280;">' + _assoc.length + ' imported</span></span>' + (_isAdm ? '<button class="btn btn-sm" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;padding:3px 10px;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;" onclick="event.stopPropagation();var c=this.closest(\x27.assoc-card\x27);var on=c.classList.toggle(\x27assoc-editing\x27);this.textContent=on?\x27Done\x27:\x27Edit list\x27;">Edit list</button>' : '') + '</h2>';
                         html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Imported catalogue reference \u2014 may be inaccurate. Link the ones that belong here and they move up to Linked Parts.</p>';
                         html += '<table><thead><tr><th>APN</th><th>Class</th><th>Qty</th><th>Description</th><th></th></tr></thead><tbody>';
                         _assoc.forEach(function(a){
@@ -3476,7 +3513,7 @@
                             html += '<td style="font-size:12px;color:#4b5563;">' + escapeHtml(a.description||'') + '</td>';
                             html += '<td style="white-space:nowrap;">';
                             if (_canL) html += '<button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:3px 10px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkAssociatedPopup(\x27' + data.conveyorNumber + '\x27,\x27' + String(a.apn) + '\x27)">Link</button>';
-                            if (_isAdm) html += ' <button class="btn btn-sm" title="Remove from associated list" style="background:#fee2e2;color:#b91c1c;border:none;padding:3px 8px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();removeAssociatedPart(\x27' + data.conveyorNumber + '\x27,\x27' + String(a.apn) + '\x27)">\u2715</button>';
+                            if (_isAdm) html += ' <button class="btn btn-sm assoc-remove-btn" title="Remove from associated list" style="background:#fee2e2;color:#b91c1c;border:none;padding:3px 8px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();removeAssociatedPart(\x27' + data.conveyorNumber + '\x27,\x27' + String(a.apn) + '\x27)">\u2715</button>';
                             html += '</td></tr>';
                         });
                         html += '</tbody></table></div>';
@@ -3508,7 +3545,7 @@
                     data.locations.forEach(function(loc){html+='<div style="font-size:13px;color:#4b5563;">'+escapeHtml(loc.store||'')+' — '+escapeHtml(loc.bin||'')+'</div>';});
                     html+='</div></div>';
                 }
-                html+='<div class="detail-field"><label>Weight</label><div class="value">'+(data.weight?data.weight+' Kg':'N/A')+'</div></div>';
+                html+='<div class="detail-field"><label>Weight</label><div class="value">'+(data.weight?escapeHtml(String(data.weight))+' Kg':'N/A')+'</div></div>';
                 html+='<div class="detail-field"><label>Repairable</label><div class="value">'+(data.repairable?'<span style="color:#16a34a;font-weight:600;">Yes</span>':'<span style="color:#6b7280;">No</span>')+'</div></div>';
                 html+='</div>';
                 // Supplier & Manufacturer card
@@ -3553,7 +3590,7 @@
                     html+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">'+indicator+'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+ptKey+'\x27);return false;">'+escapeHtml(pt)+'</a><span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span></div>';
                 }
                 html+='</div></div>';
-                var _rtDetImg=await getRouteImage(key);if(_rtDetImg){html+='<div class="detail-field"><label>Route Location</label><img src="'+_rtDetImg+'" class="img-preview" style="display:block;"></div>';}
+                var _rtDetImg=await getRouteImage(key);if(_rtDetImg){html+='<div class="detail-field"><label>Route Location</label><img src="'+_rtDetImg+'" alt="Route location screenshot" class="img-preview" style="display:block;"></div>';}
                 else{html+='<div class="detail-field" id="quick-ss-container"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27route\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Route screenshot missing \u2014 click to add</a></div>';}
                 html+='</div>';
 
@@ -3611,12 +3648,12 @@
                 var types = ['','Nitta','Transnorm','Transport conveyor','V-Belt','Intralox','SL2','Manual Induct Belt 1','Manual Induct Belt 2-4','Manual Induct Finger Belts','ECC','SC3','Ambaflex Spiral','Gappers','Fives','SWD','Other'];
                 types.forEach(function(t) { html += '<option' + (t===data.type?' selected':'') + '>' + (t||'Select type...') + '</option>'; });
                 html += '</select></div>';
-                html += '<div class="form-group"><label>Equipment Description</label><input type="text" id="edit-pos-desc" value="' + (data.description||data.notes||'').replace(/"/g,'&quot;') + '"></div>';
-                html += '<div class="form-group"><label>Notes</label><textarea id="edit-pos-notes" rows="3" maxlength="500">' + (data.notes||'') + '</textarea></div>';
+                html += '<div class="form-group"><label>Equipment Description</label><input type="text" id="edit-pos-desc" value="' + escapeHtml(data.description||data.notes||'') + '"></div>';
+                html += '<div class="form-group"><label>Notes</label><textarea id="edit-pos-notes" rows="3" maxlength="500">' + escapeHtml(data.notes||'') + '</textarea></div>';
                 // Screenshot
                 var _eqEditImg = await getEquipmentImage(key);
                 if (_eqEditImg) {
-                    html += '<div class="form-group"><label>SCADA Screenshot</label><img src="' + _eqEditImg + '" class="img-preview" style="display:block;margin-bottom:8px;">';
+                    html += '<div class="form-group"><label>SCADA Screenshot</label><img src="' + _eqEditImg + '" alt="SCADA screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
                     html += '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\x27edit-pos-file\x27).click()">Replace Screenshot</button>';
                     html += '<input type="file" id="edit-pos-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-pos-preview\x27)"><img id="edit-pos-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
                 } else {
@@ -3638,20 +3675,20 @@
                 
                 html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#6b7280;">Loading linked parts...</p></div>';
             } else if (type === 'route') {
-                html += '<div class="form-group"><label>Route Number</label><input type="text" id="edit-route-num" value="' + (data.routeNumber||'') + '"></div>';
+                html += '<div class="form-group"><label>Route Number</label><input type="text" id="edit-route-num" value="' + escapeHtml(data.routeNumber||'') + '"></div>';
                 html += '<div class="form-group"><label>Type</label><select id="edit-route-type">';
                 ['','Ultrasound','Thermal','Oil','Ranger','Strobe','Vibration','Other'].forEach(function(t) { html += '<option' + (t===data.type?' selected':'') + '>' + (t||'Select...') + '</option>'; });
                 html += '</select></div>';
-                html += '<div class="form-group"><label>Equipment Description</label><input type="text" id="edit-route-desc" value="' + (data.notes||'').replace(/"/g,'&quot;') + '"></div>';
-                html += '<div class="form-group"><label>Start Point</label><input type="text" id="edit-route-start" value="' + (data.startPoint||'') + '"></div>';
+                html += '<div class="form-group"><label>Equipment Description</label><input type="text" id="edit-route-desc" value="' + escapeHtml(data.notes||'') + '"></div>';
+                html += '<div class="form-group"><label>Start Point</label><input type="text" id="edit-route-start" value="' + escapeHtml(data.startPoint||'') + '"></div>';
                 html += '<div id="edit-route-waypoints">';
-                if (data.waypoints) { data.waypoints.forEach(function(w) { html += '<div class="waypoint-row" draggable="true" style="margin-bottom:6px;display:flex;align-items:center;gap:6px;cursor:grab;" ondragstart="this.style.opacity=0.5;event.dataTransfer.effectAllowed=\x27move\x27;window._dragWp=this;" ondragend="this.style.opacity=1;window._dragWp=null;" ondragover="event.preventDefault();this.style.borderTop=\x272px solid #2563eb\x27;" ondragleave="this.style.borderTop=\x27\x27;" ondrop="event.preventDefault();this.style.borderTop=\x27\x27;if(window._dragWp&&window._dragWp!==this){this.parentElement.insertBefore(window._dragWp,this);}"><span style="cursor:grab;color:#6b7280;font-size:16px;user-select:none;">\u2261</span><input type="text" class="edit-wp" value="' + w + '" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;"> <button class="btn-remove" onclick="this.parentElement.remove()">X</button></div>'; }); }
+                if (data.waypoints) { data.waypoints.forEach(function(w) { html += '<div class="waypoint-row" draggable="true" style="margin-bottom:6px;display:flex;align-items:center;gap:6px;cursor:grab;" ondragstart="this.style.opacity=0.5;event.dataTransfer.effectAllowed=\x27move\x27;window._dragWp=this;" ondragend="this.style.opacity=1;window._dragWp=null;" ondragover="event.preventDefault();this.style.borderTop=\x272px solid #2563eb\x27;" ondragleave="this.style.borderTop=\x27\x27;" ondrop="event.preventDefault();this.style.borderTop=\x27\x27;if(window._dragWp&&window._dragWp!==this){this.parentElement.insertBefore(window._dragWp,this);}"><span style="cursor:grab;color:#6b7280;font-size:16px;user-select:none;">\u2261</span><input type="text" class="edit-wp" value="' + escapeHtml(w) + '" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;"> <button class="btn-remove" onclick="this.parentElement.remove()">X</button></div>'; }); }
                 html += '</div><button class="btn btn-add" onclick="addEditWaypoint()" style="margin-bottom:12px;">+ Add Waypoint</button>';
-                html += '<div class="form-group"><label>End Point</label><input type="text" id="edit-route-end" value="' + (data.endPoint||'') + '"></div>';
+                html += '<div class="form-group"><label>End Point</label><input type="text" id="edit-route-end" value="' + escapeHtml(data.endPoint||'') + '"></div>';
                                 // Route Screenshot
                 var _rtEditImg = await getRouteImage(key);
                 if (_rtEditImg) {
-                    html += '<div class="form-group" style="margin-top:12px;"><label>Route Screenshot</label><img src="' + _rtEditImg + '" class="img-preview" style="display:block;margin-bottom:8px;">';
+                    html += '<div class="form-group" style="margin-top:12px;"><label>Route Screenshot</label><img src="' + _rtEditImg + '" alt="Route screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
                     html += '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\x27edit-route-file\x27).click()">Replace Screenshot</button>';
                     html += '<input type="file" id="edit-route-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-route-preview\x27)">';
                     html += '<img id="edit-route-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
@@ -3690,23 +3727,23 @@
             } else if (type === 'part') {
                 // Read-only fields (greyed out)
                 var roStyle = 'background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;cursor:not-allowed;';
-                html += '<div class="form-group"><label>Part Description</label><input type="text" value="' + (data.partDescription||data.notes||'').replace(/"/g,'&quot;') + '" disabled style="' + roStyle + '"></div>';
-                html += '<div class="form-group"><label>Part Class</label><input type="text" value="' + (data.partClass||data.partType||'') + '" disabled style="' + roStyle + '"></div>';
-                html += '<div class="form-group"><label>Criticality</label><input type="text" value="' + (data.criticality||'') + '" disabled style="' + roStyle + '"></div>';
-                html += '<div class="form-group"><label>Store</label><input type="text" value="' + (data.store||'') + '" disabled style="' + roStyle + '"></div>';
-                html += '<div class="form-group"><label>Weight (Kg)</label><input type="text" value="' + (data.weight||'') + '" disabled style="' + roStyle + '"></div>';
-                html += '<div class="form-group"><label>Primary Manufacturer</label><input type="text" value="' + (data.primaryManufacturer||'').replace(/"/g,'&quot;') + '" disabled style="' + roStyle + '"></div>';
-                html += '<div class="form-group"><label>Manufacturer Reference</label><input type="text" value="' + (data.manufacturerReference||'').replace(/"/g,'&quot;') + '" disabled style="' + roStyle + '"></div>';
-                html += '<div class="form-group"><label>Preferred Supplier</label><input type="text" value="' + (data.preferredSupplier||'').replace(/"/g,'&quot;') + '" disabled style="' + roStyle + '"></div>';
-                html += '<div class="form-group"><label>Supplier Reference</label><input type="text" value="' + (data.supplierReference||'').replace(/"/g,'&quot;') + '" disabled style="' + roStyle + '"></div>';
-                html += '<div class="form-group"><label>Supplier Part Description</label><input type="text" value="' + (data.supplierPartDescription||'').replace(/"/g,'&quot;') + '" disabled style="' + roStyle + '"></div>';
+                html += '<div class="form-group"><label>Part Description</label><input type="text" value="' + escapeHtml(data.partDescription||data.notes||'') + '" disabled style="' + roStyle + '"></div>';
+                html += '<div class="form-group"><label>Part Class</label><input type="text" value="' + escapeHtml(data.partClass||data.partType||'') + '" disabled style="' + roStyle + '"></div>';
+                html += '<div class="form-group"><label>Criticality</label><input type="text" value="' + escapeHtml(data.criticality||'') + '" disabled style="' + roStyle + '"></div>';
+                html += '<div class="form-group"><label>Store</label><input type="text" value="' + escapeHtml(data.store||'') + '" disabled style="' + roStyle + '"></div>';
+                html += '<div class="form-group"><label>Weight (Kg)</label><input type="text" value="' + escapeHtml(data.weight||'') + '" disabled style="' + roStyle + '"></div>';
+                html += '<div class="form-group"><label>Primary Manufacturer</label><input type="text" value="' + escapeHtml(data.primaryManufacturer||'') + '" disabled style="' + roStyle + '"></div>';
+                html += '<div class="form-group"><label>Manufacturer Reference</label><input type="text" value="' + escapeHtml(data.manufacturerReference||'') + '" disabled style="' + roStyle + '"></div>';
+                html += '<div class="form-group"><label>Preferred Supplier</label><input type="text" value="' + escapeHtml(data.preferredSupplier||'') + '" disabled style="' + roStyle + '"></div>';
+                html += '<div class="form-group"><label>Supplier Reference</label><input type="text" value="' + escapeHtml(data.supplierReference||'') + '" disabled style="' + roStyle + '"></div>';
+                html += '<div class="form-group"><label>Supplier Part Description</label><input type="text" value="' + escapeHtml(data.supplierPartDescription||'') + '" disabled style="' + roStyle + '"></div>';
                 html += '<p style="font-size:11px;color:#6b7280;margin:-8px 0 16px;">Fields above are system-managed and cannot be edited.</p>';
                 // Editable fields
                 html += '<hr style="border:none;border-top:2px solid #2563eb;margin:20px 0;">';
                 html += '<p style="font-size:12px;color:#2563eb;font-weight:600;margin-bottom:12px;">EDITABLE FIELDS</p>';
-                html += '<div class="form-group"><label>APN</label><input type="text" id="edit-part-apn" value="' + (data.apn||'') + '"></div>';
-                if(data.previousApn) html += '<p style="font-size:11px;color:#6b7280;margin:-8px 0 8px;">Previous: ' + data.previousApn + '</p>';
-                html += '<div class="form-group"><label>Bin Location</label><input type="text" id="edit-part-bin" value="' + (data.binLocation||data.location||'') + '"></div>';
+                html += '<div class="form-group"><label>APN</label><input type="text" id="edit-part-apn" value="' + escapeHtml(data.apn||'') + '"></div>';
+                if(data.previousApn) html += '<p style="font-size:11px;color:#6b7280;margin:-8px 0 8px;">Previous: ' + escapeHtml(data.previousApn) + '</p>';
+                html += '<div class="form-group"><label>Bin Location</label><input type="text" id="edit-part-bin" value="' + escapeHtml(data.binLocation||data.location||'') + '"></div>';
                 // Repairable toggle
                 var _repVal = data.repairable === true;
                 html += '<div style="margin-top:12px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;">';
@@ -3761,18 +3798,51 @@
                 return;
             }
             var html = '<h3 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:10px;">Linked Parts (' + linked.length + ')</h3>';
-            html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Remove a part link from this position. The part record is not deleted.</p>';
+            html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Edit the quantity and observations for a linked part, or remove the link (the part record itself is not deleted).</p>';
             linked.forEach(function(e){
                 var k=e[0],p=e[1];
+                var _cn=p.conveyorNotes&&p.conveyorNotes[sanitizeKey(conveyorNumber)];
+                var _cq=(_cn&&_cn.quantity!=null&&_cn.quantity!=='')?_cn.quantity:null;
+                var _co=(_cn&&_cn.observations)?_cn.observations:null;
                 html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:white;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;gap:8px;">';
-                html += '<div><span style="font-size:13px;font-weight:600;">' + escapeHtml(p.apn) + '</span>';
-                if(p.partType||p.partClass) html += ' <span style="font-size:11px;color:#6b7280;">(' + (p.partType||p.partClass) + ')</span>';
+                html += '<div style="flex:1;min-width:0;"><span style="font-size:13px;font-weight:600;">' + escapeHtml(p.apn) + '</span>';
+                if(p.partType||p.partClass) html += ' <span style="font-size:11px;color:#6b7280;">(' + escapeHtml(p.partType||p.partClass) + ')</span>';
+                html += '<div style="font-size:12px;color:#6b7280;margin-top:2px;">Qty: <strong>' + escapeHtml(_cq!=null?String(_cq):'\u2014') + '</strong>' + (_co ? ' \u00B7 <span style="font-style:italic;">' + escapeHtml(_co) + '</span>' : '') + '</div>';
                 html += '</div>';
-                html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart(\x27' + k + '\x27,\x27' + conveyorNumber + '\x27)" style="white-space:nowrap;">Unlink</button>';
+                html += '<div style="display:flex;gap:6px;white-space:nowrap;">';
+                html += '<button class="btn btn-secondary btn-sm" onclick="editLinkedPartNote(\x27' + escapeAttrArg(k) + '\x27,\x27' + escapeAttrArg(conveyorNumber) + '\x27)">Edit Qty/Obs</button>';
+                html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart(\x27' + escapeAttrArg(k) + '\x27,\x27' + escapeAttrArg(conveyorNumber) + '\x27)">Unlink</button>';
+                html += '</div>';
                 html += '</div>';
             });
             el.innerHTML = html;
         } catch(e) { el.innerHTML = '<p style="font-size:12px;color:#ef4444;margin:0;">Could not load linked parts.</p>'; }
+    }
+    async function editLinkedPartNote(partKey, conveyorNumber){ if(!requireWrite())return;
+        if(!checkFirebase())return;
+        var _ck = sanitizeKey(conveyorNumber);
+        var _cur = {};
+        try { var _cs = await db.ref('parts/'+partKey+'/conveyorNotes/'+_ck).once('value'); _cur = _cs.val() || {}; } catch(_e){}
+        var _q = (_cur.quantity!=null) ? String(_cur.quantity) : '';
+        var _o = _cur.observations || '';
+        var body = '<div class="form-group"><label>Quantity at this position</label><input type="number" id="cn-qty" min="1" value="' + escapeHtml(_q) + '" placeholder="e.g. 2" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>'
+                 + '<div class="form-group"><label>Observations</label><input type="text" id="cn-obs" maxlength="300" value="' + escapeHtml(_o) + '" placeholder="e.g. bearing size, notes..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
+        var ok = await showCustomModal('Edit Qty / Observations', body, [
+            {label:'Cancel',class:'btn-secondary',value:false},
+            {label:'Save',class:'btn-primary',value:true}
+        ]);
+        if(!ok) return;
+        var qty = document.getElementById('cn-qty') ? document.getElementById('cn-qty').value.trim() : '';
+        var obs = document.getElementById('cn-obs') ? document.getElementById('cn-obs').value.trim() : '';
+        if(!checkFirebase())return;
+        showLoading();
+        try {
+            await db.ref('parts/'+partKey+'/conveyorNotes/'+_ck).set({ quantity: qty||null, observations: obs||null, updatedAt: new Date().toISOString() });
+            invalidatePartsCache();
+            showToast('Qty / observations updated', 'success');
+            loadEditLinkedParts(sanitizeKey(conveyorNumber), conveyorNumber);
+        } catch(e){ showToast('Error: '+e.message, 'error'); }
+        hideLoading();
     }
     function loadEditLinkedPositions(partKey, conveyors) {
         var el = document.getElementById('edit-linked-section');
@@ -4060,7 +4130,7 @@
             tick();
         }else{
             if(status)status.textContent='Loading scanner...';
-            try{await loadScriptOnce(ZXING_CDN);}catch(e){closeScanner();showToast('Could not load the scanner (offline?). Reconnect and try again.','error');return;}
+            try{await loadScriptOnce(ZXING_CDN, 'sha384-NyKHkzm0aj4yWFC3Hh4cp1VflBgCLfStVlAK6WJOdXAht/pj6RHbMcZgUj48rcAs');}catch(e){closeScanner();showToast('Could not load the scanner (offline?). Reconnect and try again.','error');return;}
             if(!_scanActive)return;
             if(typeof ZXing==='undefined'||!ZXing.BrowserMultiFormatReader){closeScanner();showToast('Scanner failed to load','error');return;}
             try{
@@ -4504,7 +4574,7 @@
             html += '<div class="note-text">' + escapeHtml(note.text) + '</div>';
             if (note.author === currentUser) {
                 html += '<div class="note-actions">';
-                html += '<button class="btn btn-secondary btn-sm" onclick="promptEditNote(\x27' + entityType + '\x27,\x27' + entityKey + '\x27,\x27' + note.id + '\x27,\x27' + note.text.replace(/'/g, '\\x27').replace(/\r?\n/g, ' ') + '\x27)">Edit</button>';
+                html += '<button class="btn btn-secondary btn-sm" onclick="promptEditNote(\x27' + entityType + '\x27,\x27' + entityKey + '\x27,\x27' + note.id + '\x27,\x27' + escapeAttrArg(note.text) + '\x27)">Edit</button>';
                 html += '<button class="btn btn-danger btn-sm" onclick="promptDeleteNote(\x27' + entityType + '\x27,\x27' + entityKey + '\x27,\x27' + note.id + '\x27)">Delete</button>';
                 html += '</div>';
             }
@@ -6076,7 +6146,7 @@
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.11';
+    var APP_VERSION = '1.12';
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== APP_VERSION) {
