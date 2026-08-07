@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- RME App v1.12 - Updated 2026-08-03 -->
+<!-- RME App v1.14 - Updated 2026-08-06 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -331,6 +331,48 @@
             .dash-tile { padding:12px 4px; }
             .dash-num { font-size:22px; }
         }
+        /* Landing dashboard v1.14: desktop = console (A), mobile phones = field-first (C) */
+        .dash2 { max-width:960px; margin:0 auto; }
+        .dash2-greet h1 { font-size:20px; font-weight:600; color:#232F3E; margin:2px 0 2px; }
+        .dash2-greet h1 b { font-weight:800; }
+        .dash2-date { font-size:13px; color:#6b7280; margin-bottom:14px; }
+        .dash2-scan { display:none; }
+        .dash2-kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px; }
+        .dash2-kpi { background:#fff; border:1px solid #e2e8f0; border-left:4px solid #cbd5e1; border-radius:12px; padding:16px; cursor:pointer; transition:box-shadow .15s, transform .05s; min-height:84px; }
+        .dash2-kpi:hover { box-shadow:0 3px 10px rgba(16,24,40,.08); }
+        .dash2-kpi:active { transform:translateY(1px); }
+        .dash2-kpi .k-num { font-size:32px; font-weight:800; color:#232F3E; line-height:1; letter-spacing:-.5px; }
+        .dash2-kpi .k-lbl { font-size:12px; color:#6b7280; margin-top:8px; font-weight:600; }
+        .dash2-kpi.k-assigned { border-left-color:#00A8E1; }
+        .dash2-kpi.k-assigned .k-num { color:#00A8E1; }
+        .dash2-kpi.k-overdue.on { border-left-color:#d64545; background:#fff6f6; }
+        .dash2-kpi.k-overdue.on .k-num { color:#d64545; }
+        .dash2-kpi.k-alerts.on { border-left-color:#ef4444; }
+        .dash2-kpi.k-alerts.on .k-num { color:#ef4444; }
+        .dash2-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:14px; }
+        .dash2-card-h { font-size:14px; font-weight:700; color:#232F3E; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+        .dash2-card-cnt { font-size:12px; font-weight:600; color:#00A8E1; }
+        .dash2-empty { font-size:13px; color:#6b7280; padding:6px 0; }
+        .dash2-brk { display:flex; flex-direction:column; }
+        .dash2-row { display:flex; align-items:center; padding:9px 0; border-bottom:1px solid #f1f5f9; }
+        .dash2-row:last-child { border-bottom:none; }
+        .dash2-bar { width:4px; height:20px; border-radius:3px; margin-right:12px; flex:0 0 auto; }
+        .dash2-nm { font-size:14px; font-weight:600; color:#232F3E; flex:1; }
+        .dash2-q { font-size:14px; font-weight:700; color:#232F3E; background:#f1f5f9; border-radius:8px; padding:2px 10px; }
+        .dash2-bar.b-th { background:#e0701a; } .dash2-bar.b-us { background:#00A8E1; } .dash2-bar.b-oc { background:#94a3b8; } .dash2-bar.b-pm { background:#7c5cbf; } .dash2-bar.b-fw { background:#0f9d8c; }
+        .dash2-note { font-size:11px; color:#9aa4b0; margin-top:10px; font-style:italic; }
+        @media (max-width:640px){
+            .dash2-greet h1 { font-size:22px; }
+            .dash2-scan { display:flex; align-items:center; gap:14px; width:100%; text-align:left; border:none; cursor:pointer; background:linear-gradient(135deg,#00A8E1 0%,#0089b8 100%); border-radius:16px; padding:18px; margin-bottom:16px; box-shadow:0 5px 16px rgba(0,168,225,.30); }
+            .dash2-scan .dash2-scan-ic { width:48px; height:48px; border-radius:13px; background:rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+            .dash2-scan .dash2-scan-ic svg { width:28px; height:28px; }
+            .dash2-scan .dash2-scan-tx { display:flex; flex-direction:column; }
+            .dash2-scan .dash2-scan-tx b { color:#fff; font-size:18px; font-weight:700; }
+            .dash2-scan .dash2-scan-tx i { color:rgba(255,255,255,.85); font-size:12.5px; font-style:normal; margin-top:2px; }
+            .dash2-kpis { grid-template-columns:1fr 1fr; }
+            .dash2-kpi.k-alerts { grid-column:1 / -1; }
+            .dash2-kpi .k-num { font-size:30px; }
+        }
         .assoc-remove-btn{display:none !important;}
         .assoc-card.assoc-editing .assoc-remove-btn{display:inline-block !important;}
     </style>
@@ -371,8 +413,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.12)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; Assigned Jobs now show the route/position screenshot right on the job card. Tap it to view fullscreen and pinch to zoom.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.14)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; New home screen: a scan shortcut plus at-a-glance counts — Jobs assigned, Jobs overdue (in red) and Open alerts, with a &ldquo;What's left&rdquo; breakdown of your open jobs by type. Field-first on phones, console on laptops.<br>&bull; Thermal History always lists reading points in APM walk order, no matter how a route's points get re-ordered.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -1639,6 +1681,39 @@
 
     function naturalCompare(a, b) { return String(a).localeCompare(String(b), undefined, {numeric:true, sensitivity:'base'}); }
 
+    // APM-order helpers (v1.13): Thermal History always follows the route's authoritative apmOrder
+    // (imported from APM), decoupled from the editable `motors` array. Falls back to numerical
+    // (naturalCompare) when apmOrder is absent/empty.
+    function apmOrderKeys(keys, apmOrder) {
+        keys = (keys||[]).slice();
+        apmOrder = apmOrder || [];
+        if(!apmOrder.length) return keys.sort(naturalCompare);
+        var idx={}; apmOrder.forEach(function(pos,i){ if(!(pos in idx)) idx[pos]=i; });
+        return keys.sort(function(a,b){
+            var ai=(a in idx)?idx[a]:Infinity, bi=(b in idx)?idx[b]:Infinity;
+            if(ai!==bi) return ai-bi;
+            return naturalCompare(a,b);
+        });
+    }
+    function apmOrderComponents(comps, apmOrder) {
+        comps = (comps||[]).slice();
+        apmOrder = apmOrder || [];
+        var baseOf=function(c){ return c.endsWith(' Motor')?c.slice(0,-6):(c.endsWith(' Gearbox')?c.slice(0,-8):c); };
+        var typeOf=function(c){ return c.endsWith(' Gearbox')?1:0; };
+        var idx={}; apmOrder.forEach(function(pos,i){ if(!(pos in idx)) idx[pos]=i; });
+        var hasApm=apmOrder.length>0;
+        return comps.sort(function(a,b){
+            var ba=baseOf(a), bb=baseOf(b);
+            if(hasApm){
+                var ai=(ba in idx)?idx[ba]:Infinity, bi=(bb in idx)?idx[bb]:Infinity;
+                if(ai!==bi) return ai-bi;
+            }
+            var nc=naturalCompare(ba,bb);
+            if(nc!==0) return nc;
+            return typeOf(a)-typeOf(b);
+        });
+    }
+
     function goRecordThermal(routeNum) {
         // Record form (v1.10): baseline hints, live tint, drafts, sticky save bar, step-through mode
         if (!checkFirebase()) return;
@@ -1944,27 +2019,66 @@
         var host = document.getElementById('search-results'); if (!host) return;
         var inp = document.getElementById('search-conveyor');
         if (inp && inp.value.trim().length) return; // a search is active, don't clobber
-        var pending = document.querySelectorAll('#work-list .work-card:not(.done)').length;
+        var hr = new Date().getHours();
+        var greet = hr < 12 ? 'Good morning' : (hr < 18 ? 'Good afternoon' : 'Good evening');
         var today = new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
-        var html = '<div id="dash-root">';
-        html += '<div class="dash-hero"><div><div class="dash-hello">Hi' + (currentUser ? ', ' + escapeHtml(currentUser) : '') + '</div><div class="dash-date">' + escapeHtml(today) + '</div></div>';
+        var html = '<div id="dash-root" class="dash2">';
+        html += '<div class="dash2-greet"><h1>' + greet + (currentUser ? ', <b>' + escapeHtml(currentUser) + '</b>' : '') + '</h1><div class="dash2-date">' + escapeHtml(today) + ' \u00b7 LCY2 RME</div></div>';
+        html += '<button type="button" class="dash2-scan" onclick="openScanner()"><span class="dash2-scan-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg></span><span class="dash2-scan-tx"><b>Scan a QR code</b><i>Open a position or part instantly</i></span></button>';
+        html += '<div class="dash2-kpis">';
+        html += '<div class="dash2-kpi k-assigned" role="button" tabindex="0" onclick="switchTab(\x27work\x27)"><div class="k-num" id="dash-assigned">\u2014</div><div class="k-lbl">Jobs assigned</div></div>';
+        html += '<div class="dash2-kpi k-overdue" role="button" tabindex="0" onclick="switchTab(\x27work\x27)"><div class="k-num" id="dash-overdue">\u2014</div><div class="k-lbl">Jobs overdue</div></div>';
+        html += '<div class="dash2-kpi k-alerts" role="button" tabindex="0" onclick="openAlertsView()"><div class="k-num" id="dash-alerts">\u2014</div><div class="k-lbl">Open alerts</div></div>';
         html += '</div>';
-        html += '<div class="dash-tiles">';
-        html += '<div class="dash-tile" role="button" tabindex="0" onclick="switchTab(\x27work\x27)"><div class="dash-num" id="dash-pending">' + pending + '</div><div class="dash-lbl">Pending jobs</div></div>';
-        html += '<div class="dash-tile dash-alert" role="button" tabindex="0" onclick="openAlertsView()"><div class="dash-num" id="dash-alerts">\u2014</div><div class="dash-lbl">Open alerts</div></div>';
-        html += '<div class="dash-tile dash-due" role="button" tabindex="0" onclick="openAlertsView()"><div class="dash-num" id="dash-due">\u2014</div><div class="dash-lbl">Due for reading</div></div>';
-        html += '</div>';
+        html += '<div class="dash2-card" id="dash-breakdown"></div>';
         html += '<div id="dash-attention"></div>';
-        html += '<div class="dash-hint">Search above, or scan a route to record a reading.</div>';
         html += '</div>';
         host.innerHTML = html;
         if (!firebaseReady) return;
         try {
+            // Jobs: same data source (workAssigned) and overdue rule as the Assigned Jobs tab.
+            var data = await getWorkAssignedData();
+            var me = (currentUser || '').toLowerCase();
+            var mine = Object.keys(data || {}).map(function(k){ return data[k]; }).filter(function(v){ return v && (v.assignedTo || '').toLowerCase() === me; });
+            var openJobs = mine.filter(function(v){ return v.status !== 'done'; });
+            var _wn = new Date(); var _w4 = new Date(_wn.getFullYear(), _wn.getMonth(), _wn.getDate(), 4, 0, 0);
+            var _cut = _wn.getHours() < 4 ? new Date(_w4.getTime() - 86400000) : _w4;
+            var overdue = openJobs.filter(function(v){ return v.createdAt && new Date(v.createdAt) < _cut; });
+            var aEl = document.getElementById('dash-assigned'); if (aEl) aEl.textContent = openJobs.length;
+            var oEl = document.getElementById('dash-overdue'); if (oEl){ oEl.textContent = overdue.length; if (overdue.length) oEl.closest('.dash2-kpi').classList.add('on'); }
+            var c = { Thermal:0, Ultrasound:0, OtherCBM:0, PM:0, FWO:0 };
+            openJobs.forEach(function(v){
+                if (v.workType === 'CBM'){ var t = (v.cbmType || '').toLowerCase(); if (t === 'thermal') c.Thermal++; else if (t === 'ultrasound') c.Ultrasound++; else c.OtherCBM++; }
+                else if (v.workType === 'PM') c.PM++;
+                else if (v.workType === 'FWO') c.FWO++;
+            });
+            var rows = [
+                { n:c.Thermal, lbl:'Thermal route', plural:true, cls:'b-th' },
+                { n:c.Ultrasound, lbl:'Ultrasound route', plural:true, cls:'b-us' },
+                { n:c.OtherCBM, lbl:'Other CBM', plural:false, cls:'b-oc' },
+                { n:c.PM, lbl:'PM', plural:false, cls:'b-pm' },
+                { n:c.FWO, lbl:'FWO', plural:false, cls:'b-fw' }
+            ].filter(function(r){ return r.n > 0; });
+            var bd = document.getElementById('dash-breakdown');
+            if (bd){
+                var bh = '<div class="dash2-card-h">What\x27s left <span class="dash2-card-cnt">' + openJobs.length + ' job' + (openJobs.length === 1 ? '' : 's') + '</span></div>';
+                if (!openJobs.length){
+                    bh += '<div class="dash2-empty">\u2705 All clear \u2014 no open jobs right now.</div>';
+                } else {
+                    bh += '<div class="dash2-brk">';
+                    rows.forEach(function(r){
+                        var nm = escapeHtml(r.lbl) + (r.plural && r.n !== 1 ? 's' : '');
+                        bh += '<div class="dash2-row"><span class="dash2-bar ' + r.cls + '"></span><span class="dash2-nm">' + nm + '</span><span class="dash2-q">' + r.n + '</span></div>';
+                    });
+                    bh += '</div>';
+                    bh += '<div class="dash2-note">PM &amp; FWO breakdown to be refined in a later release</div>';
+                }
+                bd.innerHTML = bh;
+            }
+            // Thermal anomaly alerts (unchanged source); "Due for reading" removed per field feedback.
             var scan = await _runThermalScan(false);
-            var aEl = document.getElementById('dash-alerts');
-            if (aEl){ aEl.textContent = scan.alerts.length; if (scan.alerts.length) aEl.parentElement.classList.add('on'); }
-            var dEl = document.getElementById('dash-due');
-            if (dEl){ dEl.textContent = scan.due.length; if (scan.due.length) dEl.parentElement.classList.add('on'); }
+            var alEl = document.getElementById('dash-alerts');
+            if (alEl){ alEl.textContent = scan.alerts.length; if (scan.alerts.length) alEl.closest('.dash2-kpi').classList.add('on'); }
             var att = document.getElementById('dash-attention');
             if (att && scan.alerts.length){
                 var top = scan.alerts.slice(0, 3);
@@ -2077,7 +2191,7 @@
                 entries.sort(function(a, b){ var ta = (a && a.timestamp) ? a.timestamp : ''; var tb = (b && b.timestamp) ? b.timestamp : ''; return ta > tb ? -1 : (ta < tb ? 1 : 0); }); // newest first
                 var chrono = entries.slice().reverse(); // oldest -> newest
                 var recent = chrono.slice(-6);
-                var comps = (data.motors || []).slice();
+                var comps = apmOrderComponents(data.motors || [], data.apmOrder);
                 h += '<div class="pr-section"><div class="pr-h">Thermal Readings (last ' + recent.length + ' of ' + entries.length + ')</div>';
                 if (comps.length && recent.length){
                     h += '<table class="pr-tbl"><thead><tr><th>Component</th>';
@@ -3014,7 +3128,7 @@
     // ============================================================
     // THERMAL READINGS
     // ============================================================
-    let currentThermalRoute='',currentThermalItems=[],thermalChart=null,thermalHistoryData=[];
+    let currentThermalRoute='',currentThermalItems=[],currentThermalApmOrder=[],thermalChart=null,thermalHistoryData=[];
 
     function renderThermalHistory(routeKey, containerEl) {
         if(!firebaseReady)return;
@@ -3040,16 +3154,7 @@
                         else if(isGB)points[ptName].gearbox=entry.readings[k];
                         else points[ptName].motor=entry.readings[k];
                     });
-                    var _apmIdx={};
-                    (currentThermalItems||[]).forEach(function(m,i){
-                        var _b=m.endsWith(' Motor')?m.slice(0,-6):(m.endsWith(' Gearbox')?m.slice(0,-8):m);
-                        if(!(_b in _apmIdx))_apmIdx[_b]=i;
-                    });
-                    Object.keys(points).sort(function(a,b){
-                        var ai=(a in _apmIdx)?_apmIdx[a]:Infinity, bi=(b in _apmIdx)?_apmIdx[b]:Infinity;
-                        if(ai===bi)return 0;
-                        return ai-bi;
-                    }).forEach(function(name){
+                    apmOrderKeys(Object.keys(points), currentThermalApmOrder).forEach(function(name){
                         var vals=points[name];
                         html+='<div style="margin:6px 0 10px;">';
                         html+='<div style="font-weight:700;color:#2563eb;font-size:13px;margin-bottom:3px;">'+escapeHtml(name)+'</div>';
@@ -3623,7 +3728,7 @@
             // Load thermal history if route
             if(type==='route'&&routeReadingRequired(data)){
                 const histEl=document.getElementById('detail-thermal-history');
-                if(histEl){currentThermalRoute=data.routeNumber||key;currentThermalItems=data.motors||[];renderThermalHistory(key,histEl);}
+                if(histEl){currentThermalRoute=data.routeNumber||key;currentThermalApmOrder=data.apmOrder||[];currentThermalItems=apmOrderComponents(data.motors||[],data.apmOrder);renderThermalHistory(key,histEl);}
             }
             hideLoading();
         }catch(e){showToast('Error: '+e.message,'error');hideLoading();}
@@ -6146,7 +6251,7 @@
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.12';
+    var APP_VERSION = '1.14';
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== APP_VERSION) {

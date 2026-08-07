@@ -7,6 +7,41 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.14 — 2026-08-06
+
+**Status:** Not deployed yet.
+
+**Highlights:**
+- **Redesigned home screen** — the landing page now leads with a scan shortcut and three at-a-glance counts: Jobs assigned, Jobs overdue (shown in red) and Open thermal alerts. Below that, a “What’s left” panel breaks your open jobs down by type (e.g. 3 thermal routes, 1 ultrasound route, 1 PM). On phones it uses a field-first layout with a large “Scan a QR code” button; on laptops it stays a compact console. The old “Due for reading” tile was removed.
+
+**Detail:**
+
+### New landing dashboard (mobile field-first / desktop console)
+- `renderDashboard` was rewritten to read live from `workAssigned` (filtered to the signed-in user) instead of counting rendered cards. Counts:
+  - **Jobs assigned** = your jobs not yet marked done.
+  - **Jobs overdue** = open jobs carried past the 4 a.m. work-day rollover, using the exact same rule as the Assigned Jobs tab (`createdAt` before the most recent 04:00). The tile turns red when the count is above zero.
+  - **What’s left** = your open jobs grouped by work type; CBM jobs are split into Thermal / Ultrasound / Other by their CBM type. PM and FWO show as single lines for now (a fuller PM/FWO breakdown is planned for a later release).
+  - **Open alerts** = the existing thermal anomaly scan (unchanged).
+- The “Due for reading” tile was removed from the dashboard per field feedback. The 4 a.m. sweep and overdue logic themselves are unchanged — the dashboard only surfaces them.
+- Responsive from one set of markup: at ≤ 640 px (phones) it shows the large cyan “Scan a QR code” hero and stacks the KPIs; above that (laptops) it shows a three-across KPI console, with scanning available from the existing camera button next to the search box.
+- The scan shortcut opens the existing QR scanner (positions and parts).
+
+## v1.13 — 2026-08-06
+
+**Status:** Not deployed yet.
+
+**Highlights:**
+- **Thermal History is now locked to APM order, for good** — the thermal history on a route's detail screen always lists reading points in APM walk order, and stays that way even if someone re-orders the route's points by editing the route. Each route now carries its own authoritative APM sequence (imported directly from APM), and the history reads from that instead of from the editable points list. The Record Readings form and the Route Points list stay in numerical order as before.
+
+**Detail:**
+
+### APM order decoupled from the editable route
+- Previously the thermal history followed the order of the route's `motors` (reading-points) list. That list is rebuilt whenever the route is edited, and gets rebuilt in numerical order, which would silently undo any APM ordering. With 100+ people able to edit routes, that ordering was fragile.
+- Each route now stores an authoritative `apmOrder` field (the list of position tags in APM walk sequence, imported from the APM export). Two new helpers — `apmOrderKeys` (for the history's point headings) and `apmOrderComponents` (for the print/PDF report and the Excel export) — sort by this field, falling back to numerical order when a route has no `apmOrder` recorded.
+- `apmOrder` was imported for 639 routes (every route whose points all resolve against the APM export, including all 51 routes that currently have readings). The 15 routes that don't cleanly resolve keep the previous numerical-order behaviour via the fallback.
+- The field is additive: it does not touch the `motors` list, so editing a route (which rebuilds `motors`) no longer affects the history order. Readings are keyed by component name, not by position, so re-ordering never detaches a reading.
+- No stored readings are changed. This complements the v1.12 display-time ordering by giving it a stable source of truth that route edits cannot disturb.
+
 ## v1.12 — 2026-08-03
 
 **Status:** Not deployed yet.
