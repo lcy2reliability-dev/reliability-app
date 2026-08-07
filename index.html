@@ -268,12 +268,13 @@
             table.rtable thead{ display:none; }
             table.rtable tbody{ display:block; }
             table.rtable tr{ display:block; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
-            table.rtable td{ display:flex; justify-content:space-between; align-items:baseline; gap:14px; border:none; padding:5px 0; text-align:right; min-height:auto; }
-            table.rtable td::before{ content:attr(data-label); font-weight:700; color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:.3px; text-align:left; flex:0 0 auto; }
+            table.rtable td{ display:block; overflow:hidden; border:none; padding:5px 0; text-align:right; min-height:auto; overflow-wrap:anywhere; word-break:break-word; }
+            table.rtable td::before{ content:attr(data-label); float:left; margin-right:14px; font-weight:700; color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:.3px; text-align:left; }
             table.rtable td:first-child{ font-size:16px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; margin-bottom:4px; }
             table.rtable td:first-child::before{ align-self:center; }
             table.rtable td:empty{ display:none; }
             table.rtable td .search-link{ text-align:right; }
+            .search-scan-btn{ display:none !important; }
         }
         /* Print / PDF route report (v1.10): no library, browser print dialog */
         #print-root { display:none; }
@@ -414,7 +415,7 @@
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
                     <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.14)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; New home screen: a scan shortcut plus at-a-glance counts — Jobs assigned, Jobs overdue (in red) and Open alerts, with a &ldquo;What's left&rdquo; breakdown of your open jobs by type. Field-first on phones, console on laptops.<br>&bull; Thermal History always lists reading points in APM walk order, no matter how a route's points get re-ordered.</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; New Home tab (renamed from Search): a scan shortcut plus at-a-glance counts — Jobs assigned, Jobs overdue (in red) and Open alerts, with a &ldquo;What's left&rdquo; breakdown of your open jobs by type. Field-first on phones, console on laptops.<br>&bull; Thermal History always lists reading points in APM walk order, no matter how a route's points get re-ordered.<br>&bull; You can now link a part to a position from either screen — the part page has a new &ldquo;+ Link Position&rdquo; button to match the position page's &ldquo;+ Link Part&rdquo;.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -443,8 +444,8 @@
         <div id="burger-backdrop" onclick="toggleBurgerMenu()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);z-index:9999;"></div>
     </div>
     <div class="tabs" role="tablist" aria-label="Main sections">
-        <div class="tab active" role="tab" aria-selected="true" tabindex="0" onclick="switchTab('search')">Search</div>
-        <div class="tab" role="tab" aria-selected="false" tabindex="0" onclick="switchTab('work')">Assigned Jobs <span id="work-count" style="background:#2563eb;color:white;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;"></span></div>
+        <div class="tab active" role="tab" aria-selected="true" tabindex="0" onclick="switchTab('search')">Home</div>
+        <div class="tab" role="tab" aria-selected="false" tabindex="0" onclick="switchTab('work')">Job list <span id="work-count" style="background:#2563eb;color:white;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;"></span></div>
     </div>
     <div id="setup-banner" class="setup-banner" style="display:none;">
         <strong>Firebase not configured.</strong> Add your Firebase config to enable data storage.
@@ -459,7 +460,7 @@
                 <div style="position:relative;">
                     <div class="form-group">
                         <label>Search</label>
-                        <div style="display:flex;gap:8px;align-items:stretch;"><div style="position:relative;flex:1;min-width:0;display:flex;"><input type="text" id="search-conveyor" placeholder="Search by position, APN, route, description... (or type Ultrasound/Thermal/CBM)" oninput="liveSearchSuggest(this.value);updateSearchClear()" onkeydown="handleSearchKey(event)" onfocus="onSearchFocus()" autocomplete="off" style="flex:1;min-width:0;padding-right:36px;"><button type="button" id="search-clear-btn" onclick="clearSearchInput()" aria-label="Clear search" title="Clear" style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:22px;line-height:1;color:#9ca3af;cursor:pointer;padding:2px 8px;">&times;</button></div><button class="btn btn-secondary" onclick="openScanner()" title="Scan barcode / QR code" aria-label="Scan barcode or QR code" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">📷</button></div>
+                        <div style="display:flex;gap:8px;align-items:stretch;"><div style="position:relative;flex:1;min-width:0;display:flex;"><input type="text" id="search-conveyor" placeholder="Search by position, APN, route, description... (or type Ultrasound/Thermal/CBM)" oninput="liveSearchSuggest(this.value);updateSearchClear()" onkeydown="handleSearchKey(event)" onfocus="onSearchFocus()" autocomplete="off" style="flex:1;min-width:0;padding-right:36px;"><button type="button" id="search-clear-btn" onclick="clearSearchInput()" aria-label="Clear search" title="Clear" style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:22px;line-height:1;color:#9ca3af;cursor:pointer;padding:2px 8px;">&times;</button></div><button class="btn btn-secondary search-scan-btn" onclick="openScanner()" title="Scan barcode / QR code" aria-label="Scan barcode or QR code" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">📷</button></div>
                     </div>
                     <div id="main-search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:200;max-height:280px;overflow-y:auto;margin-top:2px;"></div>
                 </div>
@@ -686,8 +687,8 @@
         <!-- WORK ASSIGNED -->
         <div id="sec-work" class="section">
             <div class="card">
-                <h2>Assigned Jobs</h2>
-                <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Record your assigned jobs for the day.</p>
+                <h2>Job list</h2>
+                <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Record your jobs for the day.</p>
                 <button class="btn btn-primary" onclick="showAddWorkModal()">+ Add New Job</button>
                 <div id="work-list" style="margin-top:16px;"><div class="empty-state">No jobs assigned yet</div></div>
             </div>
@@ -1200,7 +1201,7 @@
         document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
         document.getElementById('sec-'+tab).classList.add('active');
         var tabs = document.querySelectorAll('.tab');
-        tabs.forEach(function(t) { if (t.textContent.toLowerCase().includes(tab.substring(0,4))) { t.classList.add('active'); t.setAttribute('aria-selected','true'); } });
+        tabs.forEach(function(t) { if ((t.getAttribute('onclick')||'').indexOf("'"+tab+"'")>=0) { t.classList.add('active'); t.setAttribute('aria-selected','true'); } });
         if(tab==='search'){try{renderDashboard();}catch(e){}}
     }
 
@@ -3321,7 +3322,7 @@
                 var nt=card.querySelector('.work-card-notes'); if(nt)nt.style.display='block';
             });
             } catch(e) { console.error('Work list error:', e); }
-        }, function(err){ console.warn('Work listener error:', err); showToast('Lost connection to Assigned Jobs — refresh to retry.', 'error'); });
+        }, function(err){ console.warn('Work listener error:', err); showToast('Lost connection to Job list — refresh to retry.', 'error'); });
     }
     var _expandedJobs = {};
     function expandWorkCard(el){
@@ -3507,7 +3508,7 @@
         }
     }
     async function deleteWork(key){ if(!requireWrite())return;
-        const confirmed=await showModal('Delete Job','Remove this job from your assigned jobs?');
+        const confirmed=await showModal('Delete Job','Remove this job from your job list?');
         if(!confirmed)return;
         await db.ref('workAssigned/'+key).remove();showToast('Job removed');
     }
@@ -3529,11 +3530,14 @@
         document.getElementById('detail-overlay').classList.remove('active');
         if(thermalChart){try{thermalChart.destroy();}catch(e){}thermalChart=null;}
         // If last search had only 1 result, clear search for fresh start
+        var _si = document.getElementById('search-conveyor');
         if (lastSearchResultCount <= 1) {
-            var searchInput = document.getElementById('search-conveyor');
-            var searchResults = document.getElementById('search-results');
-            if (searchInput) searchInput.value = '';
-            if (searchResults) searchResults.innerHTML = '';
+            if (_si) _si.value = '';
+        }
+        // Pin the dashboard to the Home page: with no active search query, restore the
+        // dashboard instead of leaving the page blank until the logo is tapped.
+        if (!_si || _si.value.trim().length < 2) {
+            try { renderDashboard(); } catch(e){ var _sr=document.getElementById('search-results'); if(_sr) _sr.innerHTML=''; }
         }
         // Pop history state if we pushed one
         if (window._detailHistoryPushed) {
@@ -3554,8 +3558,8 @@
             try{pushRecent(type,key,_itemName);}catch(e){}
             var _isInWork = Object.values(_waAll).some(function(j){ return j && (j.assignedTo||'').toLowerCase()===currentUser.toLowerCase() && ((j.routeNumber&&j.routeNumber===_itemName)||(j.equipment&&j.equipment===_itemName)); });
             if(type!=='part'){
-                if(!_isInWork){html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="addToWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">+ Add to Work</button>';}
-                else{html+='<button class="btn btn-secondary btn-sm" style="background:#ef4444;color:white;border:none;" onclick="removeFromWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">\u2212 Remove from Work</button>';}
+                if(!_isInWork){html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="addToWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">+ Add to Job list</button>';}
+                else{html+='<button class="btn btn-secondary btn-sm" style="background:#ef4444;color:white;border:none;" onclick="removeFromWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">\u2212 Remove from Job list</button>';}
             }
             
             html+='</div><div class="card">';
@@ -3663,7 +3667,7 @@
                 html+='</div>';
                 // Linked Positions card
                 var conveyors=data.conveyors||(data.conveyorNumber?[data.conveyorNumber]:[]);
-                html+='<div class="card"><h2>Linked Positions ('+conveyors.length+')</h2>';
+                html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Linked Positions ('+conveyors.length+') <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkPositionPopup(\x27'+key+'\x27)">+ Link Position</button></h2>';
                 if(conveyors.length>0){
                     html+='<div style="display:flex;flex-wrap:wrap;gap:8px;">';
                     conveyors.forEach(function(c){html+='<span style="display:inline-flex;align-items:center;padding:4px 12px;background:#f1f5f9;border-radius:6px;font-size:13px;"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(c)+'\x27);return false;">'+escapeHtml(c)+'</a></span>';});
@@ -4181,6 +4185,8 @@
     // BARCODE / QR SCANNER (search)
     // ============================================================
     var _scanStream=null,_scanActive=false,_scanTimer=null,_scanReader=null,_scanTorchOn=false;
+    var _scanFillTarget=null,_scanFillCallback=null;
+    function openScannerForInput(inputId,cb){ _scanFillTarget=inputId; _scanFillCallback=cb||null; openScanner(); }
     var ZXING_CDN='https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js';
     async function openScanner(){
         if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
@@ -4273,6 +4279,14 @@
         if(!val)return;
         try{if(navigator.vibrate)navigator.vibrate(80);}catch(e){}
         closeScanner();
+        if(_scanFillTarget){
+            var _ft=document.getElementById(_scanFillTarget); var _fcb=_scanFillCallback;
+            _scanFillTarget=null; _scanFillCallback=null;
+            if(_ft){ _ft.value=val; }
+            showToast('Scanned: '+val,'success');
+            if(typeof _fcb==='function'){ try{_fcb(val);}catch(e){} }
+            return;
+        }
         try{
             if(firebaseReady){
                 var caches=await Promise.all([getRoutesCache(),getEquipmentCache(),getPartsCache()]);
@@ -4852,7 +4866,7 @@
                        ((j.routeNumber && j.routeNumber === itemName) || (j.equipment && j.equipment === itemName));
             });
             if (isDuplicate) {
-                showToast('Already in Assigned Jobs!', 'error');
+                showToast('Already in Job list!', 'error');
                 return;
             }
             var jobData = {
@@ -4871,10 +4885,10 @@
             }
             await db.ref('workAssigned').push(jobData);
             updateWorkCount();
-            showToast('Added to Assigned Jobs!', 'success');
-            openDetail(type, key); // re-render: button flips to Remove from Work
+            showToast('Added to Job list!', 'success');
+            openDetail(type, key); // re-render: button flips to Remove from Job list
         } catch(e) {
-            showToast('Error adding to Work: ' + e.message, 'error');
+            showToast('Error adding to Job list: ' + e.message, 'error');
         }
     }
 
@@ -4890,13 +4904,13 @@
                     updates['workAssigned/' + id] = null;
                 }
             });
-            if (Object.keys(updates).length === 0) { showToast('Not in Assigned Jobs', 'error'); openDetail(type, key); return; }
+            if (Object.keys(updates).length === 0) { showToast('Not in Job list', 'error'); openDetail(type, key); return; }
             await db.ref().update(updates);
             updateWorkCount();
-            showToast('Removed from Assigned Jobs', 'success');
-            openDetail(type, key); // re-render: button flips back to Add to Work
+            showToast('Removed from Job list', 'success');
+            openDetail(type, key); // re-render: button flips back to Add to Job list
         } catch(e) {
-            showToast('Error removing from Work: ' + e.message, 'error');
+            showToast('Error removing from Job list: ' + e.message, 'error');
         }
     }
 
@@ -4968,9 +4982,9 @@
         var saveToRoute = (await showCustomModal('Save to Route page?', '<p style="font-size:14px;color:#374151;">Also save this note to the Route page?</p>', [{ label: 'No', class: 'btn-secondary', value: 'no' }, { label: 'Yes', class: 'btn-primary', value: 'yes' }])) === 'yes';
         if (saveToRoute) {
             await addNote('routes', routeKey, noteText);
-            showToast('Note saved to route and assigned jobs!');
+            showToast('Note saved to route and job list!');
         } else {
-            showToast('Note saved to assigned jobs!');
+            showToast('Note saved to job list!');
         }
     }
 
@@ -5131,7 +5145,7 @@
             clearDraft(routeKey);
             _saveReadingsCooldown=true; setTimeout(function(){_saveReadingsCooldown=false;},5000);
             
-            // Auto-add to Work Assigned
+            // Auto-add to Job list
             var _routeDisplay = routeNum;
             var waAll = await getWorkAssignedData();
             var alreadyExists = false;
@@ -5843,6 +5857,93 @@
         } catch(e) { hideLoading(); showToast('Error: ' + e.message, 'error'); }
     }
 
+    // ============================================================
+    // LINK POSITION TO PART POPUP (mirror of Link Part; part -> position)
+    // ============================================================
+    async function openLinkPositionPopup(partKey){
+        var _apn='';
+        try{ var _ps=await db.ref('parts/'+partKey+'/apn').once('value'); _apn=_ps.val()||''; }catch(e){}
+        var html='<div style="padding:20px;">';
+        html+='<h2 style="margin-top:0;">Link Position to '+escapeHtml(_apn||'part')+'</h2>';
+        html+='<p style="font-size:13px;color:#6b7280;">Scan or type a conveyor / position number to link this part to it.</p>';
+        html+='<div class="form-group" style="position:relative;"><label>Position (conveyor number)</label>';
+        html+='<div style="display:flex;gap:8px;">';
+        html+='<input type="text" id="link-pos-input" autocomplete="off" placeholder="Type or scan..." oninput="autocompleteLinkPosition(this.value)" onkeydown="if(event.key===\x27Enter\x27)searchPositionToLink(\x27'+partKey+'\x27)" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;">';
+        html+='<button class="btn btn-secondary" type="button" onclick="openScannerForInput(\x27link-pos-input\x27)" style="padding:8px 14px;">\ud83d\udcf7</button>';
+        html+='</div>';
+        html+='<div id="link-pos-dropdown" style="display:none;position:absolute;left:0;right:0;z-index:50;background:#fff;border:1px solid #e5e7eb;border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.08);"></div>';
+        html+='</div>';
+        html+='<button class="btn btn-primary" onclick="searchPositionToLink(\x27'+partKey+'\x27)">Find Position</button>';
+        html+=' <button class="btn btn-secondary" onclick="openDetail(\x27part\x27,\x27'+partKey+'\x27)">Cancel</button>';
+        html+='<div id="link-pos-result" style="margin-top:16px;"></div>';
+        html+='</div>';
+        document.getElementById('detail-content').innerHTML=html;
+    }
+    var _linkPosTimer=null;
+    function autocompleteLinkPosition(query){
+        var dd=document.getElementById('link-pos-dropdown'); if(!dd)return;
+        if(!query||query.length<2){ dd.style.display='none'; return; }
+        clearTimeout(_linkPosTimer);
+        _linkPosTimer=setTimeout(async function(){
+            var cache=await getEquipmentCache(); var q=query.toLowerCase(); var out=[];
+            for(var k in cache){ var v=cache[k]; if(!v||v.active===false)continue;
+                var cn=(v.conveyorNumber||'').toLowerCase(); var desc=(v.description||v.notes||'').toLowerCase();
+                if(cn.indexOf(q)>=0||desc.indexOf(q)>=0){ out.push({cn:v.conveyorNumber||k,desc:v.description||v.notes||''}); if(out.length>=10)break; }
+            }
+            if(out.length){
+                dd.innerHTML=out.map(function(o){ return '<div style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f1f5f9;" data-cn="'+escapeHtml(o.cn)+'" onclick="var i=document.getElementById(\x27link-pos-input\x27);i.value=this.getAttribute(\x27data-cn\x27);document.getElementById(\x27link-pos-dropdown\x27).style.display=\x27none\x27;"><strong>'+escapeHtml(o.cn)+'</strong>'+(o.desc?' <span style="color:#6b7280;font-size:12px;">\u2014 '+escapeHtml(o.desc.substring(0,50))+'</span>':'')+'</div>'; }).join('');
+                dd.style.display='block';
+            } else { dd.style.display='none'; }
+        },250);
+    }
+    async function searchPositionToLink(partKey){
+        var dd=document.getElementById('link-pos-dropdown'); if(dd)dd.style.display='none';
+        var val=(document.getElementById('link-pos-input').value||'').trim();
+        if(!val){ showToast('Enter or scan a position','error'); return; }
+        if(!checkFirebase())return;
+        var cache=await getEquipmentCache(); var vl=val.toLowerCase(); var found=null,foundKey=null;
+        for(var k in cache){ var v=cache[k]; if(!v||v.active===false)continue; if((v.conveyorNumber||'').toLowerCase()===vl){ found=v; foundKey=k; break; } }
+        var res=document.getElementById('link-pos-result');
+        if(!found){
+            res.innerHTML='<div style="padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;"><p style="font-weight:600;color:#92400e;">Position not found</p><p style="font-size:13px;">No position "'+escapeHtml(val)+'" in the database. Check the number and try again.</p></div>';
+            return;
+        }
+        var conveyorNumber=found.conveyorNumber||foundKey;
+        var pconv=(await db.ref('parts/'+partKey+'/conveyors').once('value')).val()||[];
+        if(pconv.indexOf(conveyorNumber)>=0){
+            res.innerHTML='<div style="padding:12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;"><p style="font-weight:600;color:#92400e;">Already linked!</p><p style="font-size:13px;">This part is already linked to '+escapeHtml(conveyorNumber)+'.</p></div>';
+            return;
+        }
+        var html='<div style="padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">';
+        html+='<p style="font-weight:700;font-size:16px;margin-bottom:4px;">'+escapeHtml(conveyorNumber)+'</p>';
+        html+='<p style="font-size:13px;margin:4px 0;color:#4b5563;">'+escapeHtml(found.description||found.notes||'')+'</p>';
+        html+='<hr style="margin:12px 0;border:none;border-top:1px solid #d1fae5;">';
+        html+='<p style="font-size:13px;font-weight:600;">Link this part to '+escapeHtml(conveyorNumber)+'?</p>';
+        html+='<div class="form-group" style="margin-top:12px;"><label>Quantity at this position</label><input type="number" id="link-qty" placeholder="e.g. 2" min="1" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
+        html+='<div class="form-group"><label>Observations (optional)</label><input type="text" id="link-obs" maxlength="300" placeholder="e.g. bearing size, notes..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
+        html+='<button class="btn btn-primary" style="margin-top:8px;" onclick="confirmLinkPositionToPart(\x27'+partKey+'\x27,\x27'+escapeAttrArg(conveyorNumber)+'\x27)">Confirm Link</button>';
+        html+=' <button class="btn btn-secondary" style="margin-top:8px;" onclick="openDetail(\x27part\x27,\x27'+partKey+'\x27)">Cancel</button>';
+        html+='</div>';
+        res.innerHTML=html;
+    }
+    async function confirmLinkPositionToPart(partKey, conveyorNumber){ if(!requireWrite())return;
+        if(!checkFirebase())return;
+        showLoading();
+        try{
+            var snap=await db.ref('parts/'+partKey+'/conveyors').once('value');
+            var conveyors=snap.val()||[];
+            if(conveyors.indexOf(conveyorNumber)<0){ conveyors.push(conveyorNumber); await db.ref('parts/'+partKey+'/conveyors').set(conveyors); }
+            var qty=document.getElementById('link-qty')?document.getElementById('link-qty').value.trim():'';
+            var obs=document.getElementById('link-obs')?document.getElementById('link-obs').value.trim():'';
+            if(qty||obs){ await db.ref('parts/'+partKey+'/conveyorNotes/'+sanitizeKey(conveyorNumber)).set({ quantity: qty||null, observations: obs||null, updatedAt: new Date().toISOString() }); }
+            try{ var _apnSnap=await db.ref('parts/'+partKey+'/apn').once('value'); await _removeAssoc(sanitizeKey(conveyorNumber), _apnSnap.val()); }catch(_ce){}
+            showToast('Linked to '+conveyorNumber+'!','success');
+            invalidatePartsCache();
+            hideLoading();
+            openDetail('part', partKey);
+        }catch(e){ hideLoading(); showToast('Error: '+e.message,'error'); }
+    }
+
 
     // ============================================================
     // UNLINK PART FROM POSITION
@@ -6032,7 +6133,7 @@
         {
             target: '.tabs',
             title: 'Navigation',
-            text: 'Two main tabs: Search (find and view items) and Assigned Jobs (your personal task queue with job counter).',
+            text: 'Two main tabs: Home (dashboard and search) and Job list (your personal task queue with job counter).',
             position: 'bottom'
         },
         {
@@ -6055,7 +6156,7 @@
         },
         {
             target: '#sec-work',
-            title: 'Assigned Jobs',
+            title: 'Job list',
             text: 'Your personal task queue. Add jobs from search results or routes. Toggle the switch to mark complete (moves to bottom). Add comments — you\'ll be asked if you want to save them permanently to the item. Overdue jobs (12h+) turn red.',
             position: 'bottom'
         },
@@ -6192,10 +6293,10 @@
         html += '<li>Unlinking does NOT delete the part — it just removes the connection</li>';
         html += '</ul></div>';
 
-        // Work Assigned
-        html += '<div class="card"><h2>📋 Assigned Jobs</h2>';
+        // Job list
+        html += '<div class="card"><h2>📋 Job list</h2>';
         html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
-        html += '<li>Add jobs from search results (click "+ Add to Work" on a position or route)</li>';
+        html += '<li>Add jobs from search results (click "+ Add to Job list" on a position or route)</li>';
         html += '<li>Tap a job card to expand — see actions, add comments</li>';
         html += '<li>Toggle the switch to <strong>mark complete</strong> (turns green, moves to bottom)</li>';
         html += '<li>Comments: prompted to save permanently to the item\'s detail page</li>';

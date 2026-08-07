@@ -26,6 +26,17 @@
 - Responsive from one set of markup: at ≤ 640 px (phones) it shows the large cyan “Scan a QR code” hero and stacks the KPIs; above that (laptops) it shows a three-across KPI console, with scanning available from the existing camera button next to the search box.
 - The scan shortcut opens the existing QR scanner (positions and parts).
 
+### Home tab refinements (mobile field feedback)
+- The **Search tab is renamed to Home**, since it now carries both the dashboard and the search bar.
+- **Mobile search results now wrap correctly.** Long part descriptions were running off the right edge on iPhone (an iOS Safari flexbox quirk with the responsive result cards), which pushed the whole page sideways. The result cards were switched to a wrap-safe layout, so descriptions wrap onto multiple lines and the page no longer scrolls horizontally.
+- **The camera button next to the search box is hidden on phones** (it duplicated the big “Scan a QR code” button on the home screen). It stays on laptops/desktop, where there is no scan hero.
+- **The dashboard is now pinned to the Home page.** Returning to Home from a detail view used to leave the page blank until you tapped the RME logo; now the dashboard re-appears automatically whenever there is no active search.
+- **“Assigned Jobs” is renamed to “Job list”** (the tab, its page heading and all the related messages), and the job buttons on search/detail views now read **“+ Add to Job list”** / **“− Remove from Job list”**. The dashboard’s “Jobs assigned” count keeps its name (it is a number, not the list itself).
+
+### Link a position from the part screen (two-way linking)
+- The part detail’s **Linked Positions** card now has a **“+ Link Position”** button. Until now you could only link a part *from* a position (the “+ Link Part” button on a position); you can now do it from either side.
+- Tapping it opens a small form where you **scan or type a conveyor / position number** (with type-ahead suggestions), then enter the **quantity** and any **observations** — the same details as the existing part-linking flow. Confirming links the part to that position, records the quantity/observations, and (as before) removes it from that position’s APM “associated parts” suggestions.
+
 ## v1.13 — 2026-08-06
 
 **Status:** Not deployed yet.
