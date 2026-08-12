@@ -47,6 +47,9 @@
         th { background: #f8fafc; text-align: left; padding: 10px 12px; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #475569; cursor: pointer; user-select: none; }
         th:hover { background: #e2e8f0; }
         td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+        .filter-row td{padding:4px 6px;background:#fff;border-bottom:2px solid #e2e8f0;}
+        .col-filter{width:100%;box-sizing:border-box;padding:3px 6px;font-size:11px;font-weight:400;border:1px solid #d1d5db;border-radius:4px;color:#374151;}
+        .col-filter:focus{outline:none;border-color:#2563eb;}
         tr:hover { background: #f8fafc; }
         .file-upload { border: 2px dashed #d1d5db; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; }
         .file-upload:hover { border-color: #00A8E1; background: #f0f9ff; }
@@ -414,8 +417,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.14)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; New Home tab (renamed from Search): a scan shortcut plus at-a-glance counts — Jobs assigned, Jobs overdue (in red) and Open alerts, with a &ldquo;What's left&rdquo; breakdown of your open jobs by type. Field-first on phones, console on laptops.<br>&bull; Thermal History always lists reading points in APM walk order, no matter how a route's points get re-ordered.<br>&bull; You can now link a part to a position from either screen — the part page has a new &ldquo;+ Link Position&rdquo; button to match the position page's &ldquo;+ Link Part&rdquo;.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.15)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; Positions now show their full APM name everywhere, with the short 6-digit number kept alongside for scanning.<br>&bull; Tap any position, part or route anywhere in the app to open its full detail page — including the APN links under Parts Associated.<br>&bull; Decommissioned equipment has been cleared out of live routes and moved to Inactive Items, and the affected route end-points were updated.<br>&bull; Your Job list order now syncs across devices — the plan you arrange on your laptop shows in the same order on your phone.<br>&bull; Search now supports a wildcard <strong>*</strong>: type <code>CB.SRT.01.*.01</code> to list every matching position, part or route in one go.<br>&bull; Filter the Linked Parts and Parts Associated lists on a position by any column (APN, Class, Bin, Qty, Description, Criticality, Observations) using the boxes under each heading.<br>&bull; Plus the new Home dashboard, and the &ldquo;+ Link Position&rdquo; button on part pages.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -1256,6 +1259,21 @@
     // ============================================================
     // Cache vars — used by autocomplete and predictive search
     let equipmentCache = null, equipmentCacheTime = 0;
+    function posDisp(rec, num){
+        var pn=(rec&&rec.positionName)?rec.positionName:'';
+        num=num||((rec&&rec.conveyorNumber)||'');
+        if(pn&&pn!==num)return escapeHtml(pn)+' <span style="color:#9ca3af;font-size:0.82em;font-weight:400;">'+escapeHtml(num)+'</span>';
+        return escapeHtml(num);
+    }
+    function openAssocPartInfo(apn){
+        var info=(window._assocInfo&&window._assocInfo[apn])||{apn:apn};
+        var body='<div class="detail-field"><label>APN</label><div class="value" style="font-size:18px;font-weight:700;">'+escapeHtml(String(info.apn||apn))+'</div></div>'+
+            '<div class="detail-field"><label>Part Type</label><div class="value">'+escapeHtml(info.partType||'\u2014')+'</div></div>'+
+            '<div class="detail-field"><label>Qty (associated)</label><div class="value">'+escapeHtml(String((info.qty!=null&&info.qty!=='')?info.qty:'\u2014'))+'</div></div>'+
+            '<div class="detail-field"><label>Description</label><div class="value">'+escapeHtml(info.description||'\u2014')+'</div></div>'+
+            '<p style="font-size:12px;color:#b45309;margin-top:10px;">Imported APM catalogue reference \u2014 not in the parts database yet, so location and supplier details are unavailable.</p>';
+        showCustomModal('Part '+String(info.apn||apn), body, [{label:'Close',class:'btn-primary',value:'ok'}]);
+    }
     let partsCache = null, partsCacheTime = 0;
     let routesCache = null, routesCacheTime = 0;
     let _waData = null; // live snapshot from loadWorkAssigned's persistent listener, reused by one-shot duplicate-checks
@@ -1281,8 +1299,9 @@
             const q = query.toLowerCase();
             for (const [key, val] of Object.entries(cache)) {
                 const cn = (val.conveyorNumber || '').toLowerCase();
+                const pn = (val.positionName || '').toLowerCase();
                 const desc = (val.description || val.notes || '').toLowerCase();
-                if (cn.includes(q) || desc.includes(q)) {
+                if (cn.includes(q) || pn.includes(q) || desc.includes(q)) {
                     results.push({ key, ...val });
                     if (results.length >= 10) break;
                 }
@@ -1292,7 +1311,7 @@
                 results.forEach(r => {
                     const desc = r.description || r.notes || '';
                     html += '<div class="autocomplete-item" onclick="selectPosition(\''+r.key+'\',\''+inputId+'\')">'+
-                        '<strong>'+escapeHtml(r.conveyorNumber)+'</strong>'+
+                        '<strong>'+posDisp(r)+'</strong>'+
                         (desc ? ' <span style="color:#6b7280;font-size:12px;">— '+escapeHtml(desc.substring(0,50))+'</span>' : '')+
                         '</div>';
                 });
@@ -1431,7 +1450,7 @@
         if(!query){showToast('Enter a search term','error');return;}
         if(!checkFirebase())return;
         showLoading();
-        const queryLower=query.toLowerCase();
+        const queryLower=query.toLowerCase();var _wild=queryLower.indexOf('*')>=0,_wildRe=null;if(_wild&&queryLower.replace(/[^a-z0-9]/g,'').length>0){var _esc=queryLower.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\\\*/g,'.*');try{_wildRe=new RegExp('^'+_esc+'$');}catch(_re){_wildRe=null;}}
         const showEquipment=document.getElementById('filter-equipment').checked;
         const showParts=document.getElementById('filter-parts').checked;
         const showRoutes=document.getElementById('filter-routes').checked;
@@ -1471,7 +1490,7 @@
                         else if(queryLower==='vibration'&&rType.includes('vibr'))score=50;
                     } else {
                         // Direct route number match
-                        if(rnLower===queryLower)score=100;
+                        if(_wild){if(_wildRe&&_wildRe.test(rnLower))score=90;} else if(rnLower===queryLower)score=100;
                         else if(rnLower.endsWith(queryLower))score=90;
                         else if(rnLower.startsWith(queryLower))score=80;
                         else if(rnLower.includes(queryLower))score=60;
@@ -1541,10 +1560,10 @@
                     var eqResults=[];
                     Object.entries(allEquipment).forEach(([key,eq])=>{
                         if(eq.active===false)return;
-                        var combined=[eq.conveyorNumber,eq.type,eq.notes,eq.description].filter(Boolean).join(' ').toLowerCase();var combinedStripped=combined.replace(/[^a-z0-9\s]/g,'');
+                        var combined=[eq.conveyorNumber,eq.positionName,eq.type,eq.notes,eq.description].filter(Boolean).join(' ').toLowerCase();var combinedStripped=combined.replace(/[^a-z0-9\s]/g,'');
                         var cn=(eq.conveyorNumber||'').toLowerCase();
                         var score=0;
-                        if(cn===queryLower)score=100;
+                        if(_wild){if(_wildRe&&_wildRe.test(cn))score=90;} else if(cn===queryLower)score=100;
                         else if(cn.startsWith(queryLower)||cn.replace(/[^a-z0-9]/g,'').startsWith(queryLower))score=80;
                         else if(queryWords.every(w=>combined.includes(w)||combinedStripped.includes(w)))score=50;
                         if(!score&&queryLower.length>=3){var sEq=cn.replace(/[^a-z0-9]/g,'');var qiE=0;for(var ciE=0;ciE<sEq.length&&qiE<queryLower.length;ciE++){if(sEq[ciE]===queryLower[qiE])qiE++;}if(qiE===queryLower.length)score=15;}
@@ -1557,7 +1576,7 @@
                         eqResults.slice(0,15).forEach(item=>{
                             var eq=item.data;
                             html+='<div style="padding:8px 0;border-bottom:1px solid #f1f5f9;">';
-                            html+='<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(eq.conveyorNumber)+'</a>';
+                            html+='<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+item.key+'\x27);return false;">'+posDisp(eq)+'</a>';
                             html+=' | Type: '+(eq.type||'N/A');
                             if(eq.description)html+=' | <span class="notes-display">'+escapeHtml(eq.description)+'</span>';
                             html+='</div>';
@@ -1568,7 +1587,7 @@
                             eqResults.slice(15).forEach(item=>{
                                 var eq=item.data;
                                 html+='<div style="padding:8px 0;border-bottom:1px solid #f1f5f9;">';
-                                html+='<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(eq.conveyorNumber)+'</a>';
+                                html+='<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+item.key+'\x27);return false;">'+posDisp(eq)+'</a>';
                                 html+=' | Type: '+(eq.type||'N/A');
                                 if(eq.description)html+=' | <span class="notes-display">'+escapeHtml(eq.description)+'</span>';
                                 html+='</div>';
@@ -1596,7 +1615,7 @@
                     var bin=(p.binLocation||p.location||'').toLowerCase();
                     var combined=[apn,prevApn,desc,supDesc,mfrRef,pClass,bin].filter(Boolean).join(' ');
                     var score=0;
-                    if(apn===queryLower)score=100;
+                    if(_wild){if(_wildRe&&_wildRe.test(apn))score=90;} else if(apn===queryLower)score=100;
                     else if(prevApn.length>0&&prevApn.split(',').indexOf(queryLower)>=0)score=95;
                     else if(apn.startsWith(queryLower))score=80;
                     else if(mfrRef===queryLower)score=75;
@@ -1723,10 +1742,12 @@
         showLoading();
         Promise.all([
             db.ref('routes/' + key).once('value'),
-            db.ref('readings/' + key).limitToLast(10).once('value')
+            db.ref('readings/' + key).limitToLast(10).once('value'),
+            getEquipmentCache()
         ]).then(function(res) {
             var route = res[0].val();
             var histVal = res[1].val();
+            var _eqc = res[2] || {};
             if (!route || !route.motors || route.motors.length === 0) {
                 hideLoading();
                 showToast('No motors/gearboxes found for this route', 'error');
@@ -1751,7 +1772,7 @@
 
             Object.keys(points).sort(naturalCompare).forEach(function(ptName) {
                 var pt = points[ptName];
-                html += '<div class="rec-point-group"><div class="rec-point-title">' + escapeHtml(ptName) + '</div>';
+                html += '<div class="rec-point-group"><div class="rec-point-title">' + posDisp(_eqc[sanitizeKey(ptName)],ptName) + '</div>';
                 if (pt.motor) html += _recFieldHtml(pt.motor, pt.motorIdx, 'Motor', histVal, key);
                 if (pt.gearbox) html += _recFieldHtml(pt.gearbox, pt.gbIdx, 'Gearbox', histVal, key);
                 html += '</div>';
@@ -2116,7 +2137,7 @@
                 alerts.forEach(function(rr){
                     html += '<div style="border:1px solid #fecaca;border-left:4px solid #ef4444;border-radius:8px;padding:12px;margin-bottom:10px;background:#fff;">';
                     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">';
-                    html += '<div><div style="font-weight:700;font-size:15px;color:#111827;">Route ' + escapeHtml(String(rr.routeNumber)) + '</div>';
+                    html += '<div><div style="font-weight:700;font-size:15px;color:#111827;">Route <a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+sanitizeKey(String(rr.routeNumber))+'\x27);return false;">' + escapeHtml(String(rr.routeNumber)) + '</a></div>';
                     var whenTxt = rr.when ? formatWorkTime(rr.when) : '';
                     if (whenTxt) html += '<div style="font-size:12px;color:#6b7280;">last recorded ' + escapeHtml(whenTxt) + '</div>';
                     html += '</div>';
@@ -2141,7 +2162,7 @@
                 due.forEach(function(dd){
                     var days = Math.floor(dd.ageMs / 86400000);
                     html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:8px;margin-bottom:8px;background:#fff;">';
-                    html += '<div><div style="font-weight:700;font-size:14px;color:#111827;">Route ' + escapeHtml(String(dd.routeNumber)) + '</div>';
+                    html += '<div><div style="font-weight:700;font-size:14px;color:#111827;">Route <a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+sanitizeKey(String(dd.routeNumber))+'\x27);return false;">' + escapeHtml(String(dd.routeNumber)) + '</a></div>';
                     html += '<div style="font-size:12px;color:#92400e;">last recorded ' + days + ' day' + (days === 1 ? '' : 's') + ' ago</div></div>';
                     html += '<button class="btn btn-primary btn-sm" onclick="goRecordThermal(\x27' + dd.routeNumber + '\x27)">&#127777; Record</button>';
                     html += '</div>';
@@ -2165,6 +2186,7 @@
             var rs = await db.ref('routes/' + routeKey).once('value');
             var data = rs.val();
             if (!data){ hideLoading(); showToast('Route not found', 'error'); return; }
+            var _eqc = await getEquipmentCache();
             var isThermal = routeReadingRequired(data);
             var histVal = null;
             if (isThermal){ var hs = await db.ref('readings/' + routeKey).limitToLast(12).once('value'); histVal = hs.val(); }
@@ -2184,7 +2206,7 @@
             allPts = allPts.filter(function(p){ return p; });
             if (allPts.length){
                 h += '<div class="pr-section"><div class="pr-h">Route Points (' + allPts.length + ')</div><ol class="pr-pts">';
-                allPts.forEach(function(p){ h += '<li>' + escapeHtml(p) + '</li>'; });
+                allPts.forEach(function(p){ h += '<li>' + posDisp(_eqc[sanitizeKey(p)], p) + '</li>'; });
                 h += '</ol></div>';
             }
             if (isThermal && histVal){
@@ -3133,7 +3155,7 @@
 
     function renderThermalHistory(routeKey, containerEl) {
         if(!firebaseReady)return;
-        db.ref('readings/'+routeKey).orderByChild('timestamp').limitToLast(50).once('value').then(snap=>{
+        Promise.all([db.ref('readings/'+routeKey).orderByChild('timestamp').limitToLast(50).once('value'), getEquipmentCache()]).then(function(_res){ var snap=_res[0]; var _eqc=_res[1]||{};
             const data=snap.val();
             if(!data){containerEl.innerHTML='<div class="empty-state">No historical data yet</div>';return;}
             var entries=Object.entries(data).map(function(e){return Object.assign({_key:e[0]},e[1]);}).sort(function(a,b){return new Date(b.timestamp)-new Date(a.timestamp);});
@@ -3158,7 +3180,7 @@
                     apmOrderKeys(Object.keys(points), currentThermalApmOrder).forEach(function(name){
                         var vals=points[name];
                         html+='<div style="margin:6px 0 10px;">';
-                        html+='<div style="font-weight:700;color:#2563eb;font-size:13px;margin-bottom:3px;">'+escapeHtml(name)+'</div>';
+                        html+='<div style="font-weight:700;color:#2563eb;font-size:13px;margin-bottom:3px;">'+posDisp(_eqc[sanitizeKey(name)],name)+'</div>';
                         if(vals.motor!==null)html+='<div style="padding-left:8px;margin-bottom:2px;"><span class="reading-chip">Motor Temperature: '+escapeHtml(String(vals.motor))+'\u00B0C</span></div>';
                         if(vals.gearbox!==null)html+='<div style="padding-left:8px;"><span class="reading-chip">Gearbox Temperature: '+escapeHtml(String(vals.gearbox))+'\u00B0C</span></div>';
                         html+='</div>';
@@ -3259,9 +3281,8 @@
             _waData = data || {};
             if(!data){container.innerHTML='<div class="empty-state">No jobs assigned yet</div>';updateWorkCount();return;}
             // Filter to current user's work
-            var _savedOrder=[]; try{ _savedOrder=JSON.parse(localStorage.getItem('work_order_'+currentUser)||'[]'); if(!Array.isArray(_savedOrder))_savedOrder=[]; }catch(e){ _savedOrder=[]; }
-            function _ordIdx(k){ var i=_savedOrder.indexOf(k); return i<0?1e9:i; }
-            const items=Object.entries(data).filter(([k,v])=>(v.assignedTo||'').toLowerCase()===currentUser.toLowerCase()).sort((a,b)=>{var aD=a[1].status==='done'?1:0,bD=b[1].status==='done'?1:0;if(aD!==bD)return aD-bD;var ai=_ordIdx(a[0]),bi=_ordIdx(b[0]);if(ai!==bi)return ai-bi;return new Date(b[1].createdAt)-new Date(a[1].createdAt);});
+            function _ordIdx(v){ return (v&&typeof v.sortIndex==='number')?v.sortIndex:1e9; }
+            const items=Object.entries(data).filter(([k,v])=>(v.assignedTo||'').toLowerCase()===currentUser.toLowerCase()).sort((a,b)=>{var aD=a[1].status==='done'?1:0,bD=b[1].status==='done'?1:0;if(aD!==bD)return aD-bD;var ai=_ordIdx(a[1]),bi=_ordIdx(b[1]);if(ai!==bi)return ai-bi;return new Date(b[1].createdAt)-new Date(a[1].createdAt);});
             if(items.length===0){container.innerHTML='<div class="empty-state">No jobs assigned to you today</div>';updateWorkCount();return;}
             var _wn=new Date();var _w4=new Date(_wn.getFullYear(),_wn.getMonth(),_wn.getDate(),4,0,0);
             var _workCutoff=_wn.getHours()<4?new Date(_w4.getTime()-86400000):_w4;
@@ -3565,8 +3586,8 @@
             html+='</div><div class="card">';
 
             if(type==='equipment'){
-                title='Position: '+data.conveyorNumber;
-                html+='<div class="detail-field"><label>Position</label><div class="value" style="font-size:20px;font-weight:700;">'+escapeHtml(data.conveyorNumber)+'</div></div>';
+                title='Position: '+(data.positionName||data.conveyorNumber);
+                html+='<div class="detail-field"><label>Position</label><div class="value" style="font-size:20px;font-weight:700;">'+escapeHtml(data.positionName||data.conveyorNumber)+'</div>'+((data.positionName&&data.positionName!==data.conveyorNumber)?'<div style="font-size:13px;color:#6b7280;margin-top:2px;">No. '+escapeHtml(data.conveyorNumber)+'</div>':'')+'</div>';
                 html+='<div class="detail-field"><label>Type</label><div class="value">'+escapeHtml(data.type||'Not set')+'</div></div>';
                 html+='<div class="detail-field"><label>Description</label><div class="value">'+escapeHtml(data.description||'None')+'</div></div>';
                 if(data.area)html+='<div class="detail-field"><label>Area</label><div class="value">'+escapeHtml(data.area)+'</div></div>';
@@ -3580,10 +3601,11 @@
                 html+='</div>';
                 // Linked Parts
                 var allParts=await getPartsCache();
+                var _apnIdx={};Object.entries(allParts).forEach(function(pr){var a=(pr[1].apn||'').toString().toLowerCase().trim();if(a&&!_apnIdx[a])_apnIdx[a]=pr[0];});
                 var eqParts=Object.entries(allParts).filter(([k,p])=>p.conveyors&&p.conveyors.indexOf(data.conveyorNumber)>=0);
                 html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Linked Parts <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkPartPopup(\x27'+data.conveyorNumber+'\x27)">+ Link Part</button></h2>';
                 if(eqParts.length>0){
-                    html+='<table><thead><tr><th>APN</th><th>Class</th><th>Bin</th><th>Qty</th><th>Description</th><th>Criticality</th><th>Observations</th></tr></thead><tbody>';
+                    html+='<table id="lp-table"><thead><tr><th>APN</th><th>Class</th><th>Bin</th><th>Qty</th><th>Description</th><th>Criticality</th><th>Observations</th></tr><tr class="filter-row"><td><input class="col-filter" data-col="0" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="1" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="2" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="3" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="4" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="5" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="6" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td></tr></thead><tbody>';
                     eqParts.forEach(([k,p])=>{
                         var cc='#6b7280';
                         if((p.criticality||'').includes('HIGH'))cc='#dc2626';
@@ -3614,9 +3636,12 @@
                         var _canL = canWrite(); var _isAdm = isAdmin();
                         html += '<div class="card assoc-card"><h2 style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>Parts Associated <span style="font-size:12px;font-weight:400;color:#6b7280;">' + _assoc.length + ' imported</span></span>' + (_isAdm ? '<button class="btn btn-sm" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;padding:3px 10px;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;" onclick="event.stopPropagation();var c=this.closest(\x27.assoc-card\x27);var on=c.classList.toggle(\x27assoc-editing\x27);this.textContent=on?\x27Done\x27:\x27Edit list\x27;">Edit list</button>' : '') + '</h2>';
                         html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Imported catalogue reference \u2014 may be inaccurate. Link the ones that belong here and they move up to Linked Parts.</p>';
-                        html += '<table><thead><tr><th>APN</th><th>Class</th><th>Qty</th><th>Description</th><th></th></tr></thead><tbody>';
+                        html += '<table id="pa-table"><thead><tr><th>APN</th><th>Class</th><th>Qty</th><th>Description</th><th></th></tr><tr class="filter-row"><td><input class="col-filter" data-col="0" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="1" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="2" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="3" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td></td></tr></thead><tbody>';
                         _assoc.forEach(function(a){
-                            html += '<tr><td><strong>' + escapeHtml(String(a.apn||'')) + '</strong></td>';
+                            var _aApn=String(a.apn||'');var _aKey=_apnIdx[_aApn.toLowerCase().trim()];
+                            (window._assocInfo=window._assocInfo||{})[_aApn]={apn:_aApn,description:a.description||'',partType:a.partType||'',qty:(a.qty!=null?a.qty:'')};
+                            var _apnHtml=_aKey?('<a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+_aKey+'\x27);return false;">'+escapeHtml(_aApn)+'</a>'):('<a class="search-link" href="#" style="color:#475569;" onclick="openAssocPartInfo(\x27'+escapeAttrArg(_aApn)+'\x27);return false;">'+escapeHtml(_aApn)+'</a>');
+                            html += '<tr><td>' + _apnHtml + '</td>';
                             html += '<td><span style="font-size:11px;padding:1px 6px;background:#f1f5f9;color:#475569;border-radius:8px;">' + escapeHtml(a.partType||'') + '</span></td>';
                             html += '<td style="font-size:12px;text-align:center;color:#6b7280;">' + escapeHtml(String(a.qty!=null?a.qty:'\u2014')) + '</td>';
                             html += '<td style="font-size:12px;color:#4b5563;">' + escapeHtml(a.description||'') + '</td>';
@@ -3632,7 +3657,7 @@
                 var allRoutes=await getRoutesCache();
                 var eqRoutes=Object.entries(allRoutes).filter(([k,r])=>{if(r.active===false)return false;var pts=[r.startPoint,...(r.waypoints||[])];if(r.endPoint)pts.push(r.endPoint);return pts.indexOf(data.conveyorNumber)>=0;});
                 html+='<div class="card"><h2>Routes containing '+escapeHtml(data.conveyorNumber)+'</h2>';
-                if(eqRoutes.length>0){html+='<table><thead><tr><th>Route</th><th>Type</th><th>Start</th><th>End</th></tr></thead><tbody>';eqRoutes.forEach(([k,r])=>{html+='<tr><td><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+k+'\x27);return false;">'+escapeHtml(r.routeNumber)+'</a></td><td>'+escapeHtml(r.type)+'</td><td>'+escapeHtml(r.startPoint)+'</td><td>'+escapeHtml(r.endPoint||'\u2014')+'</td></tr>';});html+='</tbody></table>';}
+                if(eqRoutes.length>0){html+='<table><thead><tr><th>Route</th><th>Type</th><th>Start</th><th>End</th></tr></thead><tbody>';eqRoutes.forEach(([k,r])=>{html+='<tr><td><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+k+'\x27);return false;">'+escapeHtml(r.routeNumber)+'</a></td><td>'+escapeHtml(r.type)+'</td><td><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(r.startPoint)+'\x27);return false;">'+escapeHtml(r.startPoint)+'</a></td><td>'+(r.endPoint?'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(r.endPoint)+'\x27);return false;">'+escapeHtml(r.endPoint)+'</a>':'\u2014')+'</td></tr>';});html+='</tbody></table>';}
                 else html+='<p class="empty-state">Not part of any route</p>';
                 html+='</div>';
             } else if(type==='part'){
@@ -3666,11 +3691,12 @@
                 html+='<div class="detail-field"><label>Supplier Part Description</label><div class="value">'+escapeHtml(data.supplierPartDescription||'N/A')+'</div></div>';
                 html+='</div>';
                 // Linked Positions card
+                var _eqc=await getEquipmentCache();
                 var conveyors=data.conveyors||(data.conveyorNumber?[data.conveyorNumber]:[]);
                 html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Linked Positions ('+conveyors.length+') <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkPositionPopup(\x27'+key+'\x27)">+ Link Position</button></h2>';
                 if(conveyors.length>0){
                     html+='<div style="display:flex;flex-wrap:wrap;gap:8px;">';
-                    conveyors.forEach(function(c){html+='<span style="display:inline-flex;align-items:center;padding:4px 12px;background:#f1f5f9;border-radius:6px;font-size:13px;"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(c)+'\x27);return false;">'+escapeHtml(c)+'</a></span>';});
+                    conveyors.forEach(function(c){var _pr=_eqc[sanitizeKey(c)];html+='<span style="display:inline-flex;align-items:center;padding:4px 12px;background:#f1f5f9;border-radius:6px;font-size:13px;"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(c)+'\x27);return false;">'+posDisp(_pr,c)+'</a></span>';});
                     html+='</div>';
                 } else {
                     html+='<p class="empty-state">Not linked to any position</p>';
@@ -3685,18 +3711,19 @@
                 var allPts=[data.startPoint];
                 if(data.waypoints)allPts.push(...data.waypoints);
                 if(data.endPoint&&data.endPoint!==data.startPoint)allPts.push(data.endPoint);
+                // Numerical ascending order = the physical walking order; label Start/End by position in that order (Waypoint in between). APM order is kept only in Thermal History.
+                allPts.sort(function(_a,_b){ return naturalCompare(_a,_b); });
                 html+='<div class="detail-field"><label>Route Points ('+allPts.length+')</label><div style="margin-top:6px;">';
                 var _eqCache=await getEquipmentCache();
                 for(var pi=0;pi<allPts.length;pi++){
-                    var pt=allPts[pi];var ptKey=sanitizeKey(pt);
+                    var pt=allPts[pi];var ptKey=sanitizeKey(pt);var label=(pi===0?'Start':(pi===allPts.length-1?'End':'Waypoint'));
                     var indicator='';
                     if(_eqCache[ptKey]){
                         indicator='<span style="color:#10b981;font-weight:700;margin-right:4px;" title="Position exists in DB">✓</span>';
                     } else {
                         indicator='<span style="color:#ef4444;font-weight:700;margin-right:4px;" title="Position NOT in Position database">✗</span>';
                     }
-                    var label=pi===0?'Start':pi===allPts.length-1&&data.endPoint?'End':'Waypoint';
-                    html+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">'+indicator+'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+ptKey+'\x27);return false;">'+escapeHtml(pt)+'</a><span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span></div>';
+                    html+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">'+indicator+'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+ptKey+'\x27);return false;">'+posDisp(_eqCache[ptKey],pt)+'</a><span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span></div>';
                 }
                 html+='</div></div>';
                 var _rtDetImg=await getRouteImage(key);if(_rtDetImg){html+='<div class="detail-field"><label>Route Location</label><img src="'+_rtDetImg+'" alt="Route location screenshot" class="img-preview" style="display:block;"></div>';}
@@ -4021,18 +4048,29 @@
     // PREDICTIVE SEARCH DROPDOWN
     // ============================================================
     var _liveSearchTimer=null;
-    function liveSearchSuggest(query){
+    function filterPartsTable(tableId){
+  var tbl=document.getElementById(tableId); if(!tbl) return;
+  var ins=tbl.querySelectorAll('thead tr.filter-row input');
+  var fs=[];
+  Array.prototype.forEach.call(ins,function(inp){var v=(inp.value||'').trim().toLowerCase();if(v)fs.push({c:parseInt(inp.getAttribute('data-col'),10),v:v});});
+  Array.prototype.forEach.call(tbl.querySelectorAll('tbody tr'),function(r){
+    var ok=true;
+    for(var i=0;i<fs.length;i++){var cell=r.cells[fs[i].c];var t=cell?(cell.textContent||'').toLowerCase():'';if(t.indexOf(fs[i].v)<0){ok=false;break;}}
+    r.style.display=ok?'':'none';
+  });
+}
+function liveSearchSuggest(query){
         var dd=document.getElementById('main-search-dropdown');if(!dd)return;
         if(!query||query.length<2){dd.style.display='none';return;}
         clearTimeout(_liveSearchTimer);
         _liveSearchTimer=setTimeout(async function(){
             if(!firebaseReady){return;}
-            var q=query.toLowerCase();
+            var q=query.toLowerCase();var _wq=q.indexOf('*')>=0,_wqRe=null;if(_wq&&q.replace(/[^a-z0-9]/g,'').length>0){var _we=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\\\*/g,'.*');try{_wqRe=new RegExp('^'+_we+'$');}catch(_re){_wqRe=null;}}
             // Score an ID-like field (mirrors searchAll): exact=100, endsWith=90, startsWith=80, subsequence=20/30, contains=10
             function scoreId(field){
                 if(!field)return 0;
                 var f=field.toString().toLowerCase();
-                if(f===q)return 100;
+                if(_wq)return(_wqRe&&_wqRe.test(f))?90:0; if(f===q)return 100;
                 if(f.endsWith(q))return 90;
                 if(f.startsWith(q))return 80;
                 if(q.length>=3){
@@ -4055,8 +4093,8 @@
                 // Collect ALL matches with relevance score — no early cutoff
                 Object.entries(eq).forEach(function([k,v]){
                     if(v.active===false)return;
-                    var s=Math.max(scoreId(v.conveyorNumber),scoreText(v.description),scoreText(v.notes));
-                    if(s>0)results.push({type:'equipment',key:k,label:v.conveyorNumber,sub:v.description||v.notes||'',_score:s});
+                    var s=Math.max(scoreId(v.conveyorNumber),scoreId(v.positionName),scoreText(v.description),scoreText(v.notes));
+                    if(s>0)results.push({type:'equipment',key:k,label:(v.positionName||v.conveyorNumber),sub:v.description||v.notes||'',_score:s});
                 });
                 Object.entries(pts).forEach(function([k,v]){
                     if(v.active===false)return;
@@ -4818,13 +4856,18 @@
         saveJobOrder();
     }
 
-    async function saveJobOrder() { if(!requireWrite())return;
+    var _saveOrderTimer = null;
+    function saveJobOrder() { if(!requireWrite())return;
         if (!firebaseReady || !currentUser) return;
-        var cards = document.querySelectorAll('.work-card');
-        var order = [];
-        cards.forEach(function(c) { if (c.dataset.key) order.push(c.dataset.key); });
-        // Job order stored locally for simplicity
-        localStorage.setItem('work_order_' + currentUser, JSON.stringify(order));
+        // Persist the order in Firebase (sortIndex per job) so the plan set on a laptop
+        // shows in the same order on the phone. Debounced so rapid arrow clicks = one write.
+        clearTimeout(_saveOrderTimer);
+        _saveOrderTimer = setTimeout(function() {
+            var cards = document.querySelectorAll('#work-list .work-card');
+            var updates = {}; var idx = 0;
+            cards.forEach(function(c) { if (c.dataset.key && c.dataset.status !== 'done') { updates['workAssigned/' + c.dataset.key + '/sortIndex'] = idx++; } });
+            if (Object.keys(updates).length && typeof db !== 'undefined' && db) db.ref().update(updates).catch(function(e) { console.warn('save job order failed', e); });
+        }, 500);
     }
 
     function formatWorkTime(iso){
@@ -6352,7 +6395,7 @@
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.14';
+    var APP_VERSION = '1.15';
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== APP_VERSION) {

@@ -7,6 +7,52 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.15 — 2026-08-11
+
+**Status:** Not deployed yet.
+
+**Highlights:**
+- **Positions now show their full APM name everywhere**, with the short 6-digit number kept right alongside for scanning. Search results, the position page, route point lists, the Record Readings form, Thermal History, the picker and the printed report all now read the descriptive name (e.g. `AFE2.0.DIS.LN.01.703010`) instead of just `703010` — nothing was renamed in the database, this is a display change and no data was lost.
+- **Tap any position, part or route anywhere in the app to open its full detail page.** That includes the APN entries under a position's “Parts Associated” list — they are now links: known parts open the part page, and APNs not yet in the parts database open a small info card built from the imported APM catalogue reference.
+- **Decommissioned equipment has been cleared out of the live routes and moved to Inactive Items**, and the affected routes had their end-points corrected.
+- **Your Job list order now syncs across devices.** The order you set with the arrows (or drag) on your laptop now shows in the same order on your phone — the plan is saved to the database instead of only to the device you arranged it on.
+- **Search now understands a `*` wildcard:** e.g. `CB.SRT.01.*.01` lists all ten induction `.01` positions at once, and `CBM.ULTS.*` lists every Ultrasound route.
+- **Filter the Linked Parts and Parts Associated lists on a position.** Each of those two tables now has a small filter box under every column heading (APN, Class, Bin, Qty, Description, Criticality, Observations for Linked Parts; APN, Class, Qty, Description for Parts Associated). Type in one or more boxes to narrow a long list instantly — filters combine, so you can e.g. find a part class with a matching description in one step.
+
+**Detail:**
+
+### Full position names (display only, no data change)
+- A `positionName` field (the full APM equipment name) was written to 3,497 position records. The short conveyor/position number is unchanged and stays the scannable ID.
+- A shared `posDisp()` helper renders “full name + grey short number” consistently across: position search results and the predictive dropdown, the position detail header, the route detail Route Points list, the Record Readings point titles, the position picker, the Linked Positions on a part page, Thermal History headings, and the printed route report's Route Points list.
+- After a follow-up audit, another 173 positions were matched 1:1 to a unique APM name and assigned (143 live, 30 decommissioned). The remaining 169 keep showing their number only: 89 are ambiguous (a short tag like `01` or `12` matches many assets) and 80 are absent from the APM export entirely. See `Position name audit v1.15.xlsx`.
+
+### Cross-linking everywhere
+- Every place that names a position, part or route is now a link into that asset's detail view: routes-containing-this-position (Start/End cells), the burger-menu Alerts and Due lists, Linked Parts and Parts Associated tables, and existing search/job links.
+- “Parts Associated” APNs: 2,985 of 3,464 associated APNs matched a part record and link straight to the part page; the remaining ones open an info popup (“not in the parts database yet”) from the imported reference so nothing is a dead end.
+
+### Decommissioned points moved to Inactive
+- Using a status-aware reconciliation against the APM export (`equipment_status` I = installed, D = decommissioned), 27 reading-points across 5 active routes that mapped only to decommissioned equipment were removed from those routes; none had recorded readings, so no history was lost.
+  - `CBM.THERMO.562` and `CBM.THERMO.862`: dropped `180070`, new end-point `180170`.
+  - `CBM.THERMO.903`: whole route was decommissioned — set inactive.
+  - `CBM.ULTS.46`: dropped `270220/230/240/250`, new end-point `270210`.
+  - `CBM.ULTS.114`: dropped 12 dead points, new end-point `182210`.
+- 17 decommissioned equipment records were set inactive (they now live under “Manage Inactive Items” and can be restored). End-point rule used: the largest 6-digit number becomes the new end-point.
+- All changes were backed up to `Database update\decomm_backup_20260811_141039.json` before applying.
+
+### Job list order now syncs across devices
+- Previously the order you arranged your jobs in was saved only to that device's browser (`localStorage`), so a plan built on the laptop never reached the phone.
+- The order is now stored in Firebase as a `sortIndex` on each job and read back when the list renders, so any device signed in as you shows the same order in real time. Re-ordering writes are debounced (rapid arrow clicks = one save). Completed jobs still sort to the bottom.
+- Note: the very first time you open the list after this update your existing order resets to newest-first — just re-arrange once and it will stick everywhere.
+
+### Route point ordering (unchanged, confirmed)
+- Route detail and the Record Readings form stay numerical ascending; Thermal History and the printed / Excel report stay in APM walk order (as decided in v1.13).
+
+### Wildcard search
+- Search now accepts a `*` wildcard so you can pin the parts of an ID you know and let the rest vary. `CB.SRT.01.*.01` returns all ten induction `.01` positions (ID11.01–ID25.01); `CBM.ULTS.*` lists every Ultrasound route; `*.ID23.*` returns the five ID23 sub-positions.
+- Rules: dots stay literal, each `*` matches any run of characters, and the pattern is anchored at both ends (so `CB.SRT.01.*.01` excludes `.02`–`.05`). It applies to the ID field of positions, parts and routes, in both the full search and the live dropdown. A query with no `*` behaves exactly as before — nothing existing changes.
+
+_Note: v1.15 ships together with the still-undeployed v1.12 hotfix, v1.13 and v1.14 in one deploy._
+
 ## v1.14 — 2026-08-06
 
 **Status:** Not deployed yet.
@@ -36,6 +82,9 @@
 ### Link a position from the part screen (two-way linking)
 - The part detail’s **Linked Positions** card now has a **“+ Link Position”** button. Until now you could only link a part *from* a position (the “+ Link Part” button on a position); you can now do it from either side.
 - Tapping it opens a small form where you **scan or type a conveyor / position number** (with type-ahead suggestions), then enter the **quantity** and any **observations** — the same details as the existing part-linking flow. Confirming links the part to that position, records the quantity/observations, and (as before) removes it from that position’s APM “associated parts” suggestions.
+
+### Route Points shown in numerical order on the route screen
+- On a route’s detail screen the **Route Points** list is now sorted in numerical ascending order (matching the Record Readings form). It previously showed the APM walk order. The **Start / Waypoint / End** tags follow that same order to reflect the physical walk — the lowest-numbered point is Start, the highest is End, everything in between is a Waypoint. Thermal History (and the printed report / Excel export) is unchanged — it stays in APM walk order.
 
 ## v1.13 — 2026-08-06
 
