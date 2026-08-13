@@ -7,9 +7,65 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.17 — 2026-08-13
+
+**Status:** Not deployed yet — bundles with v1.16 in a single deploy. Login stays OFF until the separate console rollout.
+
+**Highlights:**
+- **Security build, login stays off until switched on.** All the server-side pieces needed to lock the database down are now in the app and ready. Nothing changes for anyone today: the app still opens with no login. Turning the lock on is a deliberate, separate step done in the Firebase console plus a one-line switch (`AUTH_ENABLED`), documented in `SECURITY_SETUP.md`.
+- **New people are look-only until an Admin approves them.** Once login is on, the first time someone signs in they can view everything but cannot edit. They see a "waiting for admin approval" banner; an Admin approves them in Manage Users (the existing "Role review required" flag), after which they can edit normally. This stops a stranger who finds the public URL from changing data.
+- **Complete database rules.** The rules now cover every part of the app, including the photo stores, the associated-parts catalogue and the Activity Log that were added after the first rules were written. The Activity Log is append-only (technicians can add entries but not edit or delete them; only Admins prune) and indexed on time.
+- **More complete backup.** "Download Backup" now also captures route and equipment photos, the associated-parts catalogue and the Activity Log.
+
+**Detail:**
+
+### Approval gate (look-only until reviewed)
+- New self-registrations are created as `technician` with `reviewed:false`. Until an Admin approves them, `canWrite()` returns false, so every edit is blocked client-side (with a clear "waiting for approval" message) and server-side by the rules. A persistent amber banner explains the state and the body carries a `role-pending` class. Admins and already-approved technicians are unaffected.
+- Approval reuses the existing "Role review required (N)" flag and the "Mark reviewed" button in Manage Users — no new screen.
+
+### Firebase rules (see SECURITY_SETUP.md / firebase_rules_v117.json)
+- Rewritten for the two-role model and expanded to every node the app now uses: `equipment`, `parts`, `routes` (create/edit for approved technicians, delete Admin-only), `readings`, `workAssigned`, `notes`, `routeImages`, `equipmentImages`, `associatedParts` (approved technician + Admin), `trash` and `users` (Admin-managed; self-registration limited to your own reviewed:false technician record), and `auditLog` (Admin read/prune, append-only for approved users, `.indexOn:["ts"]`).
+- Self-registration cannot self-approve or self-promote: the rule forces `role=technician`, `reviewed=false` on the first write.
+
+### Housekeeping
+- `AUTH_ENABLED` stays `false` in this build — the security code is dormant until the console rollout. Download Backup node list corrected (added the photo/catalogue/audit nodes, dropped the unused `workLog`). Version bumped to 1.17 and the What's New banner refreshed. `SECURITY_SETUP.md` rewritten with the two-role model, the approval flow and an ordered switch-on runbook.
+
+
+## v1.16 - 2026-08-13
+
+**Status:** Not deployed yet — deploys together with v1.17.
+
+**Highlights:**
+- **Two access levels instead of three.** The old view-only "viewer" role has been retired. Everyone is now either a **Technician** (record readings, link and unlink parts, manage the Job list, add notes) or an **Admin** (everything, plus user management, imports, deletes and the new Activity Log). Any existing viewer accounts are treated as Technicians.
+- **New Activity Log (Admins only).** A running, append-only record of who changed what and when: adds, edits, links and unlinks, deletes, readings, notes, jobs, role changes and imports. Open it from the Menu, filter by user, action or item. Entries older than 12 months are removed automatically.
+- **Links now remember who created them.** Every part-to-position link records who made it. Once login is enforced, a link can be removed only by the person who made it or by an Admin, so you cannot accidentally undo someone else's work. Legacy links with no recorded owner are Admin-only to remove.
+- **The guided tour is now role-aware.** Technicians get the core tour; Admins get extra steps covering the admin tools and the Activity Log. If you have already seen the tour and later become an Admin, you are shown just the new admin steps. "Take the Tour" in the Menu always replays the full tour for your role.
+
+**Detail:**
+
+### Roles collapsed to two (Technician / Admin)
+- `normalizeRole()` maps anything that is not `admin` to `technician`, so legacy `viewer` records read as `technician`. All role defaults, the sign-up path, the Manage Users dropdown and the role-change validation now use `['technician','admin']`. View-only wording was removed from the users screen and the login hints.
+
+### Audit log
+- A `logAudit(action, entityType, entityId, details)` helper pushes an entry to `auditLog/` on every user-facing mutation: `{ ts, user, role, action, entityType, entityId, details }` with a Firebase server timestamp. It is fire-and-forget and never blocks or fails the underlying action.
+- 31 call sites wired in across positions, parts, routes, part links, thermal readings, notes, job-list actions, screenshots and role changes. Bulk equipment import is logged as a single summary entry (imported / skipped counts) rather than one row per record.
+- The recorded user is the typed name (no-auth mode) or the login ID (once auth is on). `pruneAuditLog()` deletes entries older than 12 months; it runs on login and whenever an Admin opens the Activity Log.
+
+### Activity Log viewer (Admins)
+- `openActivityLog()` shows the most recent 500 entries, newest first, in a filterable table (When / User / Action / Item / Details), reached from a new Menu item. Free-text filters for user, action and item combine.
+
+### Per-user unlink
+- Links now store `linkedBy` and `linkedAt` in `parts/<key>/conveyorNotes/<position>`. Unlink is blocked unless you are the link owner or an Admin, on both the position-edit and part-edit screens. Editing a link's Qty/Observations preserves the original `linkedBy`.
+- Note: with login not yet enforced, everyone is effectively an Admin, so per-user unlink only starts to bite once the security work lands. Until then it quietly records ownership on every new link.
+
+### Housekeeping
+- Version bumped to 1.16 and the What's New banner refreshed. No data migration required: everything above is app behaviour plus new `auditLog/` writes. Existing data is untouched.
+- Security follow-up (next project): publish Firebase rules (including `.indexOn: ["ts"]` on `auditLog`), enable backups, then flip `AUTH_ENABLED` to true. Until then the audit log is record-keeping rather than tamper-proof, and per-user unlink is dormant.
+
+
 ## v1.15 — 2026-08-11
 
-**Status:** Not deployed yet.
+**Status:** Deployed 2026-08-13.
 
 **Highlights:**
 - **Positions now show their full APM name everywhere**, with the short 6-digit number kept right alongside for scanning. Search results, the position page, route point lists, the Record Readings form, Thermal History, the picker and the printed report all now read the descriptive name (e.g. `AFE2.0.DIS.LN.01.703010`) instead of just `703010` — nothing was renamed in the database, this is a display change and no data was lost.

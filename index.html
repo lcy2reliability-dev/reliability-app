@@ -399,7 +399,7 @@
                 <label id="login-pin-label" for="login-pin" style="font-size:12px;color:#6b7280;display:block;margin-top:10px;margin-bottom:4px;">PIN</label>
                 <input type="password" id="login-pin" inputmode="numeric" maxlength="12" placeholder="PIN (6+ digits)" autocomplete="current-password" onkeyup="if(event.key==='Enter')submitLogin()">
                 <button class="btn btn-primary" onclick="submitLogin()" style="margin-top:12px;">Continue</button>
-                <p id="login-hint" style="font-size:12px;color:#6b7280;margin-top:10px;">First time? Pick a 6-digit PIN and we'll create your account (view-only until an admin upgrades you).</p>
+                <p id="login-hint" style="font-size:12px;color:#6b7280;margin-top:10px;">First time? Pick a 6-digit PIN and we'll create your account (standard access; an admin can make you an admin).</p>
             </div>
         </div>
     </div>
@@ -417,8 +417,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.15)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; Positions now show their full APM name everywhere, with the short 6-digit number kept alongside for scanning.<br>&bull; Tap any position, part or route anywhere in the app to open its full detail page — including the APN links under Parts Associated.<br>&bull; Decommissioned equipment has been cleared out of live routes and moved to Inactive Items, and the affected route end-points were updated.<br>&bull; Your Job list order now syncs across devices — the plan you arrange on your laptop shows in the same order on your phone.<br>&bull; Search now supports a wildcard <strong>*</strong>: type <code>CB.SRT.01.*.01</code> to list every matching position, part or route in one go.<br>&bull; Filter the Linked Parts and Parts Associated lists on a position by any column (APN, Class, Bin, Qty, Description, Criticality, Observations) using the boxes under each heading.<br>&bull; Plus the new Home dashboard, and the &ldquo;+ Link Position&rdquo; button on part pages.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.17)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; New <strong>Activity Log</strong> in the menu: a running record of who added, edited, linked or deleted what, and when. History is kept for 12 months.<br>&bull; The guided tour now adapts to your role.<br>&bull; Behind the scenes, a secure login &amp; approval system is now built and ready to switch on.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -432,6 +432,7 @@
                 <div onclick="downloadAllData()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#11015; Download Backup</div>
                 <div class="admin-only" onclick="openRecentlyDeleted()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128465; Recently Deleted</div>
                 <div class="admin-only" role="button" tabindex="0" onclick="openUsersScreen()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128101; Manage Users <span id="role-review-badge" style="display:none;color:#ef4444;font-weight:600;font-size:12px;">Role review required (<span id="role-review-count">0</span>)<span class="role-review-dot"></span></span></div>
+                <div class="admin-only" role="button" tabindex="0" onclick="openActivityLog()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128220; Activity Log</div>
                 <div style="height:1px;background:#e5e7eb;margin:8px 20px;"></div>
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Help</div>
                 <div role="button" tabindex="0" onclick="toggleBurgerMenu();startTour();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Take the Tour</div>
@@ -455,6 +456,7 @@
     </div>
     <div id="offline-banner" role="status" aria-live="polite" style="display:none;background:#fee2e2;color:#991b1b;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;border-bottom:1px solid #fca5a5;">&#9888; You are offline — changes may not save until your connection returns.</div>
     <div id="sync-status" class="sync-status" role="status" aria-live="polite" style="display:none;"></div>
+    <div id="pending-approval-banner" role="status" style="display:none;background:#fef3c7;color:#92400e;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;border-bottom:1px solid #fcd34d;">&#9203; Your account is waiting for admin approval. You can view everything; editing unlocks once an admin approves you.</div>
     <div class="content">
         <!-- SEARCH -->
         <div id="sec-search" class="section active">
@@ -775,7 +777,7 @@
 
     let db = null, firebaseReady = false, currentUser = null, lastSearchResultCount = 0;
     var _saveReadingsCooldown = false; // rate-limit: 5s cooldown between thermal saves
-    var auth = null, currentUid = null, currentRole = 'viewer';
+    var auth = null, currentUid = null, currentRole = 'technician', currentReviewed = true;
     (function initFirebase() {
         if (_isPreview) return;
         try {
@@ -816,12 +818,44 @@
     var AUTH_EMAIL_DOMAIN = 'lcy2reliability.local';
     function loginIdToEmail(id){ return String(id).toLowerCase().replace(/[^a-z0-9._-]/g,'') + '@' + AUTH_EMAIL_DOMAIN; }
     function isAdmin(){ return currentRole === 'admin'; }
-    function canWrite(){ return currentRole === 'technician' || currentRole === 'admin'; }
-    function requireWrite(){ if(!canWrite()){ showToast('You have view-only access. Ask an admin to upgrade your role.', 'error'); return false; } return true; }
+    function canWrite(){ if(currentRole === 'admin') return true; return currentRole === 'technician' && currentReviewed !== false; }
+    function requireWrite(){ if(canWrite()) return true; if(currentRole === 'technician' && currentReviewed === false){ showToast('Your account is waiting for admin approval. You can view everything; editing unlocks once an admin approves you.', 'error'); } else { showToast('You have view-only access. Ask an admin to upgrade your role.', 'error'); } return false; }
     function requireAdmin(){ if(!isAdmin()){ showToast('Admins only.', 'error'); return false; } return true; }
+    function normalizeRole(r){ return (r === 'admin') ? 'admin' : 'technician'; } // 2-tier model: legacy 'viewer' -> technician
+    function auditUser(){ return (currentUser || 'unknown'); }
+    // Append-only change log: who changed what, and when. Fire-and-forget; never blocks the action.
+    function logAudit(action, entityType, entityId, details){
+        try {
+            if (!db) return;
+            var _ts; try { _ts = firebase.database.ServerValue.TIMESTAMP; } catch(_te){ _ts = Date.now(); }
+            db.ref('auditLog').push({
+                ts: _ts,
+                user: auditUser(),
+                role: currentRole || '',
+                action: action || '',
+                entityType: entityType || '',
+                entityId: (entityId != null ? String(entityId) : ''),
+                details: (details != null ? details : null)
+            }).catch(function(){});
+        } catch(_e){}
+    }
+    // 12-month retention: drop audit entries older than a year (best-effort, admin-triggered).
+    async function pruneAuditLog(){
+        if (!db || !isAdmin()) return 0;
+        try {
+            var cutoff = Date.now() - 365*24*60*60*1000;
+            var snap = await db.ref('auditLog').orderByChild('ts').endAt(cutoff).once('value');
+            var updates = {}; var n = 0;
+            snap.forEach(function(ch){ updates['auditLog/' + ch.key] = null; n++; });
+            if (n > 0) await db.ref().update(updates);
+            return n;
+        } catch(_e){ return 0; }
+    }
     function applyRoleVisibility(){
-        document.body.classList.remove('role-viewer','role-technician','role-admin');
-        document.body.classList.add('role-' + (currentRole||'viewer'));
+        document.body.classList.remove('role-viewer','role-technician','role-admin','role-pending');
+        var pending = (currentRole === 'technician' && currentReviewed === false);
+        document.body.classList.add(pending ? 'role-pending' : ('role-' + (currentRole||'technician')));
+        var pb = document.getElementById('pending-approval-banner'); if(pb) pb.style.display = pending ? 'block' : 'none';
         if(typeof updateRoleReviewBadge === 'function') updateRoleReviewBadge();
     }
 
@@ -883,7 +917,7 @@
                 // Either a brand-new user, or a wrong PIN for an existing one (Firebase merges these codes).
                 try {
                     var cred = await auth.createUserWithEmailAndPassword(email, pin);
-                    await db.ref('users/' + cred.user.uid).set({ loginId: id, role: 'viewer', status: 'active', reviewed: false, createdAt: new Date().toISOString() });
+                    await db.ref('users/' + cred.user.uid).set({ loginId: id, role: 'technician', status: 'active', reviewed: false, createdAt: new Date().toISOString() });
                     // onAuthStateChanged finishes login
                 } catch (e2) {
                     hideLoading();
@@ -910,12 +944,13 @@
                     var u = snap.val();
                     if (!u) {
                         var derived = (user.email || '').split('@')[0];
-                        u = { loginId: derived, role: 'viewer', status: 'active', reviewed: false, createdAt: new Date().toISOString() };
+                        u = { loginId: derived, role: 'technician', status: 'active', reviewed: false, createdAt: new Date().toISOString() };
                         await db.ref('users/' + user.uid).set(u);
                     }
                     currentUid = user.uid;
                     currentUser = (u.loginId || (user.email || '').split('@')[0] || '').toLowerCase();
-                    currentRole = u.role || 'viewer';
+                    currentRole = normalizeRole(u.role);
+                    currentReviewed = (u.reviewed !== false);
                     localStorage.setItem('reliability_app_user', currentUser);
                     var ov = document.getElementById('login-overlay'); if (ov) ov.style.display = 'none';
                     var bu = document.getElementById('burger-user');
@@ -925,7 +960,7 @@
                     onLoginComplete();
                 } catch (e) { hideLoading(); console.error('Auth profile load failed:', e); showToast('Could not load your profile', 'error'); }
             } else {
-                currentUid = null; currentRole = 'viewer';
+                currentUid = null; currentRole = 'technician';
                 applyRoleVisibility();
                 initLogin();
             }
@@ -957,7 +992,7 @@
                 cleanupOldWork();
                 cleanupDuplicateEndpoints();
                 db.ref('.info/connected').on('value', function(cs){ _fbConnected = cs.val()===true; _updateOfflineBanner(); if(_fbConnected) flushPendingReadings(); });
-                setTimeout(function() { initJobDragDrop(); updateWorkCount(); ensureChart().catch(function(){}); ensureXLSX().catch(function(){}); try{renderDashboard();}catch(e){} }, 1000);
+                setTimeout(function() { initJobDragDrop(); updateWorkCount(); ensureChart().catch(function(){}); ensureXLSX().catch(function(){}); try{renderDashboard();}catch(e){} try{pruneAuditLog();}catch(e){} setTimeout(function(){ try{maybeAutoTour();}catch(e){} }, 900); }, 1000);
             } catch(e) { console.error('Init error:', e); showToast('Something failed to load — please refresh the page.', 'error'); }
         }
     }
@@ -2382,7 +2417,7 @@
                 await db.ref('equipment/'+key).set({conveyorNumber:item.conveyorNumber,type:item.type,description:item.description,notes:bulkNotes,updatedAt:new Date().toISOString()});
                 imported++;
             }
-            showToast(imported+' imported, '+skipped+' skipped.');
+            logAudit('import','position','',{imported:imported,skipped:skipped});showToast(imported+' imported, '+skipped+' skipped.');
             eqImportData=[];document.getElementById('eq-import-preview').style.display='none';
             document.getElementById('eq-import-notes-section').style.display='none';document.getElementById('eq-import-btn').style.display='none';
             document.getElementById('eq-bulk-file').value='';document.getElementById('eq-import-notes').value='';
@@ -3520,18 +3555,18 @@
         if(_editWorkKey){
             delete workData.createdAt;
             workData.updatedAt=new Date().toISOString();
-            await db.ref('workAssigned/'+_editWorkKey).update(workData);
+            await db.ref('workAssigned/'+_editWorkKey).update(workData);logAudit('editJob','job',_editWorkKey,null);
             _editWorkKey=null;
             closeModal();showToast('Job updated!');
         } else {
-            await db.ref('workAssigned').push(workData);
+            await db.ref('workAssigned').push(workData);logAudit('addJob','job',(workData.equipment||workData.routeNumber||''),null);
             closeModal();showToast('Job added!');
         }
     }
     async function deleteWork(key){ if(!requireWrite())return;
         const confirmed=await showModal('Delete Job','Remove this job from your job list?');
         if(!confirmed)return;
-        await db.ref('workAssigned/'+key).remove();showToast('Job removed');
+        await db.ref('workAssigned/'+key).remove();logAudit('removeJob','job',key,null);showToast('Job removed');
     }
     async function editWork(key){
         if(!checkFirebase())return;
@@ -3947,7 +3982,12 @@
                 html += '</div>';
                 html += '<div style="display:flex;gap:6px;white-space:nowrap;">';
                 html += '<button class="btn btn-secondary btn-sm" onclick="editLinkedPartNote(\x27' + escapeAttrArg(k) + '\x27,\x27' + escapeAttrArg(conveyorNumber) + '\x27)">Edit Qty/Obs</button>';
-                html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart(\x27' + escapeAttrArg(k) + '\x27,\x27' + escapeAttrArg(conveyorNumber) + '\x27)">Unlink</button>';
+                var _lo6 = (_cn && _cn.linkedBy) ? String(_cn.linkedBy) : null;
+                if (isAdmin() || (_lo6 && _lo6.toLowerCase() === (auditUser()||'').toLowerCase())) {
+                    html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart(\x27' + escapeAttrArg(k) + '\x27,\x27' + escapeAttrArg(conveyorNumber) + '\x27)">Unlink</button>';
+                } else {
+                    html += '<span style="font-size:11px;color:#94a3b8;white-space:nowrap;">Linked by ' + escapeHtml(_lo6 || 'import') + '</span>';
+                }
                 html += '</div>';
                 html += '</div>';
             });
@@ -3973,14 +4013,14 @@
         if(!checkFirebase())return;
         showLoading();
         try {
-            await db.ref('parts/'+partKey+'/conveyorNotes/'+_ck).set({ quantity: qty||null, observations: obs||null, updatedAt: new Date().toISOString() });
+            await db.ref('parts/'+partKey+'/conveyorNotes/'+_ck).update({ quantity: qty||null, observations: obs||null, updatedAt: new Date().toISOString() });
             invalidatePartsCache();
-            showToast('Qty / observations updated', 'success');
+            logAudit('editLink','part',partKey,{position:conveyorNumber});showToast('Qty / observations updated', 'success');
             loadEditLinkedParts(sanitizeKey(conveyorNumber), conveyorNumber);
         } catch(e){ showToast('Error: '+e.message, 'error'); }
         hideLoading();
     }
-    function loadEditLinkedPositions(partKey, conveyors) {
+    async function loadEditLinkedPositions(partKey, conveyors) {
         var el = document.getElementById('edit-linked-section');
         if (!el) return;
         conveyors = conveyors || [];
@@ -3988,12 +4028,20 @@
             el.innerHTML = '<p style="font-size:13px;color:#6b7280;margin:0;">This part is not linked to any position.</p>';
             return;
         }
+        var _notes = {};
+        try { _notes = (await db.ref('parts/' + partKey + '/conveyorNotes').once('value')).val() || {}; } catch(_e){}
         var html = '<h3 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:10px;">Linked Positions (' + conveyors.length + ')</h3>';
-        html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Remove a position link from this part. The position record is not deleted.</p>';
+        html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Remove a position link from this part. The position record is not deleted. You can only remove links you added yourself.</p>';
         conveyors.forEach(function(c){
+            var _cn7 = _notes[sanitizeKey(c)];
+            var _lo7 = (_cn7 && _cn7.linkedBy) ? String(_cn7.linkedBy) : null;
             html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:white;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;">';
-            html += '<span style="font-size:13px;font-weight:600;">' + c + '</span>';
-            html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart(\x27' + partKey + '\x27,\x27' + c + '\x27)" style="white-space:nowrap;">Unlink</button>';
+            html += '<span style="font-size:13px;font-weight:600;">' + escapeHtml(c) + '</span>';
+            if (isAdmin() || (_lo7 && _lo7.toLowerCase() === (auditUser()||'').toLowerCase())) {
+                html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart(\x27' + escapeAttrArg(partKey) + '\x27,\x27' + escapeAttrArg(c) + '\x27)" style="white-space:nowrap;">Unlink</button>';
+            } else {
+                html += '<span style="font-size:11px;color:#94a3b8;white-space:nowrap;">Linked by ' + escapeHtml(_lo7 || 'import') + '</span>';
+            }
             html += '</div>';
         });
         el.innerHTML = html;
@@ -4358,8 +4406,62 @@ function liveSearchSuggest(query){
         var overlay=document.getElementById('qr-scanner-overlay');if(overlay)overlay.style.display='none';
     }
     // ============================================================
-    // RECENTLY DELETED
+    // ACTIVITY LOG
     // ============================================================
+    async function openActivityLog(){
+        if(!requireAdmin()) return;
+        if(!checkFirebase()) return;
+        var bm=document.getElementById('burger-menu');var bb=document.getElementById('burger-backdrop');
+        if(bm)bm.style.display='none';if(bb)bb.style.display='none';
+        showLoading();
+        try {
+            pruneAuditLog();
+            var snap = await db.ref('auditLog').orderByChild('ts').limitToLast(500).once('value');
+            var rows=[]; snap.forEach(function(ch){ var v=ch.val()||{}; v._k=ch.key; rows.push(v); });
+            rows.reverse();
+            window._auditRows = rows;
+            var html='<div class="card"><h2>Activity Log</h2>';
+            html+='<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Every change: who, what, and when. Showing the most recent '+rows.length+' entries. Entries older than 12 months are removed automatically.</p>';
+            html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
+            html+='<input id="audit-f-user" oninput="filterAuditLog()" placeholder="Filter by user" style="flex:1;min-width:110px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">';
+            html+='<input id="audit-f-action" oninput="filterAuditLog()" placeholder="Filter by action" style="flex:1;min-width:110px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">';
+            html+='<input id="audit-f-entity" oninput="filterAuditLog()" placeholder="Filter by item" style="flex:1;min-width:110px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">';
+            html+='</div>';
+            if(!rows.length){ html+='<div class="empty-state">No activity recorded yet.</div>'; }
+            else {
+                html+='<div style="overflow-x:auto;"><table id="audit-table"><thead><tr><th>When</th><th>User</th><th>Action</th><th>Item</th><th>Details</th></tr></thead><tbody>';
+                html+=rows.map(function(r){ return _auditRowHtml(r); }).join('');
+                html+='</tbody></table></div>';
+            }
+            html+='</div>';
+            document.getElementById('detail-content').innerHTML=html;
+            document.getElementById('detail-title').textContent='Activity Log';
+            document.getElementById('detail-overlay').classList.add('active');
+        } catch(e){ showToast('Error: '+e.message,'error'); }
+        hideLoading();
+    }
+    function _auditWhen(ts){ if(!ts) return ''; try { return new Date(ts).toLocaleString(); } catch(e){ return String(ts); } }
+    function _auditDetails(d){ if(d==null) return ''; if(typeof d==='object'){ try { return Object.keys(d).map(function(k){ return k+': '+d[k]; }).join(', '); } catch(e){ return ''; } } return String(d); }
+    function _auditRowHtml(r){
+        return '<tr><td style="white-space:nowrap;font-size:12px;">'+escapeHtml(_auditWhen(r.ts))+'</td>'
+            +'<td style="font-size:12px;font-weight:600;">'+escapeHtml(r.user||'')+'</td>'
+            +'<td style="font-size:12px;">'+escapeHtml(r.action||'')+'</td>'
+            +'<td style="font-size:12px;">'+escapeHtml((r.entityType?r.entityType+': ':'')+(r.entityId||''))+'</td>'
+            +'<td style="font-size:12px;color:#4b5563;">'+escapeHtml(_auditDetails(r.details))+'</td></tr>';
+    }
+    function filterAuditLog(){
+        var uf=document.getElementById('audit-f-user'); var af=document.getElementById('audit-f-action'); var ef=document.getElementById('audit-f-entity');
+        var u=(uf?uf.value:'').toLowerCase(); var a=(af?af.value:'').toLowerCase(); var e=(ef?ef.value:'').toLowerCase();
+        var tb=document.querySelector('#audit-table tbody'); if(!tb||!window._auditRows) return;
+        var rows=window._auditRows.filter(function(r){
+            var okU=!u||String(r.user||'').toLowerCase().indexOf(u)>=0;
+            var okA=!a||String(r.action||'').toLowerCase().indexOf(a)>=0;
+            var itm=((r.entityType||'')+' '+(r.entityId||'')).toLowerCase();
+            var okE=!e||itm.indexOf(e)>=0;
+            return okU&&okA&&okE;
+        });
+        tb.innerHTML=rows.map(function(r){ return _auditRowHtml(r); }).join('');
+    }
     async function openUsersScreen() {
         if(!requireAdmin())return;
         if(!checkFirebase())return;
@@ -4371,19 +4473,19 @@ function liveSearchSuggest(query){
             var entries=Object.entries(users);
             entries.sort(function(a,b){return (a[1].loginId||'').localeCompare(b[1].loginId||'');});
             var html='<div class="card"><h2>Manage Users</h2>';
-            html+='<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Set each person\x27s role. New sign-ups start as <strong>viewer</strong> with immediate read access.</p>';
+            html+='<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Two access levels. <strong>Technician</strong> (standard): search, jobs, readings, notes, screenshots, link parts, and unlink their own links. <strong>Admin</strong>: everything, plus manage users, imports, deletes and the activity log. New sign-ups start as Technician.</p>';
             if(!entries.length){html+='<div class="empty-state">No users yet</div>';}
             entries.forEach(function(pair){
                 var uid=pair[0], u=pair[1];
                 var lid=escapeHtml(u.loginId||uid);
-                var role=u.role||'viewer';
+                var role=normalizeRole(u.role);
                 var needsReview=u.reviewed===false;
                 html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;'+(needsReview?'background:#fef2f2;':'')+'">';
                 html+='<div><strong>'+lid+'</strong>';
                 if(needsReview)html+=' <span style="font-size:11px;color:#ef4444;font-weight:600;">NEW - needs review</span>';
                 html+='</div><div style="display:flex;gap:6px;align-items:center;">';
                 html+='<select onchange="changeUserRole(\x27'+uid+'\x27,this.value)" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">';
-                ['viewer','technician','admin'].forEach(function(r){html+='<option value="'+r+'"'+(r===role?' selected':'')+'>'+r+'</option>';});
+                ['technician','admin'].forEach(function(r){html+='<option value="'+r+'"'+(r===role?' selected':'')+'>'+r+'</option>';});
                 html+='</select>';
                 if(needsReview)html+='<button class="btn btn-secondary btn-sm" onclick="markUserReviewed(\x27'+uid+'\x27)">Mark reviewed</button>';
                 html+='</div></div>';
@@ -4398,12 +4500,12 @@ function liveSearchSuggest(query){
     async function changeUserRole(uid, role) {
         if(!requireAdmin())return;
         if(!checkFirebase())return;
-        if(['viewer','technician','admin'].indexOf(role)<0)return;
+        if(['technician','admin'].indexOf(role)<0)return;
         showLoading();
         try {
             await db.ref('users/'+uid+'/role').set(role);
             await db.ref('users/'+uid+'/reviewed').set(true);
-            showToast('Role updated to '+role,'success');
+            logAudit('roleChange','user',uid,{role:role});showToast('Role updated to '+role,'success');
             if(uid===currentUid){currentRole=role;applyRoleVisibility();}
             updateRoleReviewBadge();
             await openUsersScreen();
@@ -4482,7 +4584,7 @@ function liveSearchSuggest(query){
             if(!data){showToast('Item not found','error');hideLoading();return;}
             delete data.deletedAt;
             await db.ref(col+'/'+key).set(data);await db.ref('trash/'+col+'/'+key).remove();
-            showToast('Restored!','success');openRecentlyDeleted();
+            logAudit('restore',col,key,null);showToast('Restored!','success');openRecentlyDeleted();
         }catch(e){hideLoading();showToast('Error: '+e.message,'error');}
         hideLoading();
     }
@@ -4491,7 +4593,7 @@ function liveSearchSuggest(query){
         if(!confirmed)return;if(!checkFirebase())return;showLoading();
         try {
             await db.ref('trash/'+col+'/'+key).remove();
-            showToast('Permanently deleted.','success');openRecentlyDeleted();
+            logAudit('purge',col,key,null);showToast('Permanently deleted.','success');openRecentlyDeleted();
         }catch(e){hideLoading();showToast('Error: '+e.message,'error');}
         hideLoading();
     }
@@ -4502,7 +4604,7 @@ function liveSearchSuggest(query){
         if(!requireAdmin())return;
         if(!checkFirebase())return;showLoading();
         try {
-            var _bkNodes=['equipment','parts','routes','readings','trash','users','workAssigned','workLog','notes'];
+            var _bkNodes=['equipment','parts','routes','readings','trash','users','workAssigned','notes','routeImages','equipmentImages','associatedParts','auditLog'];
             var data={};
             for(var _bi=0;_bi<_bkNodes.length;_bi++){var _bs=await db.ref(_bkNodes[_bi]).once('value');var _bv=_bs.val();if(_bv!==null&&_bv!==undefined)data[_bkNodes[_bi]]=_bv;}
             const json=JSON.stringify(data,null,2);
@@ -4684,7 +4786,7 @@ function liveSearchSuggest(query){
             author: currentUser,
             createdAt: new Date().toISOString()
         };
-        var ref = await db.ref('notes/' + entityType + '/' + entityKey).push(noteData);
+        var ref = await db.ref('notes/' + entityType + '/' + entityKey).push(noteData);logAudit('addNote',entityType,entityKey,{text:String(noteText).trim().substring(0,80)});
         return ref.key;
     }
 
@@ -4697,13 +4799,14 @@ function liveSearchSuggest(query){
     }
 
     async function deleteNote(entityType, entityKey, noteId) { if(!requireWrite())return;
-        await db.ref('notes/' + entityType + '/' + entityKey + '/' + noteId).remove();
+        await db.ref('notes/' + entityType + '/' + entityKey + '/' + noteId).remove();logAudit('deleteNote',entityType,entityKey,{noteId:noteId});
     }
 
     async function editNote(entityType, entityKey, noteId, newText) { if(!requireWrite())return;
         await db.ref('notes/' + entityType + '/' + entityKey + '/' + noteId).update({
             text: newText, editedAt: new Date().toISOString()
         });
+        logAudit('editNote',entityType,entityKey,{noteId:noteId});
     }
 
     async function renderNotesSection(entityType, entityKey, container) {
@@ -4926,7 +5029,7 @@ function liveSearchSuggest(query){
                 jobData.cbmType = routeData ? (routeData.type || 'CBM') : 'CBM';
                 jobData.readingRequired = routeReadingRequired(routeData);
             }
-            await db.ref('workAssigned').push(jobData);
+            await db.ref('workAssigned').push(jobData);logAudit('addJob','job',itemName,{type:type});
             updateWorkCount();
             showToast('Added to Job list!', 'success');
             openDetail(type, key); // re-render: button flips to Remove from Job list
@@ -4950,7 +5053,7 @@ function liveSearchSuggest(query){
             if (Object.keys(updates).length === 0) { showToast('Not in Job list', 'error'); openDetail(type, key); return; }
             await db.ref().update(updates);
             updateWorkCount();
-            showToast('Removed from Job list', 'success');
+            logAudit('removeJob','job',itemName,null);showToast('Removed from Job list', 'success');
             openDetail(type, key); // re-render: button flips back to Add to Job list
         } catch(e) {
             showToast('Error removing from Job list: ' + e.message, 'error');
@@ -5082,7 +5185,7 @@ function liveSearchSuggest(query){
             await db.ref('readings/' + routeKey + '/' + readingKey + '/readings').set(newValues);
             await db.ref('readings/' + routeKey + '/' + readingKey + '/editedAt').set(new Date().toISOString());
             await db.ref('readings/' + routeKey + '/' + readingKey + '/editedBy').set(currentUser);
-            showToast('Reading updated!', 'success');
+            logAudit('editReading','route',routeKey,{reading:readingKey});showToast('Reading updated!', 'success');
             var histContainer = document.getElementById('detail-thermal-history');
             if (histContainer) renderThermalHistory(routeKey, histContainer);
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
@@ -5100,7 +5203,7 @@ function liveSearchSuggest(query){
         showLoading();
         try {
             await db.ref('readings/' + routeKey + '/' + readingKey).remove();
-            showToast('Reading deleted!', 'success');
+            logAudit('deleteReading','route',routeKey,{reading:readingKey});showToast('Reading deleted!', 'success');
             var histContainer = document.getElementById('detail-thermal-history');
             if (histContainer) renderThermalHistory(routeKey, histContainer);
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
@@ -5132,7 +5235,7 @@ function liveSearchSuggest(query){
             if (_cddData) await db.ref('trash/' + _cddCol + '/' + key).set({...(_cddData), deletedAt: new Date().toISOString()});
             await db.ref(refPath).remove();
             if(type==='equipment')invalidateEquipmentCache();else if(type==='part')invalidatePartsCache();else invalidateRoutesCache();
-            showToast(label.charAt(0).toUpperCase() + label.slice(1) + ' permanently deleted.');
+            logAudit('delete',type,key,{label:label});showToast(label.charAt(0).toUpperCase() + label.slice(1) + ' permanently deleted.');
             closeDetail();
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
         hideLoading();
@@ -5183,7 +5286,7 @@ function liveSearchSuggest(query){
                 timestamp: new Date().toISOString(),
                 recordedBy: currentUser || 'Unknown'
             });
-            showToast('Readings saved!', 'success');
+            logAudit('addReading','route',routeNum,{points:Object.keys(readings).length});showToast('Readings saved!', 'success');
             invalidateAlertsCache(); if (typeof _sparkCache !== 'undefined') delete _sparkCache[routeKey];
             clearDraft(routeKey);
             _saveReadingsCooldown=true; setTimeout(function(){_saveReadingsCooldown=false;},5000);
@@ -5241,7 +5344,7 @@ function liveSearchSuggest(query){
         }
     }
     function burgerSwitchUser() { toggleBurgerMenu(); showNewLogin(); }
-    function burgerLogout() { toggleBurgerMenu(); try{if(db){db.ref('equipment').off();db.ref('parts').off();db.ref('routes').off();db.ref('workAssigned').off();}}catch(e){} currentUser=null; currentUid=null; currentRole = AUTH_ENABLED ? 'viewer' : 'admin'; applyRoleVisibility(); if(!AUTH_ENABLED){ localStorage.removeItem('reliability_app_user'); initLogin(); return; } if(auth){ auth.signOut().catch(function(){}); } else { initLogin(); } }
+    function burgerLogout() { toggleBurgerMenu(); try{if(db){db.ref('equipment').off();db.ref('parts').off();db.ref('routes').off();db.ref('workAssigned').off();}}catch(e){} currentUser=null; currentUid=null; currentRole = AUTH_ENABLED ? 'technician' : 'admin'; applyRoleVisibility(); if(!AUTH_ENABLED){ localStorage.removeItem('reliability_app_user'); initLogin(); return; } if(auth){ auth.signOut().catch(function(){}); } else { initLogin(); } }
     
     // ============================================================
     // ADD FORM OVERLAY (from burger menu)
@@ -5360,7 +5463,7 @@ function liveSearchSuggest(query){
                 conveyorNumber: id, type: type, description: desc, notes: notes,
                 updatedAt: new Date().toISOString()
             });
-            if (imageUrl) await db.ref('equipmentImages/' + key).set(imageUrl);
+            if (imageUrl) await db.ref('equipmentImages/' + key).set(imageUrl);logAudit('add','position',id,{type:type});
             invalidateEquipmentCache();
             showToast('Position saved!', 'success');
             closeAddForm();
@@ -5402,7 +5505,7 @@ function liveSearchSuggest(query){
                 conveyors: pos ? [pos] : [],
                 createdAt: new Date().toISOString()
             };
-            await db.ref('parts').push(partData);
+            await db.ref('parts').push(partData);logAudit('add','part',apn,{cls:partClass});
             invalidatePartsCache();
             showToast('Part ' + apn + ' saved!', 'success');
             closeAddForm();
@@ -5456,7 +5559,7 @@ function liveSearchSuggest(query){
             var path = type === 'route' ? 'routeImages/' + key : 'equipmentImages/' + key;
             await db.ref(path).set(imageUrl);
             if (type === 'route') invalidateRoutesCache(); else invalidateEquipmentCache();
-            showToast('Screenshot saved!', 'success');
+            logAudit('addScreenshot',type,key,null);showToast('Screenshot saved!', 'success');
             // Refresh detail page
             openDetail(type === 'route' ? 'route' : 'equipment', key);
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
@@ -5500,7 +5603,7 @@ function liveSearchSuggest(query){
                 if (_posImg) await db.ref('equipmentImages/' + key).set(_posImg);
             }
             invalidateEquipmentCache();
-            showToast('Position updated!', 'success');
+            logAudit('edit','position',id,{active:(activeChecked?activeChecked.checked:true)});showToast('Position updated!', 'success');
             openDetail('equipment', newKey || key);
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
         hideLoading();
@@ -5551,7 +5654,7 @@ function liveSearchSuggest(query){
                 if (_rEditImg) await db.ref('routeImages/' + key).set(_rEditImg);
             }
             invalidateRoutesCache();
-            showToast('Route updated!', 'success');
+            logAudit('edit','route',num,{active:active});showToast('Route updated!', 'success');
             openDetail('route', newKey || key);
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
         hideLoading();
@@ -5576,7 +5679,7 @@ function liveSearchSuggest(query){
             }
             await db.ref('parts/' + key).update(updates);
             invalidatePartsCache();
-            showToast('Part updated!', 'success');
+            logAudit('edit','part',newApn,{active:active,bin:newBin});showToast('Part updated!', 'success');
             openDetail('part', key);
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
         hideLoading();
@@ -5591,7 +5694,7 @@ function liveSearchSuggest(query){
             var path = type === 'equipment' ? 'equipment/' + key : (type === 'route' ? 'routes/' + key : 'parts/' + key);
             await db.ref(path + '/active').set(true);
             if(type==='equipment')invalidateEquipmentCache();else if(type==='route')invalidateRoutesCache();else invalidatePartsCache();
-            showToast('Item reactivated!', 'success');
+            logAudit('reactivate',type,key,null);showToast('Item reactivated!', 'success');
             openDetail(type, key);
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
         hideLoading();
@@ -5696,7 +5799,7 @@ function liveSearchSuggest(query){
         var noteText = inputEl.value.trim();
         try {
             // Append note as a child key (Firebase turns arrays into objects on re-read, which breaks .push)
-            await db.ref('workAssigned/' + key + '/jobNotes').push({text: noteText, author: currentUser, createdAt: new Date().toISOString()});
+            await db.ref('workAssigned/' + key + '/jobNotes').push({text: noteText, author: currentUser, createdAt: new Date().toISOString()});logAudit('addJobNote','job',key,null);
             inputEl.value = '';
             showToast('Note added!', 'success');
             // Prompt to save to entity
@@ -5802,11 +5905,11 @@ function liveSearchSuggest(query){
                 // then the 4am sweep (cleanupOldWork) deletes it on the next work-day.
                 await db.ref('workAssigned/' + jobKey + '/status').set('done');
                 await db.ref('workAssigned/' + jobKey + '/completedAt').set(new Date().toISOString());
-                showToast('Job marked as done!', 'success');
+                logAudit('completeJob','job',jobKey,null);showToast('Job marked as done!', 'success');
             } else {
                 await db.ref('workAssigned/' + jobKey + '/status').set('pending');
                 await db.ref('workAssigned/' + jobKey + '/completedAt').remove();
-                showToast('Job reopened');
+                logAudit('reopenJob','job',jobKey,null);showToast('Job reopened');
             }
             loadWorkAssigned();
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
@@ -5885,15 +5988,15 @@ function liveSearchSuggest(query){
             }
             var qty = document.getElementById('link-qty') ? document.getElementById('link-qty').value.trim() : '';
             var obs = document.getElementById('link-obs') ? document.getElementById('link-obs').value.trim() : '';
-            if (qty || obs) {
-                await db.ref('parts/' + partKey + '/conveyorNotes/' + sanitizeKey(conveyorNumber)).set({
-                    quantity: qty || null,
-                    observations: obs || null,
-                    updatedAt: new Date().toISOString()
-                });
-            }
+            await db.ref('parts/' + partKey + '/conveyorNotes/' + sanitizeKey(conveyorNumber)).set({
+                quantity: qty || null,
+                observations: obs || null,
+                linkedBy: auditUser(),
+                linkedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            });
             try { var _apnSnap = await db.ref('parts/'+partKey+'/apn').once('value'); await _removeAssoc(sanitizeKey(conveyorNumber), _apnSnap.val()); } catch(_ce){}
-            showToast('Part linked to ' + conveyorNumber + '!', 'success');
+            logAudit('link','part',partKey,{position:conveyorNumber});showToast('Part linked to ' + conveyorNumber + '!', 'success');
             invalidatePartsCache();
             hideLoading();
             openDetail('equipment', sanitizeKey(conveyorNumber));
@@ -5978,9 +6081,9 @@ function liveSearchSuggest(query){
             if(conveyors.indexOf(conveyorNumber)<0){ conveyors.push(conveyorNumber); await db.ref('parts/'+partKey+'/conveyors').set(conveyors); }
             var qty=document.getElementById('link-qty')?document.getElementById('link-qty').value.trim():'';
             var obs=document.getElementById('link-obs')?document.getElementById('link-obs').value.trim():'';
-            if(qty||obs){ await db.ref('parts/'+partKey+'/conveyorNotes/'+sanitizeKey(conveyorNumber)).set({ quantity: qty||null, observations: obs||null, updatedAt: new Date().toISOString() }); }
+            await db.ref('parts/'+partKey+'/conveyorNotes/'+sanitizeKey(conveyorNumber)).set({ quantity: qty||null, observations: obs||null, linkedBy: auditUser(), linkedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
             try{ var _apnSnap=await db.ref('parts/'+partKey+'/apn').once('value'); await _removeAssoc(sanitizeKey(conveyorNumber), _apnSnap.val()); }catch(_ce){}
-            showToast('Linked to '+conveyorNumber+'!','success');
+            logAudit('link','part',partKey,{position:conveyorNumber});showToast('Linked to '+conveyorNumber+'!','success');
             invalidatePartsCache();
             hideLoading();
             openDetail('part', partKey);
@@ -6002,6 +6105,11 @@ function liveSearchSuggest(query){
             }
         } catch(e) {}
         _noteBody += '<span style="font-size:12px;color:#6b7280;display:block;margin-top:6px;">The part itself will not be deleted.</span>';
+        var _linkOwner = (_nd && _nd.linkedBy) ? String(_nd.linkedBy).toLowerCase() : null;
+        if (!isAdmin() && _linkOwner !== (auditUser()||'').toLowerCase()) {
+            showToast(_linkOwner ? ('Only ' + _linkOwner + ' or an admin can unlink this part.') : 'Only an admin can unlink this link (added before ownership tracking).', 'error');
+            return;
+        }
         var confirmed = await showCustomModal('⚠️ Unlink Part', _noteBody, [
             {label:'Cancel',class:'btn-secondary',value:false},
             {label:'Unlink',class:'btn-danger',value:true}
@@ -6029,7 +6137,7 @@ function liveSearchSuggest(query){
                         qty: _qn
                     });
                 } catch(_re){}
-                showToast('Part unlinked from ' + conveyorNumber, 'success');
+                logAudit('unlink','part',partKey,{position:conveyorNumber});showToast('Part unlinked from ' + conveyorNumber, 'success');
             } else {
                 showToast('Link not found', 'error');
             }
@@ -6137,11 +6245,11 @@ function liveSearchSuggest(query){
             if(conveyors.indexOf(conveyorNumber) < 0){ conveyors.push(conveyorNumber); await db.ref('parts/'+partKey+'/conveyors').set(conveyors); }
             var qty = document.getElementById('link-qty') ? document.getElementById('link-qty').value.trim() : '';
             var obs = document.getElementById('link-obs') ? document.getElementById('link-obs').value.trim() : '';
-            await db.ref('parts/'+partKey+'/conveyorNotes/'+sanitizeKey(conveyorNumber)).set({ quantity: qty||null, observations: obs||null, updatedAt: new Date().toISOString() });
+            await db.ref('parts/'+partKey+'/conveyorNotes/'+sanitizeKey(conveyorNumber)).set({ quantity: qty||null, observations: obs||null, linkedBy: auditUser(), linkedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
             await _removeAssoc(key, apn);
             invalidatePartsCache();
             hideLoading();
-            showToast('Linked ' + apn + ' to ' + conveyorNumber, 'success');
+            logAudit('link','part',partKey,{position:conveyorNumber,apn:apn});showToast('Linked ' + apn + ' to ' + conveyorNumber, 'success');
             openDetail('equipment', key);
         } catch(e){ hideLoading(); showToast('Error: '+e.message, 'error'); }
     }
@@ -6160,7 +6268,7 @@ function liveSearchSuggest(query){
     // ============================================================
     // GUIDED TOUR
     // ============================================================
-    var tourSteps = [
+    function baseTourSteps() { return [
         {
             target: '#search-conveyor',
             title: 'Search',
@@ -6194,7 +6302,7 @@ function liveSearchSuggest(query){
         {
             target: null,
             title: 'Linking Parts to Positions',
-            text: 'On a Position detail view, you\'ll see a "Linked Parts" section with a "+ Link Part" button. Search by APN, confirm the link. Click ✕ to unlink (the part isn\'t deleted, just disconnected from that position).',
+            text: 'On a Position detail view, you\'ll see a "Linked Parts" section with a "+ Link Part" button. Search by APN, confirm the link. Click ✕ to unlink (the part isn\'t deleted, just disconnected). You can unlink parts you linked yourself; admins can unlink any link.',
             position: 'center'
         },
         {
@@ -6206,7 +6314,7 @@ function liveSearchSuggest(query){
         {
             target: '[title="Menu"]',
             title: 'Menu',
-            text: 'Access: Add New (Position, Part, Route), Tools (Manage Inactive Items, Backup Data), and Account settings (Switch User, Logout).',
+            text: 'Open Alerts, Download Backup, Help & Reference, and your Account settings (Switch User, Logout) all live here.',
             position: 'left'
         },
         {
@@ -6215,10 +6323,27 @@ function liveSearchSuggest(query){
             text: '• Tap any screenshot to view fullscreen (pinch to zoom on mobile)\n• "More results" links are clickable — expand to see all\n• Inactive routes won\'t show on position detail views\n• Use the browser Back button to navigate — it stays in the app',
             position: 'center'
         }
-    ];
+    ]; }
+    function adminTourSteps() { return [
+        {
+            target: '[title="Menu"]',
+            title: 'Admin Tools',
+            text: 'As an admin you also get Add New (Position, Part, Route), Manage Users, the Activity Log (a full record of who changed what and when), Manage Inactive Items and Recently Deleted.',
+            position: 'left'
+        }
+    ]; }
+    function getTourSteps(deltaOnly) {
+        if (deltaOnly) return adminTourSteps();
+        var steps = baseTourSteps();
+        if (typeof isAdmin === 'function' && isAdmin()) steps = steps.concat(adminTourSteps());
+        return steps;
+    }
     var currentTourStep = 0;
+    var currentTourSteps = [];
 
-    function startTour() {
+    function startTour(deltaOnly) {
+        currentTourSteps = getTourSteps(deltaOnly);
+        if (!currentTourSteps.length) return;
         currentTourStep = 0;
         document.getElementById('tour-overlay').classList.add('active');
         showTourStep();
@@ -6226,18 +6351,28 @@ function liveSearchSuggest(query){
 
     function endTour() {
         document.getElementById('tour-overlay').classList.remove('active');
-        localStorage.setItem('tourCompleted', 'true');
+        localStorage.setItem('tourCompleted', (typeof isAdmin === 'function' && isAdmin()) ? 'admin' : 'technician');
+    }
+    var _tourAutoChecked = false;
+    function maybeAutoTour() {
+        if (_tourAutoChecked) return;
+        _tourAutoChecked = true;
+        var sec = document.getElementById('sec-search');
+        if (!sec || sec.style.display === 'none') return;
+        var saved = localStorage.getItem('tourCompleted');
+        if (!saved) { startTour(false); return; }
+        if (saved !== 'admin' && (typeof isAdmin === 'function' && isAdmin())) { startTour(true); }
     }
 
     function tourStep(dir) {
         currentTourStep += dir;
-        if (currentTourStep >= tourSteps.length) { endTour(); return; }
+        if (currentTourStep >= currentTourSteps.length) { endTour(); return; }
         if (currentTourStep < 0) { currentTourStep = 0; return; }
         showTourStep();
     }
 
     function showTourStep() {
-        var step = tourSteps[currentTourStep];
+        var step = currentTourSteps[currentTourStep];
         var highlight = document.getElementById('tour-highlight');
         var tooltip = document.getElementById('tour-tooltip');
         var title = document.getElementById('tour-title');
@@ -6248,9 +6383,9 @@ function liveSearchSuggest(query){
 
         title.textContent = step.title;
         text.textContent = step.text;
-        counter.textContent = (currentTourStep + 1) + ' / ' + tourSteps.length;
+        counter.textContent = (currentTourStep + 1) + ' / ' + currentTourSteps.length;
         backBtn.style.display = currentTourStep === 0 ? 'none' : 'inline-block';
-        nextBtn.textContent = currentTourStep === tourSteps.length - 1 ? 'Finish' : 'Next';
+        nextBtn.textContent = currentTourStep === currentTourSteps.length - 1 ? 'Finish' : 'Next';
 
         if (step.target) {
             var el = document.querySelector(step.target);
@@ -6291,9 +6426,7 @@ function liveSearchSuggest(query){
     // Auto-trigger tour on first visit
     window.addEventListener('load', function() {
         setTimeout(function() {
-            if (!localStorage.getItem('tourCompleted') && document.getElementById('sec-search') && document.getElementById('sec-search').style.display !== 'none') {
-                startTour();
-            }
+            try { maybeAutoTour(); } catch(e){}
         }, 1500);
     });
 
@@ -6395,7 +6528,7 @@ function liveSearchSuggest(query){
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.15';
+    var APP_VERSION = '1.17';
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== APP_VERSION) {
