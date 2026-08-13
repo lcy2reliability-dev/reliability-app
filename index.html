@@ -814,7 +814,7 @@
     //           roles. Only flip to true when you do the login rollout AND have enabled
     //           Email/Password in the Firebase console + published the locked rules.
     // ============================================================
-    var AUTH_ENABLED = false;
+    var AUTH_ENABLED = true;
     var AUTH_EMAIL_DOMAIN = 'lcy2reliability.local';
     function loginIdToEmail(id){ return String(id).toLowerCase().replace(/[^a-z0-9._-]/g,'') + '@' + AUTH_EMAIL_DOMAIN; }
     function isAdmin(){ return currentRole === 'admin'; }
