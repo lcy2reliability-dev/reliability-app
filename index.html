@@ -394,12 +394,22 @@
                 <button class="btn btn-secondary" onclick="showNewLogin()">Someone else</button>
             </div>
             <div id="login-new">
+                <label id="login-name-label" for="login-name" style="font-size:12px;color:#6b7280;display:none;margin-bottom:4px;">Your name</label>
+                <input type="text" id="login-name" placeholder="Your name (e.g. Tittus)" maxlength="60" autocomplete="name" style="display:none;">
+                <label id="login-email-label" for="login-email" style="font-size:12px;color:#6b7280;display:none;margin-top:10px;margin-bottom:4px;">Amazon email</label>
+                <input type="email" id="login-email" placeholder="alias@amazon.com" maxlength="80" autocomplete="email" style="display:none;" onkeyup="if(event.key==='Enter')document.getElementById('login-pin').focus()">
                 <label id="login-id-label" for="login-input" style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px;">Login ID</label>
                 <input type="text" id="login-input" placeholder="Login ID (e.g. vladesca)" maxlength="30" autocomplete="username" onkeyup="if(event.key==='Enter')document.getElementById('login-pin').focus()">
                 <label id="login-pin-label" for="login-pin" style="font-size:12px;color:#6b7280;display:block;margin-top:10px;margin-bottom:4px;">PIN</label>
-                <input type="password" id="login-pin" inputmode="numeric" maxlength="12" placeholder="PIN (6+ digits)" autocomplete="current-password" onkeyup="if(event.key==='Enter')submitLogin()">
-                <button class="btn btn-primary" onclick="submitLogin()" style="margin-top:12px;">Continue</button>
-                <p id="login-hint" style="font-size:12px;color:#6b7280;margin-top:10px;">First time? Pick a 6-digit PIN and we'll create your account (standard access; an admin can make you an admin).</p>
+                <input type="password" id="login-pin" inputmode="numeric" maxlength="12" placeholder="PIN (6+ digits)" autocomplete="current-password" onkeyup="if(event.key==='Enter')submitLoginOrRegister()">
+                <label id="login-pin-confirm-label" for="login-pin-confirm" style="font-size:12px;color:#6b7280;display:none;margin-top:10px;margin-bottom:4px;">Confirm PIN</label>
+                <input type="password" id="login-pin-confirm" inputmode="numeric" maxlength="12" placeholder="Re-enter PIN" autocomplete="new-password" style="display:none;" onkeyup="if(event.key==='Enter')submitLoginOrRegister()">
+                <button class="btn btn-primary" id="login-primary-btn" onclick="submitLoginOrRegister()" style="margin-top:12px;">Sign in</button>
+                <p id="login-hint" style="font-size:12px;color:#6b7280;margin-top:10px;"></p>
+                <div id="login-links" style="margin-top:10px;display:flex;justify-content:space-between;gap:12px;">
+                    <a id="login-mode-toggle" role="button" tabindex="0" onclick="toggleLoginMode()" style="font-size:13px;color:#2563eb;cursor:pointer;text-decoration:underline;">Set up your login</a>
+                    <a id="login-forgot" role="button" tabindex="0" onclick="forgotPinPrompt()" style="font-size:13px;color:#6b7280;cursor:pointer;text-decoration:underline;">Forgot PIN?</a>
+                </div>
             </div>
         </div>
     </div>
@@ -441,7 +451,7 @@
                 <div style="height:1px;background:#e5e7eb;margin:8px 20px;"></div>
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Account</div>
                 <div id="burger-user" style="padding:10px 20px;font-size:14px;color:#1a1a2e;font-weight:500;">&#128100; Not logged in</div>
-                <div role="button" tabindex="0" onclick="burgerSwitchUser()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Switch User</div>
+                <div id="menu-change-pin" role="button" tabindex="0" onclick="openChangePinModal()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Change PIN</div>
                 <div role="button" tabindex="0" onclick="burgerLogout()" style="padding:10px 20px;font-size:14px;color:#ef4444;cursor:pointer;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background=''">Logout</div>
             </div>
         </div>
@@ -456,7 +466,7 @@
     </div>
     <div id="offline-banner" role="status" aria-live="polite" style="display:none;background:#fee2e2;color:#991b1b;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;border-bottom:1px solid #fca5a5;">&#9888; You are offline — changes may not save until your connection returns.</div>
     <div id="sync-status" class="sync-status" role="status" aria-live="polite" style="display:none;"></div>
-    <div id="pending-approval-banner" role="status" style="display:none;background:#fef3c7;color:#92400e;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;border-bottom:1px solid #fcd34d;">&#9203; Your account is waiting for admin approval. You can view everything; editing unlocks once an admin approves you.</div>
+    <div id="pending-approval-banner" role="status" style="display:none;background:#fef3c7;color:#92400e;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;border-bottom:1px solid #fcd34d;">&#9203; Confirm your email to unlock editing. We sent a link to your Amazon inbox &mdash; click it, then return here. <a role="button" tabindex="0" onclick="resendConfirmation()" style="color:#92400e;text-decoration:underline;cursor:pointer;">Resend link</a></div>
     <div class="content">
         <!-- SEARCH -->
         <div id="sec-search" class="section active">
@@ -777,7 +787,7 @@
 
     let db = null, firebaseReady = false, currentUser = null, lastSearchResultCount = 0;
     var _saveReadingsCooldown = false; // rate-limit: 5s cooldown between thermal saves
-    var auth = null, currentUid = null, currentRole = 'technician', currentReviewed = true;
+    var auth = null, currentUid = null, currentRole = 'technician', currentReviewed = true, currentName = '', currentEmailVerified = false;
     (function initFirebase() {
         if (_isPreview) return;
         try {
@@ -815,11 +825,11 @@
     //           Email/Password in the Firebase console + published the locked rules.
     // ============================================================
     var AUTH_ENABLED = true;
-    var AUTH_EMAIL_DOMAIN = 'lcy2reliability.local';
+    var AUTH_EMAIL_DOMAIN = 'amazon.com';
     function loginIdToEmail(id){ return String(id).toLowerCase().replace(/[^a-z0-9._-]/g,'') + '@' + AUTH_EMAIL_DOMAIN; }
     function isAdmin(){ return currentRole === 'admin'; }
-    function canWrite(){ if(currentRole === 'admin') return true; return currentRole === 'technician' && currentReviewed !== false; }
-    function requireWrite(){ if(canWrite()) return true; if(currentRole === 'technician' && currentReviewed === false){ showToast('Your account is waiting for admin approval. You can view everything; editing unlocks once an admin approves you.', 'error'); } else { showToast('You have view-only access. Ask an admin to upgrade your role.', 'error'); } return false; }
+    function canWrite(){ if(currentRole === 'admin') return true; return currentRole === 'technician' && (currentEmailVerified === true || currentReviewed === true); }
+    function requireWrite(){ if(canWrite()) return true; if(currentRole === 'technician' && currentEmailVerified !== true){ showToast('Confirm your email to unlock editing - check your Amazon inbox for the link we sent (tap Resend on the amber banner if needed).', 'error'); } else { showToast('You have view-only access. Ask an admin to upgrade your role.', 'error'); } return false; }
     function requireAdmin(){ if(!isAdmin()){ showToast('Admins only.', 'error'); return false; } return true; }
     function normalizeRole(r){ return (r === 'admin') ? 'admin' : 'technician'; } // 2-tier model: legacy 'viewer' -> technician
     function auditUser(){ return (currentUser || 'unknown'); }
@@ -853,7 +863,7 @@
     }
     function applyRoleVisibility(){
         document.body.classList.remove('role-viewer','role-technician','role-admin','role-pending');
-        var pending = (currentRole === 'technician' && currentReviewed === false);
+        var pending = (currentRole === 'technician' && !canWrite());
         document.body.classList.add(pending ? 'role-pending' : ('role-' + (currentRole||'technician')));
         var pb = document.getElementById('pending-approval-banner'); if(pb) pb.style.display = pending ? 'block' : 'none';
         if(typeof updateRoleReviewBadge === 'function') updateRoleReviewBadge();
@@ -876,12 +886,14 @@
             if(idLbl) idLbl.textContent = 'Your name';
             if(li) li.placeholder = 'Your name';
             if(pt) pt.textContent = 'Enter your name to continue';
+            ['login-name-label','login-name','login-email-label','login-email','login-pin-confirm-label','login-pin-confirm','login-links'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display='none'; });
         } else {
             if(lp) lp.style.display = '';
             if(pinLbl) pinLbl.style.display = '';
             if(hint) hint.style.display = '';
             if(idLbl) idLbl.textContent = 'Login ID';
             if(li) li.placeholder = 'Login ID (e.g. vladesca)';
+            setLoginMode('signin');
         }
         var ov = document.getElementById('login-overlay'); if(ov) ov.style.display = 'flex';
         if(li){ if(AUTH_ENABLED && last && lp){ lp.focus(); } else { li.focus(); } }
@@ -890,6 +902,129 @@
     function showNewLogin() { initLogin(); }
     function confirmLogin() { initLogin(); }
 
+    // ===== v1.17 login / self-service (email-confirmation gate) =====
+    var _loginMode = 'signin';
+    function setLoginMode(mode){
+        _loginMode = (mode === 'register') ? 'register' : 'signin';
+        var reg = (_loginMode === 'register');
+        function show(id, on){ var el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; }
+        show('login-name-label', reg); show('login-name', reg);
+        show('login-email-label', reg); show('login-email', reg);
+        show('login-id-label', !reg); show('login-input', !reg);
+        show('login-pin-confirm-label', reg); show('login-pin-confirm', reg);
+        show('login-forgot', !reg);
+        var links = document.getElementById('login-links'); if(links) links.style.display = 'flex';
+        var pt = document.getElementById('login-prompt-text'); if(pt) pt.textContent = reg ? 'Set up your login' : 'Enter your Login ID and PIN';
+        var btn = document.getElementById('login-primary-btn'); if(btn) btn.textContent = reg ? 'Create account' : 'Sign in';
+        var tog = document.getElementById('login-mode-toggle'); if(tog) tog.textContent = reg ? 'Already set up? Sign in' : 'Set up your login';
+        var hint = document.getElementById('login-hint');
+        if(hint){ hint.style.display = ''; hint.textContent = reg ? 'Use your Amazon email. Your Login ID is the part before the @ (e.g. strtt). Pick a 6+ digit PIN. You can view straight away; click the email link we send to unlock editing.' : ''; }
+        var lpc = document.getElementById('login-pin-confirm'); if(lpc && !reg) lpc.value = '';
+    }
+    function toggleLoginMode(){ setLoginMode(_loginMode === 'register' ? 'signin' : 'register'); var f = document.getElementById(_loginMode === 'register' ? 'login-name' : 'login-input'); if(f) f.focus(); }
+    function submitLoginOrRegister(){ if(_loginMode === 'register'){ submitRegister(); } else { submitLogin(); } }
+    async function submitRegister(){
+        var name = (document.getElementById('login-name').value || '').trim();
+        var email = (document.getElementById('login-email').value || '').trim().toLowerCase();
+        var pinEl = document.getElementById('login-pin'); var pin = pinEl ? (pinEl.value || '').trim() : '';
+        var confEl = document.getElementById('login-pin-confirm'); var conf = confEl ? (confEl.value || '').trim() : '';
+        if(!name){ showToast('Please enter your name', 'error'); return; }
+        if(!/^[a-z0-9][a-z0-9._-]*@amazon\.[a-z][a-z.]*$/i.test(email)){ showToast('Enter your Amazon email (e.g. strtt@amazon.com)', 'error'); return; }
+        if(!/^\d{6,}$/.test(pin)){ showToast('PIN must be 6+ digits (numbers only)', 'error'); return; }
+        if(pin !== conf){ showToast('The two PINs do not match', 'error'); return; }
+        if(!firebaseReady || !auth){ showToast('Sign-up unavailable right now', 'error'); return; }
+        var alias = email.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '');
+        if(!alias){ showToast('That email has no valid Login ID', 'error'); return; }
+        var credEmail = loginIdToEmail(alias);
+        showLoading();
+        try {
+            var cred = await auth.createUserWithEmailAndPassword(credEmail, pin);
+            await db.ref('users/' + cred.user.uid).set({ loginId: alias, name: name, email: email, role: 'technician', status: 'active', reviewed: false, createdAt: new Date().toISOString() });
+            try { await cred.user.sendEmailVerification(); } catch(_e){}
+            showToast('Account created. Check your Amazon inbox for a confirmation link to unlock editing.', 'success');
+        } catch(e){
+            hideLoading();
+            var c = e && e.code ? e.code : '';
+            if(c === 'auth/email-already-in-use'){ showToast('That Login ID is already set up. Switch to Sign in and enter your PIN (use Forgot PIN if needed).', 'error'); setLoginMode('signin'); var li = document.getElementById('login-input'); if(li) li.value = alias; }
+            else if(c === 'auth/operation-not-allowed'){ showToast('Login not enabled yet - contact your admin', 'error'); }
+            else if(c === 'auth/weak-password'){ showToast('PIN must be at least 6 digits', 'error'); }
+            else if(c === 'auth/invalid-email'){ showToast('That email address is not valid', 'error'); }
+            else { showToast('Could not set up your login: ' + (e && e.message ? e.message : 'error'), 'error'); }
+        }
+    }
+    function forgotPinPrompt(){
+        if(!AUTH_ENABLED || !auth){ showToast('Not available right now', 'error'); return; }
+        document.getElementById('modal-title').textContent = 'Forgot PIN';
+        document.getElementById('modal-message').textContent = '';
+        document.getElementById('modal-body').innerHTML = '<div class="form-group"><label for="fp-id" style="display:block;font-size:13px;color:#374151;margin-bottom:6px;">Enter your Login ID. We will email a reset link to your Amazon inbox.</label><input type="text" id="fp-id" placeholder="Login ID (e.g. strtt)" maxlength="30" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;"></div>';
+        document.getElementById('modal-actions').innerHTML = '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="doForgotPin()">Send reset link</button>';
+        document.getElementById('modal').classList.add('active'); _openModalA11y();
+        var pre = document.getElementById('login-input'); var fp = document.getElementById('fp-id');
+        if(fp){ if(pre && pre.value) fp.value = pre.value.trim(); setTimeout(function(){ fp.focus(); }, 50); }
+    }
+    async function doForgotPin(){
+        var id = (document.getElementById('fp-id').value || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
+        if(!id){ showToast('Please enter your Login ID', 'error'); return; }
+        if(!auth){ showToast('Not available right now', 'error'); return; }
+        var email = loginIdToEmail(id);
+        showLoading();
+        try { await auth.sendPasswordResetEmail(email); } catch(_e){}
+        hideLoading(); closeModal();
+        showToast('If that Login ID is set up, a reset link is on its way to the Amazon inbox.', 'success');
+    }
+    function openChangePinModal(){
+        var bm = document.getElementById('burger-menu'); if(bm && bm.style.display !== 'none' && typeof toggleBurgerMenu === 'function') toggleBurgerMenu();
+        if(!AUTH_ENABLED || !auth || !auth.currentUser){ showToast('You need to be signed in to change your PIN', 'error'); return; }
+        document.getElementById('modal-title').textContent = 'Change PIN';
+        document.getElementById('modal-message').textContent = '';
+        document.getElementById('modal-body').innerHTML = '<div class="form-group"><label for="cp-current" style="display:block;font-size:13px;color:#374151;margin-bottom:4px;">Current PIN</label><input type="password" id="cp-current" inputmode="numeric" maxlength="12" placeholder="Current PIN" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;margin-bottom:10px;"><label for="cp-new" style="display:block;font-size:13px;color:#374151;margin-bottom:4px;">New PIN (6+ digits)</label><input type="password" id="cp-new" inputmode="numeric" maxlength="12" placeholder="New PIN" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;margin-bottom:10px;"><label for="cp-confirm" style="display:block;font-size:13px;color:#374151;margin-bottom:4px;">Confirm new PIN</label><input type="password" id="cp-confirm" inputmode="numeric" maxlength="12" placeholder="Confirm new PIN" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;"></div>';
+        document.getElementById('modal-actions').innerHTML = '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveNewPin()">Save PIN</button>';
+        document.getElementById('modal').classList.add('active'); _openModalA11y();
+        setTimeout(function(){ var el = document.getElementById('cp-current'); if(el) el.focus(); }, 50);
+    }
+    async function saveNewPin(){
+        var cur = (document.getElementById('cp-current').value || '').trim();
+        var nw = (document.getElementById('cp-new').value || '').trim();
+        var cf = (document.getElementById('cp-confirm').value || '').trim();
+        if(!/^\d{6,}$/.test(nw)){ showToast('New PIN must be 6+ digits (numbers only)', 'error'); return; }
+        if(nw !== cf){ showToast('The two new PINs do not match', 'error'); return; }
+        if(nw === cur){ showToast('New PIN must be different from the current one', 'error'); return; }
+        if(!auth || !auth.currentUser){ showToast('You need to be signed in', 'error'); return; }
+        showLoading();
+        try {
+            var cred = firebase.auth.EmailAuthProvider.credential(auth.currentUser.email, cur);
+            await auth.currentUser.reauthenticateWithCredential(cred);
+            await auth.currentUser.updatePassword(nw);
+            hideLoading(); closeModal(); showToast('PIN changed', 'success');
+        } catch(e){
+            hideLoading();
+            var c = e && e.code ? e.code : '';
+            if(c === 'auth/wrong-password' || c === 'auth/invalid-credential' || c === 'auth/invalid-login-credentials'){ showToast('Current PIN is incorrect', 'error'); }
+            else if(c === 'auth/weak-password'){ showToast('New PIN must be at least 6 digits', 'error'); }
+            else { showToast('Could not change PIN: ' + (e && e.message ? e.message : 'error'), 'error'); }
+        }
+    }
+    function resendConfirmation(){
+        if(!auth || !auth.currentUser){ showToast('Sign in first', 'error'); return; }
+        showLoading();
+        auth.currentUser.sendEmailVerification().then(function(){ hideLoading(); showToast('Confirmation link re-sent to your Amazon inbox.', 'success'); }).catch(function(e){ hideLoading(); showToast('Could not resend: ' + (e && e.message ? e.message : 'error'), 'error'); });
+    }
+    function recheckEmailVerified(){
+        if(!auth || !auth.currentUser || currentRole !== 'technician') return;
+        if(currentEmailVerified === true && currentReviewed === true) return;
+        auth.currentUser.reload().then(function(){
+            var v = !!(auth.currentUser && auth.currentUser.emailVerified);
+            if(v && currentEmailVerified !== true){
+                currentEmailVerified = true; currentReviewed = true;
+                if(currentUid){ try { db.ref('users/' + currentUid + '/reviewed').set(true); logAudit('emailVerified','user',currentUid,{}); } catch(_e){} }
+                applyRoleVisibility();
+                showToast('Email confirmed - editing unlocked.', 'success');
+                if(typeof renderDashboard === 'function'){ try { renderDashboard(); } catch(_e){} }
+            }
+        }).catch(function(){});
+    }
+    window.addEventListener('focus', recheckEmailVerified);
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden) recheckEmailVerified(); });
     async function submitLogin() {
         var id = (document.getElementById('login-input').value || '').trim().toLowerCase();
         if (!AUTH_ENABLED) {
@@ -914,19 +1049,8 @@
             if (code === 'auth/wrong-password') { hideLoading(); showToast('Incorrect PIN', 'error'); return; }
             if (code === 'auth/operation-not-allowed') { hideLoading(); showToast('Login not enabled yet - contact your admin', 'error'); return; }
             if (code === 'auth/user-not-found' || code === 'auth/invalid-login-credentials' || code === 'auth/invalid-credential') {
-                // Either a brand-new user, or a wrong PIN for an existing one (Firebase merges these codes).
-                try {
-                    var cred = await auth.createUserWithEmailAndPassword(email, pin);
-                    await db.ref('users/' + cred.user.uid).set({ loginId: id, role: 'technician', status: 'active', reviewed: false, createdAt: new Date().toISOString() });
-                    // onAuthStateChanged finishes login
-                } catch (e2) {
-                    hideLoading();
-                    var c2 = e2 && e2.code ? e2.code : '';
-                    if (c2 === 'auth/email-already-in-use') { showToast('Incorrect PIN for that Login ID', 'error'); }
-                    else if (c2 === 'auth/operation-not-allowed') { showToast('Login not enabled yet - contact your admin', 'error'); }
-                    else if (c2 === 'auth/weak-password') { showToast('PIN must be at least 6 digits', 'error'); }
-                    else { showToast('Could not sign in: ' + (e2 && e2.message ? e2.message : 'error'), 'error'); }
-                }
+                hideLoading();
+                showToast('Login ID or PIN not recognised. New here? Tap "Set up your login" below.', 'error');
                 return;
             }
             hideLoading();
@@ -950,7 +1074,10 @@
                     currentUid = user.uid;
                     currentUser = (u.loginId || (user.email || '').split('@')[0] || '').toLowerCase();
                     currentRole = normalizeRole(u.role);
-                    currentReviewed = (u.reviewed !== false);
+                    currentReviewed = (u.reviewed === true);
+                    currentName = (u.name || '');
+                    currentEmailVerified = !!(user.emailVerified);
+                    if (currentRole === 'technician' && currentEmailVerified && u.reviewed !== true) { try { db.ref('users/' + user.uid + '/reviewed').set(true); currentReviewed = true; logAudit('emailVerified','user',user.uid,{}); } catch(_e){} }
                     localStorage.setItem('reliability_app_user', currentUser);
                     var ov = document.getElementById('login-overlay'); if (ov) ov.style.display = 'none';
                     var bu = document.getElementById('burger-user');
@@ -2080,7 +2207,8 @@
         var greet = hr < 12 ? 'Good morning' : (hr < 18 ? 'Good afternoon' : 'Good evening');
         var today = new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
         var html = '<div id="dash-root" class="dash2">';
-        html += '<div class="dash2-greet"><h1>' + greet + (currentUser ? ', <b>' + escapeHtml(currentUser) + '</b>' : '') + '</h1><div class="dash2-date">' + escapeHtml(today) + ' \u00b7 LCY2 RME</div></div>';
+        var greetName = (currentName || currentUser);
+        html += '<div class="dash2-greet"><h1>' + greet + (greetName ? ', <b>' + escapeHtml(greetName) + '</b>' : '') + '</h1><div class="dash2-date">' + escapeHtml(today) + ' \u00b7 LCY2 RME</div></div>';
         html += '<button type="button" class="dash2-scan" onclick="openScanner()"><span class="dash2-scan-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg></span><span class="dash2-scan-tx"><b>Scan a QR code</b><i>Open a position or part instantly</i></span></button>';
         html += '<div class="dash2-kpis">';
         html += '<div class="dash2-kpi k-assigned" role="button" tabindex="0" onclick="switchTab(\x27work\x27)"><div class="k-num" id="dash-assigned">\u2014</div><div class="k-lbl">Jobs assigned</div></div>';

@@ -9,13 +9,26 @@
 
 ## v1.17 — 2026-08-13
 
-**Status:** Not deployed yet — bundles with v1.16 in a single deploy. Login stays OFF until the separate console rollout.
+**Status:** Deployed and login switched ON 2026-08-13. Login experience refined 2026-08-14 (email-confirmation gate; see the dedicated section below). Firebase rules not yet published (database still open).
 
 **Highlights:**
 - **Security build, login stays off until switched on.** All the server-side pieces needed to lock the database down are now in the app and ready. Nothing changes for anyone today: the app still opens with no login. Turning the lock on is a deliberate, separate step done in the Firebase console plus a one-line switch (`AUTH_ENABLED`), documented in `SECURITY_SETUP.md`.
 - **New people are look-only until an Admin approves them.** Once login is on, the first time someone signs in they can view everything but cannot edit. They see a "waiting for admin approval" banner; an Admin approves them in Manage Users (the existing "Role review required" flag), after which they can edit normally. This stops a stranger who finds the public URL from changing data.
 - **Complete database rules.** The rules now cover every part of the app, including the photo stores, the associated-parts catalogue and the Activity Log that were added after the first rules were written. The Activity Log is append-only (technicians can add entries but not edit or delete them; only Admins prune) and indexed on time.
 - **More complete backup.** "Download Backup" now also captures route and equipment photos, the associated-parts catalogue and the Activity Log.
+
+### Login experience & email-confirmation gate (2026-08-14)
+Refines how people get in and how editing is unlocked. No version bump (still v1.17).
+
+- **Set up your login** now collects the person's **name** and **Amazon email** and asks them to **confirm their PIN**. The Login ID is the part of the email before the @ (e.g. `strtt`). The login credential is standardised on `<alias>@amazon.com`, which is deliverable for every Amazon employee (confirmed by test), so sign-in stays simple (Login ID + PIN) and works regardless of whether someone normally uses `@amazon.co.uk` etc.
+- **Approval by an Admin is replaced by email confirmation.** A new person can view immediately; the app emails them a confirmation link (Firebase built-in verification). When they click it and return to the app, editing unlocks automatically to technician level - Admins never need to review anyone. `canWrite()` for a technician now means "email confirmed" (or an Admin override). Admins can still bump anyone to Admin in Manage Users, and the "Mark reviewed" button remains as a manual override for stuck cases.
+- **Forgot PIN** link on the sign-in screen sends a reset link to the Amazon inbox (Firebase password reset).
+- **Change PIN** replaces "Switch User" in the menu (Logout stays below it). It re-checks the current PIN, then sets the new one.
+- **Dashboard greeting** now uses the person's name ("Good morning, Tittus"); everything else (comments, Activity Log, attribution) still uses the alias (`strtt`).
+- Sign-in no longer silently creates an account on an unknown Login ID; it points new people to "Set up your login".
+- The pending banner now explains "confirm your email to unlock editing" and carries a **Resend link** button. The app re-checks verification when you return to the tab (and on refresh).
+- **For the eventual locked-down rules:** technician writes should also be gated server-side on `auth.token.email_verified` (noted for the SECURITY_SETUP runbook).
+
 
 **Detail:**
 
