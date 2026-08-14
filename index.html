@@ -6484,9 +6484,15 @@ function liveSearchSuggest(query){
     var _tourAutoChecked = false;
     function maybeAutoTour() {
         if (_tourAutoChecked) return;
-        _tourAutoChecked = true;
+        // Don't run (or consume the one-shot flag) while the login screen is still showing.
+        // Section visibility is class-based (.section.active), so the old sec.style.display
+        // check never caught this — the window-load timer used to fire the tour invisibly
+        // behind the login overlay and spend the flag before the real post-login trigger.
+        var ov = document.getElementById('login-overlay');
+        if (ov && ov.style.display !== 'none') return;
         var sec = document.getElementById('sec-search');
-        if (!sec || sec.style.display === 'none') return;
+        if (!sec) return;
+        _tourAutoChecked = true;
         var saved = localStorage.getItem('tourCompleted');
         if (!saved) { startTour(false); return; }
         if (saved !== 'admin' && (typeof isAdmin === 'function' && isAdmin())) { startTour(true); }

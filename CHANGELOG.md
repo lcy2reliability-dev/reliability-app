@@ -27,6 +27,7 @@ Refines how people get in and how editing is unlocked. No version bump (still v1
 - **Dashboard greeting** now uses the person's name ("Good morning, Tittus"); everything else (comments, Activity Log, attribution) still uses the alias (`strtt`).
 - Sign-in no longer silently creates an account on an unknown Login ID; it points new people to "Set up your login".
 - The pending banner now explains "confirm your email to unlock editing" and carries a **Resend link** button. The app re-checks verification when you return to the tab (and on refresh).
+- **Fixed:** the guided **Tour** now reliably auto-starts for a brand-new user after their first login. Previously a background timer ran the tour check while the login screen was still up, which quietly used up its one-time trigger before login finished; the check now waits until you are actually in the app. (Existing users who already completed the tour still won't see it again unless they clear the app data / use a fresh browser.)
 - **For the eventual locked-down rules:** technician writes should also be gated server-side on `auth.token.email_verified` (noted for the SECURITY_SETUP runbook).
 
 
