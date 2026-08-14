@@ -7,6 +7,37 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.18 — 2026-08-14
+
+**Status:** Built and self-tested (all three phases); awaiting deploy. Firebase unchanged — still open (rules not yet published).
+
+**Highlights:**
+- **Reorganised into four tabs.** The single universal-search screen is replaced by four purpose-built tabs: **Home**, **Positions**, **CBM** and **Parts**. Each does one job well. Nothing about how the data works has changed — only where things live on screen.
+- **Home is now a "what's on today" screen.** Your personal Job list sits right under the dashboard, so you land on your work. The global search box stays on Home as a quick escape hatch that still finds anything (positions, parts, routes) and jumps straight to it.
+- **Positions tab — raise a job in a few taps.** Find any equipment, open it, and **"+ Add to Job list"** now opens a short wizard: choose a **PM** or a **FWO**, optionally add a **photo** of the position (saved to the position, so everyone sees it), **notes**, and — for a FWO — the **parts** you'll need (search the catalogue or type free text; add as many as you like).
+- **Parts tab — browse the whole catalogue.** All parts, 100 to a page, with a **filter box under every column** (APN, Description, Class, Bin, Criticality) that combine, plus Prev / Next paging. Tap any APN to open the part.
+- **CBM tab** keeps the existing route search and its "Add to Job list" for route checks, unchanged.
+- **Job comments are always visible** on the card now — you no longer have to expand a job to read the notes on it.
+- The **guided tour** and the **What's New** note are updated for the new layout.
+
+**Detail:**
+
+### Navigation / information architecture
+- Tab bar is now Home | Positions | CBM | Parts. The old standalone "Job list" tab is retired; the job list moved onto Home (its realtime listener is unchanged, still filtered to the signed-in user).
+- The dashboard KPI cards ("assigned", "overdue") now scroll down to the Job list on Home instead of switching tabs.
+- The "+ Add New Job" button was removed from Home — jobs are now raised from a Position (Positions tab) or a route (CBM tab).
+
+### Search engine (reused, not rebuilt)
+- The Positions and CBM tabs reuse the existing search and scoring engine unchanged; each tab simply scopes results via an additive parameter (Positions → equipment only, CBM → routes only). The Home global search still searches everything. Predictive suggestions, keyboard navigation and the wildcard `*` search all behave exactly as before.
+
+### Parts browse
+- Filters across all parts held in memory, then paginates, so a column filter always searches the whole catalogue rather than just the visible page. Reuses the same per-column filter-row pattern as the "Parts Associated" table.
+
+### Raise-a-job wizard (Positions)
+- On a position, "+ Add to Job list" opens a wizard instead of silently adding a PM. Routes (CBM) are unchanged.
+- Jobs are written exactly like any other job: same `workAssigned` shape, same auto-registration of the position and of any new parts, same duplicate check. A PM's notes and a FWO's job details become the job's first comment; FWO parts are stored on the job and linked to the position. An uploaded photo is saved to the position's shared image, only offered when the position has no photo yet.
+
+
 ## v1.17 — 2026-08-13
 
 **Status:** Deployed and login switched ON 2026-08-13. Login experience refined 2026-08-14 (email-confirmation gate; see the dedicated section below). Firebase rules not yet published (database still open).

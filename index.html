@@ -395,11 +395,11 @@
             </div>
             <div id="login-new">
                 <label id="login-name-label" for="login-name" style="font-size:12px;color:#6b7280;display:none;margin-bottom:4px;">Your name</label>
-                <input type="text" id="login-name" placeholder="Your name (e.g. Tittus)" maxlength="60" autocomplete="name" style="display:none;">
+                <input type="text" id="login-name" placeholder="Your name (e.g. Jeff)" maxlength="60" autocomplete="name" style="display:none;">
                 <label id="login-email-label" for="login-email" style="font-size:12px;color:#6b7280;display:none;margin-top:10px;margin-bottom:4px;">Amazon email</label>
-                <input type="email" id="login-email" placeholder="alias@amazon.com" maxlength="80" autocomplete="email" style="display:none;" onkeyup="if(event.key==='Enter')document.getElementById('login-pin').focus()">
+                <input type="email" id="login-email" placeholder="jeff@amazon.com" maxlength="80" autocomplete="email" style="display:none;" onkeyup="if(event.key==='Enter')document.getElementById('login-pin').focus()">
                 <label id="login-id-label" for="login-input" style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px;">Login ID</label>
-                <input type="text" id="login-input" placeholder="Login ID (e.g. vladesca)" maxlength="30" autocomplete="username" onkeyup="if(event.key==='Enter')document.getElementById('login-pin').focus()">
+                <input type="text" id="login-input" placeholder="Login ID (e.g. jeff)" maxlength="30" autocomplete="username" onkeyup="if(event.key==='Enter')document.getElementById('login-pin').focus()">
                 <label id="login-pin-label" for="login-pin" style="font-size:12px;color:#6b7280;display:block;margin-top:10px;margin-bottom:4px;">PIN</label>
                 <input type="password" id="login-pin" inputmode="numeric" maxlength="12" placeholder="PIN (6+ digits)" autocomplete="current-password" onkeyup="if(event.key==='Enter')submitLoginOrRegister()">
                 <label id="login-pin-confirm-label" for="login-pin-confirm" style="font-size:12px;color:#6b7280;display:none;margin-top:10px;margin-bottom:4px;">Confirm PIN</label>
@@ -427,8 +427,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.17)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; New <strong>Activity Log</strong> in the menu: a running record of who added, edited, linked or deleted what, and when. History is kept for 12 months.<br>&bull; The guided tour now adapts to your role.<br>&bull; Behind the scenes, a secure login &amp; approval system is now built and ready to switch on.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.18)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; New tabbed layout: <strong>Home</strong>, <strong>Positions</strong>, <strong>CBM</strong> and <strong>Parts</strong>.<br>&bull; Your <strong>Job list</strong> now lives on the Home screen, right under the dashboard.<br>&bull; New <strong>Parts</strong> tab: browse the whole catalogue with a filter box on every column.<br>&bull; Add a job straight from a Position: choose <strong>PM or FWO</strong>, attach a photo, add notes and pick the parts you need.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -459,7 +459,9 @@
     </div>
     <div class="tabs" role="tablist" aria-label="Main sections">
         <div class="tab active" role="tab" aria-selected="true" tabindex="0" onclick="switchTab('search')">Home</div>
-        <div class="tab" role="tab" aria-selected="false" tabindex="0" onclick="switchTab('work')">Job list <span id="work-count" style="background:#2563eb;color:white;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;"></span></div>
+        <div class="tab" role="tab" aria-selected="false" tabindex="0" onclick="switchTab('positions')">Positions</div>
+        <div class="tab" role="tab" aria-selected="false" tabindex="0" onclick="switchTab('cbm')">CBM</div>
+        <div class="tab" role="tab" aria-selected="false" tabindex="0" onclick="switchTab('partbrowse')">Parts</div>
     </div>
     <div id="setup-banner" class="setup-banner" style="display:none;">
         <strong>Firebase not configured.</strong> Add your Firebase config to enable data storage.
@@ -470,23 +472,28 @@
     <div class="content">
         <!-- SEARCH -->
         <div id="sec-search" class="section active">
-            <div class="card" style="position:sticky;top:0;z-index:50;">
-                <h2>Search</h2>
+            <div class="card">
                 <div style="position:relative;">
-                    <div class="form-group">
-                        <label>Search</label>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Global search</label>
                         <div style="display:flex;gap:8px;align-items:stretch;"><div style="position:relative;flex:1;min-width:0;display:flex;"><input type="text" id="search-conveyor" placeholder="Search by position, APN, route, description... (or type Ultrasound/Thermal/CBM)" oninput="liveSearchSuggest(this.value);updateSearchClear()" onkeydown="handleSearchKey(event)" onfocus="onSearchFocus()" autocomplete="off" style="flex:1;min-width:0;padding-right:36px;"><button type="button" id="search-clear-btn" onclick="clearSearchInput()" aria-label="Clear search" title="Clear" style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:22px;line-height:1;color:#9ca3af;cursor:pointer;padding:2px 8px;">&times;</button></div><button class="btn btn-secondary search-scan-btn" onclick="openScanner()" title="Scan barcode / QR code" aria-label="Scan barcode or QR code" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">📷</button></div>
                     </div>
-                    <div id="main-search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:200;max-height:280px;overflow-y:auto;margin-top:2px;"></div>
+                                        <div id="main-search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:200;max-height:280px;overflow-y:auto;margin-top:2px;"></div>
                 </div>
-                <button class="btn btn-primary" onclick="searchAll()">Search</button>
-                <div class="search-filters" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="searchAll()" style="margin-top:8px;">Search everything</button>
+                <div style="display:none;">                <div class="search-filters" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
                     <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-equipment" checked onchange="saveSearchFilters()"> Positions</label>
                     <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-parts" checked onchange="saveSearchFilters()"> Parts</label>
                     <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="filter-routes" checked onchange="saveSearchFilters()"> CBM Routes</label>
                 </div>
+</div>
             </div>
             <div id="search-results"></div>
+            <div class="card" id="home-joblist">
+                <h2 style="display:flex;align-items:center;gap:6px;">Job list <span id="work-count" style="background:#2563eb;color:white;border-radius:10px;padding:1px 7px;font-size:11px;"></span></h2>
+                <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Your jobs for the day.</p>
+                <div id="work-list" style="margin-top:8px;"><div class="empty-state">No jobs assigned yet</div></div>
+            </div>
         </div>
 
         <!-- EQUIPMENT -->
@@ -699,13 +706,43 @@
         <!-- THERMAL READINGS -->
         
 
-        <!-- WORK ASSIGNED -->
-        <div id="sec-work" class="section">
+        <!-- POSITIONS / CBM / PARTS TABS -->
+        <div id="sec-positions" class="section">
+            <div class="card" style="position:sticky;top:0;z-index:50;">
+                <h2>Positions</h2>
+                <div style="position:relative;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Search positions</label>
+                        <div style="display:flex;gap:8px;align-items:stretch;">
+                            <input type="text" id="pos-search" placeholder="Position number or name (e.g. 703010, SLAM.314...)" oninput="liveSearchSuggest(this.value,'positions')" onkeydown="handleScopedKey(event,'positions')" onblur="setTimeout(function(){var d=document.getElementById('pos-search-dd');if(d)d.style.display='none';},200)" autocomplete="off" style="flex:1;min-width:0;">
+                            <button class="btn btn-secondary" onclick="openScanner()" title="Scan barcode / QR code" aria-label="Scan barcode or QR code" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">&#128247;</button>
+                        </div>
+                    </div>
+                    <div id="pos-search-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:200;max-height:280px;overflow-y:auto;margin-top:2px;"></div>
+                </div>
+                <button class="btn btn-primary" onclick="searchAll('positions')" style="margin-top:8px;">Search</button>
+            </div>
+            <div id="pos-search-results"></div>
+        </div>
+        <div id="sec-cbm" class="section">
+            <div class="card" style="position:sticky;top:0;z-index:50;">
+                <h2>CBM Routes</h2>
+                <div style="position:relative;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Search routes</label>
+                        <input type="text" id="cbm-search" placeholder="Route number or type (e.g. 542, Thermal, Ultrasound)" oninput="liveSearchSuggest(this.value,'cbm')" onkeydown="handleScopedKey(event,'cbm')" onblur="setTimeout(function(){var d=document.getElementById('cbm-search-dd');if(d)d.style.display='none';},200)" autocomplete="off" style="width:100%;">
+                    </div>
+                    <div id="cbm-search-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:200;max-height:280px;overflow-y:auto;margin-top:2px;"></div>
+                </div>
+                <button class="btn btn-primary" onclick="searchAll('cbm')" style="margin-top:8px;">Search</button>
+            </div>
+            <div id="cbm-search-results"></div>
+        </div>
+        <div id="sec-partbrowse" class="section">
             <div class="card">
-                <h2>Job list</h2>
-                <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Record your jobs for the day.</p>
-                <button class="btn btn-primary" onclick="showAddWorkModal()">+ Add New Job</button>
-                <div id="work-list" style="margin-top:16px;"><div class="empty-state">No jobs assigned yet</div></div>
+                <h2>Parts</h2>
+                <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Browse the full parts catalogue. Use the column filters to narrow down.</p>
+                <div id="parts-browse-root"><div class="empty-state">Loading parts&#8230;</div></div>
             </div>
         </div>
     </div>
@@ -892,7 +929,7 @@
             if(pinLbl) pinLbl.style.display = '';
             if(hint) hint.style.display = '';
             if(idLbl) idLbl.textContent = 'Login ID';
-            if(li) li.placeholder = 'Login ID (e.g. vladesca)';
+            if(li) li.placeholder = 'Login ID (e.g. jeff)';
             setLoginMode('signin');
         }
         var ov = document.getElementById('login-overlay'); if(ov) ov.style.display = 'flex';
@@ -918,7 +955,7 @@
         var btn = document.getElementById('login-primary-btn'); if(btn) btn.textContent = reg ? 'Create account' : 'Sign in';
         var tog = document.getElementById('login-mode-toggle'); if(tog) tog.textContent = reg ? 'Already set up? Sign in' : 'Set up your login';
         var hint = document.getElementById('login-hint');
-        if(hint){ hint.style.display = ''; hint.textContent = reg ? 'Use your Amazon email. Your Login ID is the part before the @ (e.g. strtt). Pick a 6+ digit PIN. You can view straight away; click the email link we send to unlock editing.' : ''; }
+        if(hint){ hint.style.display = ''; hint.textContent = reg ? 'Use your Amazon email. Your Login ID is the part before the @ (e.g. jeff). Pick a 6+ digit PIN. You can view straight away; click the email link we send to unlock editing.' : ''; }
         var lpc = document.getElementById('login-pin-confirm'); if(lpc && !reg) lpc.value = '';
     }
     function toggleLoginMode(){ setLoginMode(_loginMode === 'register' ? 'signin' : 'register'); var f = document.getElementById(_loginMode === 'register' ? 'login-name' : 'login-input'); if(f) f.focus(); }
@@ -929,7 +966,7 @@
         var pinEl = document.getElementById('login-pin'); var pin = pinEl ? (pinEl.value || '').trim() : '';
         var confEl = document.getElementById('login-pin-confirm'); var conf = confEl ? (confEl.value || '').trim() : '';
         if(!name){ showToast('Please enter your name', 'error'); return; }
-        if(!/^[a-z0-9][a-z0-9._-]*@amazon\.[a-z][a-z.]*$/i.test(email)){ showToast('Enter your Amazon email (e.g. strtt@amazon.com)', 'error'); return; }
+        if(!/^[a-z0-9][a-z0-9._-]*@amazon\.[a-z][a-z.]*$/i.test(email)){ showToast('Enter your Amazon email (e.g. jeff@amazon.com)', 'error'); return; }
         if(!/^\d{6,}$/.test(pin)){ showToast('PIN must be 6+ digits (numbers only)', 'error'); return; }
         if(pin !== conf){ showToast('The two PINs do not match', 'error'); return; }
         if(!firebaseReady || !auth){ showToast('Sign-up unavailable right now', 'error'); return; }
@@ -956,7 +993,7 @@
         if(!AUTH_ENABLED || !auth){ showToast('Not available right now', 'error'); return; }
         document.getElementById('modal-title').textContent = 'Forgot PIN';
         document.getElementById('modal-message').textContent = '';
-        document.getElementById('modal-body').innerHTML = '<div class="form-group"><label for="fp-id" style="display:block;font-size:13px;color:#374151;margin-bottom:6px;">Enter your Login ID. We will email a reset link to your Amazon inbox.</label><input type="text" id="fp-id" placeholder="Login ID (e.g. strtt)" maxlength="30" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;"></div>';
+        document.getElementById('modal-body').innerHTML = '<div class="form-group"><label for="fp-id" style="display:block;font-size:13px;color:#374151;margin-bottom:6px;">Enter your Login ID. We will email a reset link to your Amazon inbox.</label><input type="text" id="fp-id" placeholder="Login ID (e.g. jeff)" maxlength="30" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;"></div>';
         document.getElementById('modal-actions').innerHTML = '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="doForgotPin()">Send reset link</button>';
         document.getElementById('modal').classList.add('active'); _openModalA11y();
         var pre = document.getElementById('login-input'); var fp = document.getElementById('fp-id');
@@ -1350,6 +1387,7 @@
         event.currentTarget.setAttribute('aria-selected','true');
         document.getElementById('sec-'+tab).classList.add('active');
         if(tab==='search'){try{renderDashboard();}catch(e){}}
+        if(tab==='partbrowse'){try{renderPartsBrowse();}catch(e){}}
     }
     function switchTabDirect(tab) {
         // Clear all inputs
@@ -1368,6 +1406,7 @@
         var tabs = document.querySelectorAll('.tab');
         tabs.forEach(function(t) { if ((t.getAttribute('onclick')||'').indexOf("'"+tab+"'")>=0) { t.classList.add('active'); t.setAttribute('aria-selected','true'); } });
         if(tab==='search'){try{renderDashboard();}catch(e){}}
+        if(tab==='partbrowse'){try{renderPartsBrowse();}catch(e){}}
     }
 
     // Click image to view full size
@@ -1605,18 +1644,19 @@
         }return false;
     }
 
-    async function searchAll() {
+    async function searchAll(scope) {
         clearTimeout(_liveSearchTimer);
-        var _dd0=document.getElementById('main-search-dropdown');if(_dd0)_dd0.style.display='none';
-        const query=document.getElementById('search-conveyor').value.trim();
+        var _cfg=(typeof scope==='string')?SEARCH_SCOPES[scope]:null;var _inpId=_cfg?_cfg.input:'search-conveyor';var _ddId=_cfg?_cfg.dd:'main-search-dropdown';
+        var _dd0=document.getElementById(_ddId);if(_dd0)_dd0.style.display='none';
+        const query=document.getElementById(_inpId).value.trim();
         if(!query){showToast('Enter a search term','error');return;}
         if(!checkFirebase())return;
         showLoading();
         const queryLower=query.toLowerCase();var _wild=queryLower.indexOf('*')>=0,_wildRe=null;if(_wild&&queryLower.replace(/[^a-z0-9]/g,'').length>0){var _esc=queryLower.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\\\*/g,'.*');try{_wildRe=new RegExp('^'+_esc+'$');}catch(_re){_wildRe=null;}}
-        const showEquipment=document.getElementById('filter-equipment').checked;
-        const showParts=document.getElementById('filter-parts').checked;
-        const showRoutes=document.getElementById('filter-routes').checked;
-        const container=document.getElementById('search-results');
+        const showEquipment=_cfg?!!_cfg.eq:document.getElementById('filter-equipment').checked;
+        const showParts=_cfg?!!_cfg.pt:document.getElementById('filter-parts').checked;
+        const showRoutes=_cfg?!!_cfg.rt:document.getElementById('filter-routes').checked;
+        const container=document.getElementById(_cfg?_cfg.results:'search-results');
 
         // Special keywords: show all routes of a type
         const isTypeSearch = /^(ultrasound|thermal|cbm)$/i.test(queryLower);
@@ -2211,8 +2251,8 @@
         html += '<div class="dash2-greet"><h1>' + greet + (greetName ? ', <b>' + escapeHtml(greetName) + '</b>' : '') + '</h1><div class="dash2-date">' + escapeHtml(today) + ' \u00b7 LCY2 RME</div></div>';
         html += '<button type="button" class="dash2-scan" onclick="openScanner()"><span class="dash2-scan-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg></span><span class="dash2-scan-tx"><b>Scan a QR code</b><i>Open a position or part instantly</i></span></button>';
         html += '<div class="dash2-kpis">';
-        html += '<div class="dash2-kpi k-assigned" role="button" tabindex="0" onclick="switchTab(\x27work\x27)"><div class="k-num" id="dash-assigned">\u2014</div><div class="k-lbl">Jobs assigned</div></div>';
-        html += '<div class="dash2-kpi k-overdue" role="button" tabindex="0" onclick="switchTab(\x27work\x27)"><div class="k-num" id="dash-overdue">\u2014</div><div class="k-lbl">Jobs overdue</div></div>';
+        html += '<div class="dash2-kpi k-assigned" role="button" tabindex="0" onclick="var _j=document.getElementById(\x27home-joblist\x27);if(_j)_j.scrollIntoView({behavior:\x27smooth\x27,block:\x27start\x27})"><div class="k-num" id="dash-assigned">\u2014</div><div class="k-lbl">Jobs assigned</div></div>';
+        html += '<div class="dash2-kpi k-overdue" role="button" tabindex="0" onclick="var _j=document.getElementById(\x27home-joblist\x27);if(_j)_j.scrollIntoView({behavior:\x27smooth\x27,block:\x27start\x27})"><div class="k-num" id="dash-overdue">\u2014</div><div class="k-lbl">Jobs overdue</div></div>';
         html += '<div class="dash2-kpi k-alerts" role="button" tabindex="0" onclick="openAlertsView()"><div class="k-num" id="dash-alerts">\u2014</div><div class="k-lbl">Open alerts</div></div>';
         html += '</div>';
         html += '<div class="dash2-card" id="dash-breakdown"></div>';
@@ -3481,14 +3521,16 @@
                 html+='<span style="position:absolute;top:0;left:0;right:0;bottom:0;background:'+(item.status==='done'?'#10b981':'#d1d5db')+';border-radius:24px;transition:0.3s;"></span>';
                 html+='<span style="position:absolute;top:2px;left:'+(item.status==='done'?'22px':'2px')+';width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 2px rgba(0,0,0,0.2);"></span>';
                 html+='</label></div>';
-                html+='<div class="work-card-notes" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">';
-                html+='<div style="display:flex;gap:6px;"><input type="text" class="work-note-input" data-key="'+key+'" placeholder="Add a note about this job..." style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;" onkeyup="if(event.key===\x27Enter\x27)saveWorkJobNote(this)">';
-                html+='<button class="btn btn-primary btn-sm" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();saveWorkJobNote(this.previousElementSibling)">Add</button></div>';
                 if(item.jobNotes){
+                    html+='<div class="work-card-comments" style="margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">';
                     Object.values(item.jobNotes).forEach(function(n){
                         html+='<div style="margin-top:6px;padding:6px 8px;background:#f8fafc;border-radius:4px;font-size:11px;"><strong>'+escapeHtml(n.author)+':</strong> '+escapeHtml(n.text)+'<span style="color:#6b7280;margin-left:8px;">'+formatWorkTime(n.createdAt)+'</span></div>';
                     });
+                    html+='</div>';
                 }
+                html+='<div class="work-card-notes" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">';
+                html+='<div style="display:flex;gap:6px;"><input type="text" class="work-note-input" data-key="'+key+'" placeholder="Add a note about this job..." style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;" onkeyup="if(event.key===\x27Enter\x27)saveWorkJobNote(this)">';
+                html+='<button class="btn btn-primary btn-sm" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();saveWorkJobNote(this.previousElementSibling)">Add</button></div>';
                 html+='</div>';
                 html+='<div class="work-card-actions" style="display:none;">';
                 html+='<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editWork(\''+key+'\')">Edit</button>';
@@ -3742,7 +3784,7 @@
             try{pushRecent(type,key,_itemName);}catch(e){}
             var _isInWork = Object.values(_waAll).some(function(j){ return j && (j.assignedTo||'').toLowerCase()===currentUser.toLowerCase() && ((j.routeNumber&&j.routeNumber===_itemName)||(j.equipment&&j.equipment===_itemName)); });
             if(type!=='part'){
-                if(!_isInWork){html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="addToWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">+ Add to Job list</button>';}
+                if(!_isInWork){if(type==='equipment'){html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="openJobWizard(\x27equipment\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">+ Add to Job list</button>';}else{html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="addToWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">+ Add to Job list</button>';}}
                 else{html+='<button class="btn btn-secondary btn-sm" style="background:#ef4444;color:white;border:none;" onclick="removeFromWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">\u2212 Remove from Job list</button>';}
             }
             
@@ -4235,8 +4277,74 @@
     r.style.display=ok?'':'none';
   });
 }
-function liveSearchSuggest(query){
-        var dd=document.getElementById('main-search-dropdown');if(!dd)return;
+    // ===== PARTS BROWSE (v1.18) =====
+    var _pbAll=[],_pbFiltered=[],_pbPage=0,PB_PAGE=100;
+    function pbRow(r){
+        var cc='#6b7280',cu=(r.crit||'').toUpperCase();
+        if(cu.indexOf('HIGH')>=0)cc='#dc2626';else if(cu.indexOf('MED')>=0)cc='#d97706';else if(cu.indexOf('LOW')>=0)cc='#16a34a';
+        return '<tr>'+
+            '<td><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+escapeAttrArg(r.k)+'\x27);return false;">'+escapeHtml(r.apn)+'</a></td>'+
+            '<td style="font-size:12px;color:#4b5563;">'+escapeHtml(r.desc)+'</td>'+
+            '<td><span style="font-size:11px;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:8px;">'+escapeHtml(r.cls)+'</span></td>'+
+            '<td style="font-weight:600;">'+escapeHtml(r.bin)+'</td>'+
+            '<td><span style="color:'+cc+';font-weight:600;font-size:12px;">'+escapeHtml(r.crit)+'</span></td>'+
+        '</tr>';
+    }
+    function pbRenderPage(){
+        var tb=document.getElementById('pb-tbody');if(!tb)return;
+        var total=_pbFiltered.length,pages=Math.max(1,Math.ceil(total/PB_PAGE));
+        if(_pbPage>=pages)_pbPage=pages-1;if(_pbPage<0)_pbPage=0;
+        var start=_pbPage*PB_PAGE,end=Math.min(start+PB_PAGE,total),slice=_pbFiltered.slice(start,end);
+        var h='';for(var i=0;i<slice.length;i++)h+=pbRow(slice[i]);
+        tb.innerHTML=h||'<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:16px;">No matching parts</td></tr>';
+        var pg=document.getElementById('pb-pager');
+        if(pg){
+            var label=total?('Showing '+(start+1)+'\u2013'+end+' of '+total):'0 parts';
+            pg.innerHTML='<button class="btn btn-secondary btn-sm" '+(_pbPage<=0?'disabled style="opacity:.5;"':'')+' onclick="pbPrev()">\u2039 Prev</button>'+
+                '<span style="font-size:12px;color:#6b7280;">'+label+'</span>'+
+                '<button class="btn btn-secondary btn-sm" '+(_pbPage>=pages-1?'disabled style="opacity:.5;"':'')+' onclick="pbNext()">Next \u203a</button>';
+        }
+        var sm=document.getElementById('pb-summary');if(sm)sm.textContent=(total===_pbAll.length)?(_pbAll.length+' parts'):(total+' of '+_pbAll.length+' parts');
+    }
+    function pbPrev(){if(_pbPage>0){_pbPage--;pbRenderPage();}}
+    function pbNext(){_pbPage++;pbRenderPage();}
+    function filterPartsBrowse(){
+        var tbl=document.getElementById('pb-table');
+        if(!tbl){_pbFiltered=_pbAll;_pbPage=0;pbRenderPage();return;}
+        var ins=tbl.querySelectorAll('thead tr.filter-row input'),fs=[];
+        Array.prototype.forEach.call(ins,function(inp){var v=(inp.value||'').trim().toLowerCase();if(v)fs.push({c:parseInt(inp.getAttribute('data-col'),10),v:v});});
+        if(!fs.length){_pbFiltered=_pbAll;}
+        else{_pbFiltered=_pbAll.filter(function(r){for(var i=0;i<fs.length;i++){if(r.s[fs[i].c].indexOf(fs[i].v)<0)return false;}return true;});}
+        _pbPage=0;pbRenderPage();
+    }
+    async function renderPartsBrowse(){
+        var root=document.getElementById('parts-browse-root');if(!root)return;
+        if(!firebaseReady){root.innerHTML='<div class="empty-state">Connecting\u2026</div>';return;}
+        try{
+            var cache=await getPartsCache();
+            _pbAll=Object.keys(cache).map(function(k){
+                var p=cache[k]||{};
+                var apn=(p.apn||'').toString(),desc=(p.partDescription||p.notes||'').toString(),cls=(p.partClass||p.partType||'').toString(),bin=(p.binLocation||p.location||'').toString(),crit=(p.criticality||'').toString();
+                return {k:k,apn:apn,desc:desc,cls:cls,bin:bin,crit:crit,s:[apn.toLowerCase(),desc.toLowerCase(),cls.toLowerCase(),bin.toLowerCase(),crit.toLowerCase()]};
+            });
+            _pbAll.sort(function(a,b){return naturalCompare(a.apn,b.apn);});
+            _pbFiltered=_pbAll;_pbPage=0;
+            root.innerHTML='<div id="pb-summary" style="font-size:12px;color:#6b7280;margin-bottom:8px;">'+_pbAll.length+' parts</div>'+
+                '<table id="pb-table"><thead><tr><th>APN</th><th>Description</th><th>Class</th><th>Bin</th><th>Criticality</th></tr>'+
+                '<tr class="filter-row">'+
+                '<td><input class="col-filter" data-col="0" oninput="filterPartsBrowse()" placeholder="Filter"></td>'+
+                '<td><input class="col-filter" data-col="1" oninput="filterPartsBrowse()" placeholder="Filter"></td>'+
+                '<td><input class="col-filter" data-col="2" oninput="filterPartsBrowse()" placeholder="Filter"></td>'+
+                '<td><input class="col-filter" data-col="3" oninput="filterPartsBrowse()" placeholder="Filter"></td>'+
+                '<td><input class="col-filter" data-col="4" oninput="filterPartsBrowse()" placeholder="Filter"></td>'+
+                '</tr></thead><tbody id="pb-tbody"></tbody></table>'+
+                '<div id="pb-pager" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;flex-wrap:wrap;"></div>';
+            pbRenderPage();
+        }catch(e){root.innerHTML='<div class="empty-state">Could not load parts</div>';console.error('renderPartsBrowse',e);}
+    }
+function liveSearchSuggest(query,scope){
+        var _cfg=(typeof scope==='string')?SEARCH_SCOPES[scope]:null;var _ddId=_cfg?_cfg.dd:'main-search-dropdown';_activeDropdownId=_ddId;_activeInputId=_cfg?_cfg.input:'search-conveyor';
+        var dd=document.getElementById(_ddId);if(!dd)return;
         if(!query||query.length<2){dd.style.display='none';return;}
         clearTimeout(_liveSearchTimer);
         _liveSearchTimer=setTimeout(async function(){
@@ -4283,6 +4391,7 @@ function liveSearchSuggest(query){
                     var s=Math.max(scoreId(rn),scoreText(v.notes),scoreText(v.type));
                     if(s>0)results.push({type:'route',key:k,label:v.routeNumber,sub:(v.type||'')+(v.notes?' — '+v.notes.substring(0,40):''),_score:s});
                 });
+                if(_cfg)results=results.filter(function(r){return (r.type==='equipment'&&_cfg.eq)||(r.type==='part'&&_cfg.pt)||(r.type==='route'&&_cfg.rt);});
                 if(!results.length){dd.style.display='none';return;}
                 // Sort by score descending, then show top 8
                 results.sort(function(a,b){return b._score-a._score;});
@@ -4292,7 +4401,7 @@ function liveSearchSuggest(query){
                 var typeLabel={equipment:'Position',part:'Part',route:'Route'};
                 var html='';
                 results.forEach(function(r){
-                    html+='<div class="autocomplete-item" onclick="document.getElementById(\x27main-search-dropdown\x27).style.display=\x27none\x27;openDetail(\x27'+r.type+'\x27,\x27'+r.key+'\x27)">';
+                    html+='<div class="autocomplete-item" onclick="document.getElementById(\x27'+_ddId+'\x27).style.display=\x27none\x27;openDetail(\x27'+r.type+'\x27,\x27'+r.key+'\x27)">';
                     html+='<span style="font-size:10px;padding:1px 6px;border-radius:8px;margin-right:6px;'+typeStyle[r.type]+'">'+typeLabel[r.type]+'</span>';
                     html+='<strong>'+escapeHtml(r.label)+'</strong>';
                     if(r.sub)html+=' <span style="color:#6b7280;font-size:12px;">— '+escapeHtml(r.sub.substring(0,50))+'</span>';
@@ -4311,6 +4420,8 @@ function liveSearchSuggest(query){
     // SEARCH INPUT UX: clear button, keyboard nav, recently-viewed
     // ============================================================
     var _suggestList=[],_suggestIndex=-1;
+    var _activeDropdownId='main-search-dropdown',_activeInputId='search-conveyor';
+    var SEARCH_SCOPES={positions:{input:'pos-search',dd:'pos-search-dd',results:'pos-search-results',eq:true,pt:false,rt:false},cbm:{input:'cbm-search',dd:'cbm-search-dd',results:'cbm-search-results',eq:false,pt:false,rt:true}};
     function updateSearchClear(){
         var inp=document.getElementById('search-conveyor'),b=document.getElementById('search-clear-btn');
         if(b&&inp)b.style.display=inp.value?'block':'none';
@@ -4333,8 +4444,22 @@ function liveSearchSuggest(query){
         }
         else if(e.key==='Escape'){if(dd)dd.style.display='none';_suggestIndex=-1;}
     }
+    function handleScopedKey(e,scope){
+        var cfg=SEARCH_SCOPES[scope];
+        if(!cfg){return handleSearchKey(e);}
+        var dd=document.getElementById(cfg.dd);
+        var open=dd&&dd.style.display!=='none';
+        if(e.key==='ArrowDown'){if(open){e.preventDefault();moveSuggest(1);}}
+        else if(e.key==='ArrowUp'){if(open){e.preventDefault();moveSuggest(-1);}}
+        else if(e.key==='Enter'){
+            e.preventDefault();
+            if(open&&_suggestIndex>=0&&_suggestList[_suggestIndex]){openSuggestAt(_suggestIndex);}
+            else{var inp=document.getElementById(cfg.input);if(inp)inp.blur();searchAll(scope);}
+        }
+        else if(e.key==='Escape'){if(dd)dd.style.display='none';_suggestIndex=-1;}
+    }
     function moveSuggest(dir){
-        var dd=document.getElementById('main-search-dropdown');if(!dd)return;
+        var dd=document.getElementById(_activeDropdownId||'main-search-dropdown');if(!dd)return;
         var items=dd.querySelectorAll('.autocomplete-item');if(!items.length)return;
         if(_suggestIndex>=0&&items[_suggestIndex])items[_suggestIndex].classList.remove('active');
         _suggestIndex+=dir;
@@ -4345,8 +4470,8 @@ function liveSearchSuggest(query){
     }
     function openSuggestAt(idx){
         var it=_suggestList[idx];if(!it)return;
-        var dd=document.getElementById('main-search-dropdown');if(dd)dd.style.display='none';
-        var inp=document.getElementById('search-conveyor');if(inp)inp.blur();
+        var dd=document.getElementById(_activeDropdownId||'main-search-dropdown');if(dd)dd.style.display='none';
+        var inp=document.getElementById(_activeInputId||'search-conveyor');if(inp)inp.blur();
         openDetail(it.type,it.key);
     }
     function getRecents(){try{return JSON.parse(localStorage.getItem('rmeRecent')||'[]');}catch(e){return [];}}
@@ -5128,6 +5253,135 @@ function liveSearchSuggest(query){
         saveJobOrder();
     }
 
+    // ===== ADD-TO-JOB WIZARD (v1.18, Positions -> PM/FWO) =====
+    var _jwKey='',_jwName='',_jwType='PM',_jwParts=[];
+    async function openJobWizard(type,key,name){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        _jwKey=key;_jwName=name||key;_jwType='PM';_jwParts=[];
+        var hasImg=false;
+        try{var s=await db.ref('equipmentImages/'+sanitizeKey(key)).once('value');hasImg=!!s.val();}catch(e){}
+        var body=''+
+            '<div style="font-size:13px;color:#374151;margin-bottom:10px;">Position <strong>'+escapeHtml(_jwName)+'</strong></div>'+
+            '<div class="form-group"><label>Job type</label><div style="display:flex;gap:8px;">'+
+                '<button type="button" id="jw-pm-btn" class="btn btn-primary btn-sm" style="flex:1;" onclick="jwSetType(\x27PM\x27)">PM</button>'+
+                '<button type="button" id="jw-fwo-btn" class="btn btn-secondary btn-sm" style="flex:1;" onclick="jwSetType(\x27FWO\x27)">FWO</button>'+
+            '</div></div>'+
+            (hasImg?'':'<div class="form-group"><label>Add a photo of this position (optional)</label><input type="file" id="jw-img-file" accept="image/*" capture="environment" onchange="jwImgPreview()"><img id="jw-img-preview" style="display:none;max-width:100%;margin-top:6px;border-radius:6px;"></div>')+
+            '<div id="jw-pm-fields"><div class="form-group"><label>Notes (optional)</label><textarea id="jw-pm-notes" rows="2" placeholder="Anything to note for this PM..."></textarea></div></div>'+
+            '<div id="jw-fwo-fields" style="display:none;">'+
+                '<div class="form-group"><label>Job details (optional)</label><textarea id="jw-fwo-desc" rows="2" placeholder="What needs doing..."></textarea></div>'+
+                '<div class="form-group"><label>Parts needed (optional)</label>'+
+                    '<div style="position:relative;"><input type="text" id="jw-parts-input" placeholder="Search APN or description, or type free text" oninput="jwPartsSuggest(this.value)" onkeydown="jwPartsKey(event)" autocomplete="off">'+
+                    '<div id="jw-parts-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:200px;overflow:auto;z-index:10;"></div></div>'+
+                    '<div id="jw-parts-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>'+
+                '</div>'+
+            '</div>';
+        document.getElementById('modal-title').textContent='Add to Job list';
+        document.getElementById('modal-message').textContent='';
+        document.getElementById('modal-body').innerHTML=body;
+        document.getElementById('modal-actions').innerHTML='<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="jwSave()">Add job</button>';
+        document.getElementById('modal').classList.add('active');_openModalA11y();
+        jwSetType('PM');
+    }
+    function jwSetType(t){
+        _jwType=(t==='FWO')?'FWO':'PM';
+        var pm=document.getElementById('jw-pm-btn'),fwo=document.getElementById('jw-fwo-btn');
+        if(pm)pm.className='btn btn-sm '+(_jwType==='PM'?'btn-primary':'btn-secondary');
+        if(fwo)fwo.className='btn btn-sm '+(_jwType==='FWO'?'btn-primary':'btn-secondary');
+        var pf=document.getElementById('jw-pm-fields'),ff=document.getElementById('jw-fwo-fields');
+        if(pf)pf.style.display=(_jwType==='PM')?'block':'none';
+        if(ff)ff.style.display=(_jwType==='FWO')?'block':'none';
+    }
+    async function jwImgPreview(){
+        var f=document.getElementById('jw-img-file'),img=document.getElementById('jw-img-preview');
+        if(!f||!img||!f.files||!f.files[0]){if(img){img.style.display='none';img.src='';}return;}
+        try{var b=await fileToBase64(f.files[0]);img.src=b;img.style.display='block';}
+        catch(e){showToast(e.message||'Image too large','error');f.value='';if(img){img.style.display='none';img.src='';}}
+    }
+    async function jwPartsSuggest(q){
+        var dd=document.getElementById('jw-parts-dd');if(!dd)return;
+        q=(q||'').trim().toLowerCase();
+        if(q.length<2){dd.style.display='none';dd.innerHTML='';return;}
+        var cache=await getPartsCache(),res=[];
+        Object.keys(cache).forEach(function(k){
+            var p=cache[k]||{},apn=(p.apn||'').toString(),desc=(p.partDescription||p.notes||'').toString();
+            var la=apn.toLowerCase(),ld=desc.toLowerCase(),sc=0;
+            if(la===q)sc=100;else if(la.indexOf(q)===0)sc=50;else if(la.indexOf(q)>=0)sc=10;else if(ld.indexOf(q)>=0)sc=8;
+            if(sc>0)res.push({k:k,apn:apn,desc:desc,sc:sc,pt:(p.partClass||p.partType||''),loc:(p.binLocation||p.location||'')});
+        });
+        res.sort(function(a,b){return b.sc-a.sc;});
+        res=res.slice(0,8);
+        if(!res.length){dd.style.display='none';dd.innerHTML='';return;}
+        var h='';
+        res.forEach(function(r){
+            h+='<div class="autocomplete-item" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f1f5f9;font-size:13px;" onmousedown="event.preventDefault();jwAddPart(\x27'+escapeAttrArg(r.apn)+'\x27,\x27'+escapeAttrArg(r.pt)+'\x27,\x27'+escapeAttrArg(r.loc)+'\x27,\x27'+escapeAttrArg(r.desc)+'\x27)"><strong>'+escapeHtml(r.apn)+'</strong> <span style="color:#6b7280;">'+escapeHtml(r.desc)+'</span></div>';
+        });
+        dd.innerHTML=h;dd.style.display='block';
+    }
+    function jwAddPart(apn,pt,loc,desc){
+        apn=(apn||'').trim();if(!apn)return;
+        if(!_jwParts.some(function(p){return (p.apn||'').toLowerCase()===apn.toLowerCase();}))
+            _jwParts.push({apn:apn,partType:pt||'',location:loc||'',description:desc||''});
+        var inp=document.getElementById('jw-parts-input');if(inp)inp.value='';
+        var dd=document.getElementById('jw-parts-dd');if(dd){dd.style.display='none';dd.innerHTML='';}
+        jwRenderChips();
+    }
+    function jwRenderChips(){
+        var c=document.getElementById('jw-parts-chips');if(!c)return;
+        var h='';
+        _jwParts.forEach(function(p,i){
+            h+='<span style="display:inline-flex;align-items:center;gap:4px;background:#eff6ff;color:#1d4ed8;border-radius:12px;padding:3px 6px 3px 10px;font-size:12px;">'+escapeHtml(p.apn)+(p.description?' <span style="color:#6b7280;font-weight:400;">'+escapeHtml(p.description.slice(0,24))+'</span>':'')+'<button type="button" onclick="jwRemovePart('+i+')" style="border:none;background:none;color:#1d4ed8;cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">\u00d7</button></span>';
+        });
+        c.innerHTML=h;
+    }
+    function jwRemovePart(i){_jwParts.splice(i,1);jwRenderChips();}
+    function jwPartsKey(e){
+        if(e.key==='Enter'){e.preventDefault();var inp=document.getElementById('jw-parts-input');var v=(inp&&inp.value||'').trim();if(v)jwAddPart(v,'','','');}
+        else if(e.key==='Escape'){var dd=document.getElementById('jw-parts-dd');if(dd)dd.style.display='none';}
+    }
+    async function jwSave(){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        if(!currentUser){showToast('Not logged in','error');return;}
+        var key=_jwKey,name=_jwName,type=(_jwType==='FWO')?'FWO':'PM';
+        try{
+            var waAll=await getWorkAssignedData();
+            var dup=Object.values(waAll).some(function(j){return j&&(j.assignedTo||'').toLowerCase()===currentUser.toLowerCase()&&j.equipment===name;});
+            if(dup){showToast('Already in Job list!','error');closeModal();return;}
+            var imgEl=document.getElementById('jw-img-file');
+            if(imgEl&&imgEl.files&&imgEl.files[0]){
+                try{var b64=await fileToBase64(imgEl.files[0]);await db.ref('equipmentImages/'+sanitizeKey(key)).set(b64);invalidateEquipmentCache();}
+                catch(e){showToast(e.message||'Image upload failed','error');}
+            }
+            var eqKey=sanitizeKey(name);
+            var eqSnap=await db.ref('equipment/'+eqKey).once('value');
+            if(!eqSnap.val())await db.ref('equipment/'+eqKey).set({conveyorNumber:name,type:'',description:'',notes:'',updatedAt:new Date().toISOString()});
+            var workData={workType:type,equipment:name,assignedTo:currentUser.toLowerCase(),status:'pending',createdAt:new Date().toISOString()};
+            var noteText='';
+            if(type==='PM'){var pe=document.getElementById('jw-pm-notes');noteText=(pe&&pe.value||'').trim();}
+            else{var fe=document.getElementById('jw-fwo-desc');noteText=(fe&&fe.value||'').trim();}
+            if(type==='FWO'&&_jwParts.length){
+                workData.parts=_jwParts.map(function(p){return {apn:p.apn,partType:p.partType||'',location:p.location||'',description:p.description||''};});
+                for(var i=0;i<_jwParts.length;i++){
+                    var p=_jwParts[i],apnKey=sanitizeKey(p.apn);
+                    try{
+                        var es=await db.ref('parts/'+apnKey).once('value');
+                        if(!es.val())await db.ref('parts/'+apnKey).set({apn:p.apn,partType:p.partType||'',location:p.location||'',notes:p.description||'',conveyors:[name],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+                        else{var ex=es.val(),cv=ex.conveyors||[];if(cv.indexOf(name)<0){cv.push(name);await db.ref('parts/'+apnKey).update({conveyors:cv,updatedAt:new Date().toISOString()});}}
+                    }catch(e){}
+                }
+                invalidatePartsCache();
+            }
+            var ref=await db.ref('workAssigned').push(workData);
+            if(noteText){try{await db.ref('workAssigned/'+ref.key+'/jobNotes').push({text:noteText,author:currentUser,createdAt:new Date().toISOString()});}catch(e){}}
+            logAudit('addJob','job',name,{type:type,via:'wizard'});
+            updateWorkCount();
+            closeModal();
+            showToast('Added to Job list!','success');
+            openDetail('equipment',key);
+        }catch(e){showToast('Error adding to Job list: '+(e.message||e),'error');}
+    }
     async function addToWorkFromSearch(type, key, title) { if(!requireWrite())return;
         if (!firebaseReady) { showToast('Firebase not ready', 'error'); return; }
         if (!currentUser) { showToast('Not logged in', 'error'); return; }
@@ -6399,55 +6653,61 @@ function liveSearchSuggest(query){
     function baseTourSteps() { return [
         {
             target: '#search-conveyor',
-            title: 'Search',
-            text: 'Search for anything: position numbers, APNs, part descriptions, manufacturer references, route numbers, or keywords. Results update instantly.',
-            position: 'bottom'
-        },
-        {
-            target: '.search-filters',
-            title: 'Filter Results',
-            text: 'Narrow your search by type. Uncheck what you don\'t need to find results faster.',
+            title: 'Global search',
+            text: 'The search box on Home is your quick escape hatch: type a position number, APN, part description, manufacturer reference, route number or keyword and jump straight to it. For focused browsing, use the tabs below.',
             position: 'bottom'
         },
         {
             target: '.tabs',
-            title: 'Navigation',
-            text: 'Two main tabs: Home (dashboard and search) and Job list (your personal task queue with job counter).',
+            title: 'Four tabs',
+            text: 'Home (dashboard + your Job list + global search), Positions (find equipment and raise jobs), CBM (browse routes and add route checks), and Parts (browse the full catalogue).',
             position: 'bottom'
         },
         {
             target: null,
-            title: 'Detail View',
-            text: 'Click any search result to open its detail view. You\'ll see full information, linked parts, routes, photos, and notes. Click the Edit button to modify allowed fields.',
+            title: 'Positions & raising a job',
+            text: 'Open the Positions tab, search for any equipment, and tap it. On the detail view, "+ Add to Job list" lets you raise a PM or a FWO: pick the type, optionally add a photo of the position, notes, and (for a FWO) the parts you\'ll need. The CBM tab works the same way for route checks.',
             position: 'center'
         },
         {
             target: null,
-            title: 'Parts — What You Can Edit',
+            title: 'Parts catalogue',
+            text: 'The Parts tab lists the whole catalogue, 100 at a time. Type in the filter box under any column (APN, Description, Class, Bin, Criticality) to narrow it down — filters combine — and page through with Prev / Next. Tap any APN to open the part.',
+            position: 'center'
+        },
+        {
+            target: null,
+            title: 'Detail view',
+            text: 'Click any result to open its detail view. You\'ll see full information, linked parts, routes, photos, and notes. Click the Edit button to modify allowed fields.',
+            position: 'center'
+        },
+        {
+            target: null,
+            title: 'Parts — what you can edit',
             text: 'On parts, only 3 fields are editable: APN, Bin Location, and Repairable. Everything else (description, manufacturer, supplier, criticality) is system-managed and greyed out. Changing an APN saves the old one so it\'s still searchable.',
             position: 'center'
         },
         {
             target: null,
-            title: 'Linking Parts to Positions',
+            title: 'Linking parts to positions',
             text: 'On a Position detail view, you\'ll see a "Linked Parts" section with a "+ Link Part" button. Search by APN, confirm the link. Click ✕ to unlink (the part isn\'t deleted, just disconnected). You can unlink parts you linked yourself; admins can unlink any link.',
             position: 'center'
         },
         {
-            target: '#sec-work',
+            target: '#home-joblist',
             title: 'Job list',
-            text: 'Your personal task queue. Add jobs from search results or routes. Toggle the switch to mark complete (moves to bottom). Add comments — you\'ll be asked if you want to save them permanently to the item. Overdue jobs (12h+) turn red.',
+            text: 'Your personal task queue, right here on Home. Jobs you raise from the Positions and CBM tabs land here. Toggle the switch to mark a job complete (it moves to the bottom). Comments are always visible; tap a card to add a note or edit it.',
             position: 'bottom'
         },
         {
             target: '[title="Menu"]',
             title: 'Menu',
-            text: 'Open Alerts, Download Backup, Help & Reference, and your Account settings (Switch User, Logout) all live here.',
+            text: 'Open Alerts, Download Backup, Help & Reference, and your account settings (Change PIN, Logout) all live here.',
             position: 'left'
         },
         {
             target: null,
-            title: 'Quick Tips',
+            title: 'Quick tips',
             text: '• Tap any screenshot to view fullscreen (pinch to zoom on mobile)\n• "More results" links are clickable — expand to see all\n• Inactive routes won\'t show on position detail views\n• Use the browser Back button to navigate — it stays in the app',
             position: 'center'
         }
@@ -6662,7 +6922,7 @@ function liveSearchSuggest(query){
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.17';
+    var APP_VERSION = '1.18';
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== APP_VERSION) {
