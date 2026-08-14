@@ -3509,7 +3509,7 @@
                 }
                 html+='</div>';
                 if(item.cbmType==='Thermal'&&item.routeNumber)html+='<div class="work-details" style="display:flex;align-items:center;gap:6px;margin-top:6px;"><span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.3px;">trend</span><span class="rspark" data-rk="'+sanitizeKey(item.routeNumber)+'"></span></div>';
-                if(item.parts&&item.parts.length>0)html+='<div class="work-details">Parts: '+item.parts.map(p=>escapeHtml(p.apn)+' ('+escapeHtml(p.partType)+')').join(', ')+'</div>';
+                if(item.details)html+='<div class="work-details" style="margin-top:6px;"><strong>Job details:</strong> <strong>'+escapeHtml(item.details)+'</strong></div>';if(item.parts&&item.parts.length>0){html+='<div class="work-details" style="margin-top:6px;"><strong>Parts:</strong></div>';item.parts.forEach(function(p){html+='<div class="work-details" style="margin-top:2px;"><strong>'+escapeHtml(p.apn||'')+'</strong>'+(p.description?' \u2014 <strong>'+escapeHtml(p.description)+'</strong>':'')+(p.location?' \u2014 <strong>Bin: '+escapeHtml(p.location)+'</strong>':'')+'</div>';});}
                 html+='<div class="work-details" style="font-size:11px;color:#6b7280;">Added '+formatWorkTime(item.createdAt)+'</div>';
                 html+='</div>';
                 if(_wsKey)html+='<div class="work-scada" data-imgtype="'+_wsType+'" data-imgkey="'+escapeHtml(_wsKey)+'"></div>';
@@ -3534,7 +3534,7 @@
                 html+='</div>';
                 html+='<div class="work-card-actions" style="display:none;">';
                 html+='<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editWork(\''+key+'\')">Edit</button>';
-                html+='<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteWork(\''+key+'\')">Delete</button>';
+                html+='<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteWork(\''+key+'\')">Remove from Job list</button>';
                 html+='</div></div>';
             });
             container.innerHTML=html;
@@ -3583,7 +3583,7 @@
                 if(document.getElementById('work-part-type'))document.getElementById('work-part-type').value=_p0.partType||'';
                 if(document.getElementById('work-apn'))document.getElementById('work-apn').value=_p0.apn||'';
                 if(document.getElementById('work-location'))document.getElementById('work-location').value=_p0.location||'';
-                if(document.getElementById('work-part-desc'))document.getElementById('work-part-desc').value=_p0.description||'';
+                if(document.getElementById('work-part-desc'))document.getElementById('work-part-desc').value=_p0.description||'';if(document.getElementById('work-fwo-details'))document.getElementById('work-fwo-details').value=prefill.details||'';
             } else if(prefill.workType==='PM'){
                 if(document.getElementById('work-equipment'))document.getElementById('work-equipment').value=prefill.equipment||'';
             } else if(prefill.workType==='CBM'){
@@ -3600,7 +3600,7 @@
                 '<div class="form-group"><label>Part Type</label><select id="work-part-type"><option value="">Select...</option><option>Drive roller</option><option>End roller</option><option>Tension roller</option><option>Snubber roller</option><option>Bearing</option><option>Motor gearbox</option><option>Pulley A</option><option>Pulley B</option><option>Pulley C</option><option>Pulley D</option><option>Pulley E</option><option>Pulley F</option><option>Pulley G</option><option>Pulley H</option><option>Idle roller</option><option>Belt</option><option>Blank</option><option>Other</option></select></div>'+
                 '<div class="form-group"><label>APN</label><input type="text" id="work-apn" placeholder="Enter APN"></div>'+
                 '<div class="form-group"><label>Store Location</label><input type="text" id="work-location" placeholder="e.g. C05-C-28"></div>'+
-                '<div class="form-group"><label>Part Description</label><input type="text" id="work-part-desc" placeholder="Optional"></div>';
+                '<div class="form-group"><label>Part Description</label><input type="text" id="work-part-desc" placeholder="Optional"></div>'+'<div class="form-group"><label>Job details</label><textarea id="work-fwo-details" rows="2" placeholder="What needs doing (optional)"></textarea></div>';
         } else if(type==='PM'){
             container.innerHTML='<div class="form-group"><label>Position Number</label><input type="text" id="work-equipment" placeholder="e.g. 703010 or CB.SRT.01.ID11.01"></div>'+
                 '<div class="form-group"><label>Add SCADA location screenshot?</label><div class="file-upload" onclick="document.getElementById(\'work-img-file\').click()" style="padding:10px;"><input type="file" id="work-img-file" accept="image/*" onchange="previewImage(this,\'work-img-preview\')"><p style="font-size:12px;">Click to upload (optional)</p></div><img id="work-img-preview" class="img-preview" style="display:none;max-height:150px;"></div>';
@@ -3638,23 +3638,11 @@
             const partType=document.getElementById('work-part-type').value;
             const apn=document.getElementById('work-apn').value.trim();
             const location=document.getElementById('work-location').value.trim();
-            const desc=document.getElementById('work-part-desc').value.trim();
+            const desc=document.getElementById('work-part-desc').value.trim();var _fd=document.getElementById('work-fwo-details');if(_fd)workData.details=_fd.value.trim();
             if(!eq){showToast('Position number required','error');return;}
             workData.equipment=eq;
             if(apn){
                 workData.parts=[{apn,partType,location,description:desc}];
-                // Auto-save part if not in DB
-                const apnKey=sanitizeKey(apn);
-                const existSnap=await db.ref('parts/'+apnKey).once('value');
-                if(!existSnap.val()){
-                    if(!location){showToast('Store location required for new part','error');return;}
-                    await db.ref('parts/'+apnKey).set({apn,partType,location,notes:desc,conveyors:[eq],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
-                } else {
-                    // Link conveyor if not already linked
-                    const existing=existSnap.val();
-                    var conveyors=existing.conveyors||[];
-                    if(conveyors.indexOf(eq)<0){conveyors.push(eq);await db.ref('parts/'+apnKey).update({conveyors,updatedAt:new Date().toISOString()});}
-                }
             }
             // Auto-register equipment if not exists
             const eqKey=sanitizeKey(eq);
@@ -5360,21 +5348,12 @@ function liveSearchSuggest(query,scope){
             var workData={workType:type,equipment:name,assignedTo:currentUser.toLowerCase(),status:'pending',createdAt:new Date().toISOString()};
             var noteText='';
             if(type==='PM'){var pe=document.getElementById('jw-pm-notes');noteText=(pe&&pe.value||'').trim();}
-            else{var fe=document.getElementById('jw-fwo-desc');noteText=(fe&&fe.value||'').trim();}
+            else{var fe=document.getElementById('jw-fwo-desc');noteText=(fe&&fe.value||'').trim();if(noteText)workData.details=noteText;}
             if(type==='FWO'&&_jwParts.length){
                 workData.parts=_jwParts.map(function(p){return {apn:p.apn,partType:p.partType||'',location:p.location||'',description:p.description||''};});
-                for(var i=0;i<_jwParts.length;i++){
-                    var p=_jwParts[i],apnKey=sanitizeKey(p.apn);
-                    try{
-                        var es=await db.ref('parts/'+apnKey).once('value');
-                        if(!es.val())await db.ref('parts/'+apnKey).set({apn:p.apn,partType:p.partType||'',location:p.location||'',notes:p.description||'',conveyors:[name],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
-                        else{var ex=es.val(),cv=ex.conveyors||[];if(cv.indexOf(name)<0){cv.push(name);await db.ref('parts/'+apnKey).update({conveyors:cv,updatedAt:new Date().toISOString()});}}
-                    }catch(e){}
-                }
-                invalidatePartsCache();
             }
             var ref=await db.ref('workAssigned').push(workData);
-            if(noteText){try{await db.ref('workAssigned/'+ref.key+'/jobNotes').push({text:noteText,author:currentUser,createdAt:new Date().toISOString()});}catch(e){}}
+            if(type==='PM'&&noteText){try{await db.ref('workAssigned/'+ref.key+'/jobNotes').push({text:noteText,author:currentUser,createdAt:new Date().toISOString()});}catch(e){}}
             logAudit('addJob','job',name,{type:type,via:'wizard'});
             updateWorkCount();
             closeModal();

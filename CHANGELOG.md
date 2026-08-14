@@ -9,7 +9,7 @@
 
 ## v1.18 — 2026-08-14
 
-**Status:** Built and self-tested (all three phases); awaiting deploy. Firebase unchanged — still open (rules not yet published).
+**Status:** Deployed and verified live 2026-08-14 (live files byte-identical to the working copy). Firebase unchanged — still open (rules not yet published).
 
 **Highlights:**
 - **Reorganised into four tabs.** The single universal-search screen is replaced by four purpose-built tabs: **Home**, **Positions**, **CBM** and **Parts**. Each does one job well. Nothing about how the data works has changed — only where things live on screen.
@@ -35,7 +35,12 @@
 
 ### Raise-a-job wizard (Positions)
 - On a position, "+ Add to Job list" opens a wizard instead of silently adding a PM. Routes (CBM) are unchanged.
-- Jobs are written exactly like any other job: same `workAssigned` shape, same auto-registration of the position and of any new parts, same duplicate check. A PM's notes and a FWO's job details become the job's first comment; FWO parts are stored on the job and linked to the position. An uploaded photo is saved to the position's shared image, only offered when the position has no photo yet.
+- Jobs are written exactly like any other job: same `workAssigned` shape, same auto-registration of the position, same duplicate check. A PM's notes become the job's first comment; a FWO's job details are stored on the job (field `details`) and shown on the job card. FWO parts are recorded on the job as the parts needed and shown on the card, but are **not** auto-linked to the position or auto-created in the catalogue — link them via the normal flow once confirmed. An uploaded photo is saved to the position's shared image, only offered when the position has no photo yet.
+
+### Job-card display refinements (follow-up, 2026-08-14)
+- FWO job cards now show the **job details** in bold at the top of the card, and each part on its own line as **APN — description — Bin location** (previously just the APN and part type). The FWO edit form gained a matching "Job details" field so edits round-trip.
+- The job card's **Delete** button was renamed **Remove from Job list** for clarity (matching the wording already used on the route detail view).
+- **FWO parts are no longer auto-linked.** Parts you add when raising a FWO are recorded on the job as the parts you'll need (and shown on the card), but the app no longer automatically adds them to the parts catalogue or links them to the position — they might not be right. A technician links them properly via the normal flow once they've confirmed them. This applies to both the Positions-tab wizard and the classic Add/Edit Job form.
 
 
 ## v1.17 — 2026-08-13
