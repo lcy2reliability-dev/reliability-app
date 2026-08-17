@@ -9,7 +9,7 @@
 
 ## v1.18 — 2026-08-14
 
-**Status:** Deployed and verified live 2026-08-14 (live files byte-identical to the working copy). Firebase unchanged — still open (rules not yet published).
+**Status:** Core v1.18 deployed and verified live 2026-08-14. The follow-ups below dated 2026-08-14 (job-card display refinements) and 2026-08-17 (FWO parts no longer auto-linked, user-account fixes, session security) are built and verified in the working copy but **not yet redeployed** — the live file is still the earlier v1.18 build. Firebase unchanged — still open (rules not yet published). On the next redeploy the What's New banner will re-appear once for everyone (its marker was bumped) even though the displayed version stays 1.18.
 
 **Highlights:**
 - **Reorganised into four tabs.** The single universal-search screen is replaced by four purpose-built tabs: **Home**, **Positions**, **CBM** and **Parts**. Each does one job well. Nothing about how the data works has changed — only where things live on screen.
@@ -41,6 +41,20 @@
 - FWO job cards now show the **job details** in bold at the top of the card, and each part on its own line as **APN — description — Bin location** (previously just the APN and part type). The FWO edit form gained a matching "Job details" field so edits round-trip.
 - The job card's **Delete** button was renamed **Remove from Job list** for clarity (matching the wording already used on the route detail view).
 - **FWO parts are no longer auto-linked.** Parts you add when raising a FWO are recorded on the job as the parts you'll need (and shown on the card), but the app no longer automatically adds them to the parts catalogue or links them to the position — they might not be right. A technician links them properly via the normal flow once they've confirmed them. This applies to both the Positions-tab wizard and the classic Add/Edit Job form.
+
+### User accounts (follow-up, 2026-08-14)
+- **Fixed phantom duplicate users.** When someone signed in with an account that had no profile record, the app used to silently create a bare one (no name or email). Combined with the recent move to `@amazon.com` logins, this could leave a person with two rows — one full record and one bare duplicate. The app no longer auto-creates records: an account with no profile (never set up here, or removed by an admin) is signed out and sent to "Set up your login" instead. The existing bare duplicates were cleaned up.
+- **Admins can now remove a user.** Manage Users has a **Remove** button on every account except your own. It signs that person out and locks them to look-only until they set up their login again, and it is logged in the Activity Log. Note: this removes their access to the app but does not delete their underlying Firebase login account — a full deletion is done in the Firebase console if ever needed.
+
+### Session security (follow-up, 2026-08-17)
+- **You stay signed in, but not forever.** The app remembers you on your own device so you don't sign in every time. If the account then goes **unused for 7 days**, the next time you open it you're asked for your **PIN** again (your Login ID stays filled in, so it's just the PIN). This limits how long a forgotten or lost device stays open.
+- **"This is a shared device" option on the sign-in screen.** Tick it when you're on a shared or borrowed laptop: as soon as that browser is closed the session ends, and the next person gets a **completely blank sign-in screen** (your Login ID is not remembered). Leave it unticked on your own phone or laptop for the normal "stay signed in" behaviour.
+- Under the covers: personal devices use persistent sign-in with a 7-day idle re-lock; shared devices use session-only sign-in that clears on close. Activity is tracked quietly (throttled) so an active user is never interrupted.
+
+### Terms & Conditions and Privacy Policy (follow-up, 2026-08-17)
+- **New sign-ups must accept the Terms & Conditions and Privacy Policy.** The "Set up your login" screen now has a required tick-box — "I have read and accept the Terms & Conditions and Privacy Policy" — with links that open each document in full. Creating the account is blocked until it is ticked, and the acceptance (with the policy version, currently 1.0, and a timestamp) is recorded against the person's account (`termsAccepted`, `termsVersion`, `termsAcceptedAt`).
+- **Both documents are available any time** from the menu (☰) under **Help**: "Terms & Conditions" and "Privacy Policy". Each opens in a full-screen reader with a Close button; the same reader is used from the sign-up tick-box links.
+- The documents are the v1.0 texts (effective 14 August 2026). Note: these are still with HR/Legal for review — if the wording changes, the version recorded on new acceptances will be bumped and existing users can be asked to re-accept.
 
 
 ## v1.17 — 2026-08-13

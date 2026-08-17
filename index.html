@@ -404,6 +404,14 @@
                 <input type="password" id="login-pin" inputmode="numeric" maxlength="12" placeholder="PIN (6+ digits)" autocomplete="current-password" onkeyup="if(event.key==='Enter')submitLoginOrRegister()">
                 <label id="login-pin-confirm-label" for="login-pin-confirm" style="font-size:12px;color:#6b7280;display:none;margin-top:10px;margin-bottom:4px;">Confirm PIN</label>
                 <input type="password" id="login-pin-confirm" inputmode="numeric" maxlength="12" placeholder="Re-enter PIN" autocomplete="new-password" style="display:none;" onkeyup="if(event.key==='Enter')submitLoginOrRegister()">
+                <label id="login-terms-row" style="display:none;align-items:flex-start;gap:8px;font-size:13px;color:#374151;margin-top:12px;cursor:pointer;text-align:left;">
+                    <input type="checkbox" id="login-terms" style="width:16px;height:16px;flex:none;margin:2px 0 0;">
+                    <span>I have read and accept the <a role="button" tabindex="0" onclick="event.preventDefault();event.stopPropagation();openTerms();" style="color:#2563eb;text-decoration:underline;cursor:pointer;">Terms &amp; Conditions</a> and <a role="button" tabindex="0" onclick="event.preventDefault();event.stopPropagation();openPrivacy();" style="color:#2563eb;text-decoration:underline;cursor:pointer;">Privacy Policy</a>.</span>
+                </label>
+                <label id="login-shared-row" style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;margin-top:12px;cursor:pointer;text-align:left;">
+                    <input type="checkbox" id="login-shared" style="width:16px;height:16px;flex:none;margin:0;">
+                    <span>This is a shared device - sign me out when I close the app</span>
+                </label>
                 <button class="btn btn-primary" id="login-primary-btn" onclick="submitLoginOrRegister()" style="margin-top:12px;">Sign in</button>
                 <p id="login-hint" style="font-size:12px;color:#6b7280;margin-top:10px;"></p>
                 <div id="login-links" style="margin-top:10px;display:flex;justify-content:space-between;gap:12px;">
@@ -414,6 +422,119 @@
         </div>
     </div>
 
+    <div id="legal-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#f0f2f5;z-index:100002;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+        <div style="position:sticky;top:0;background:#232F3E;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
+            <span id="legal-title" style="font-size:16px;font-weight:600;">Terms &amp; Conditions</span>
+            <button onclick="closeLegal()" aria-label="Close" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:0 4px;">&#10005;</button>
+        </div>
+        <div id="legal-body" style="max-width:760px;margin:0 auto;padding:16px 18px 24px;font-size:14px;line-height:1.6;color:#374151;"></div>
+        <div style="max-width:760px;margin:0 auto;padding:0 18px 56px;"><button class="btn btn-primary" onclick="closeLegal()">Close</button></div>
+    </div>
+    <div id="legal-terms-src" style="display:none;"><h1 style="font-size:20px;color:#1e293b;margin:0 0 6px;">Terms &amp; Conditions of Use — RME CBM Reliability App (LCY2 Tilbury)</h1>
+<p style="margin:8px 0;"><strong>Effective date:</strong> 14 August 2026</p>
+<p style="margin:8px 0;"><strong>Version:</strong> 1.0</p>
+<p style="margin:8px 0;">Please read these Terms before you register. By ticking "I agree" and creating an account you confirm that you have read, understood and accept these Terms and the accompanying Privacy Policy. If you do not agree, do not register or use the app.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">1. What this app is</h2>
+<p style="margin:8px 0;">The "RME App" is an internal operational tool used by Amazon Reliability &amp; Maintenance Engineering (RME) at the LCY2 (Tilbury) fulfilment centre to record and track condition-based monitoring, equipment, parts, routes and maintenance jobs.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">2. Who may use it</h2>
+<p style="margin:8px 0;">Use is limited to authorised Amazon RME personnel (and authorised contractors) working at or supporting LCY2. Access is granted only after you register, confirm your email address, and — where required — are approved by an administrator. Access may be refused or withdrawn at any time.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">3. Your account</h2>
+<ul style="margin:6px 0 6px;padding-left:22px;">
+<li style="margin:3px 0;">Register with your real name, Amazon email address and Amazon alias.</li>
+<li style="margin:3px 0;">Choose a PIN and keep it confidential. Do not share your login with anyone.</li>
+<li style="margin:3px 0;">One account per person. You are responsible for all activity carried out under your account.</li>
+<li style="margin:3px 0;">Tell the administrator immediately if you believe your account has been used by someone else.</li>
+</ul>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">4. Acceptable use</h2>
+<p style="margin:8px 0;">You agree to:</p>
+<ul style="margin:6px 0 6px;padding-left:22px;">
+<li style="margin:3px 0;">Enter accurate, honest information to the best of your knowledge.</li>
+<li style="margin:3px 0;">Use the app only for legitimate RME reliability and maintenance work.</li>
+</ul>
+<p style="margin:8px 0;">You agree <strong>not</strong> to:</p>
+<ul style="margin:6px 0 6px;padding-left:22px;">
+<li style="margin:3px 0;">Share, tamper with, scrape, copy, reverse-engineer or attempt to bypass the access controls of the app.</li>
+<li style="margin:3px 0;">Upload unlawful, offensive or confidential material, or personal data about other people beyond what the app legitimately requires.</li>
+<li style="margin:3px 0;">Use the app in any way that breaches Amazon policy or applicable law.</li>
+</ul>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">5. This is a support tool, not a safety system</h2>
+<p style="margin:8px 0;">The app supports reliability tracking but does <strong>not</strong> replace official Amazon maintenance, isolation (e.g. AMEC/LOTO) or safety procedures, or the official asset/maintenance systems of record (e.g. APM). Always follow official procedures and use official systems for any safety-critical decision. Nothing in the app authorises work on equipment.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">6. Accuracy of data</h2>
+<p style="margin:8px 0;">Information in the app is entered by users and is provided on a best-effort basis. No guarantee is made as to its accuracy, completeness or timeliness. Verify against official sources before acting on it.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">7. Availability and "as is"</h2>
+<p style="margin:8px 0;">The app is provided "as is" and "as available", without warranties of any kind. It may be slow, unavailable, changed or discontinued at any time without notice. To the extent permitted by law, the RME team and Amazon accept no liability for any loss arising from use of, or inability to use, the app.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">8. Monitoring and audit</h2>
+<p style="margin:8px 0;">Actions you take in the app are logged and attributed to your login for accountability and to keep maintenance records trustworthy. See the Privacy Policy for details.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">9. Suspension and termination</h2>
+<p style="margin:8px 0;">Access may be suspended or removed, and content may be corrected or removed, if these Terms or Amazon policy are breached, or for operational or security reasons.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">10. Amazon policies take precedence</h2>
+<p style="margin:8px 0;">These Terms sit alongside Amazon's own policies, code of conduct and information-security, data-handling and safety policies. Where there is any conflict, Amazon's policies prevail.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">11. Changes to these Terms</h2>
+<p style="margin:8px 0;">These Terms may be updated. Material changes will be noted in the app. Continuing to use the app after a change means you accept the updated Terms.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">12. Contact</h2>
+<p style="margin:8px 0;">Administrator: <strong>Tittus Streuti — RME Technician, LCY2 Tilbury — strtt@amazon.com</strong></p></div>
+    <div id="legal-privacy-src" style="display:none;"><h1 style="font-size:20px;color:#1e293b;margin:0 0 6px;">Privacy Policy — RME CBM Reliability App (LCY2 Tilbury)</h1>
+<p style="margin:8px 0;"><strong>Effective date:</strong> 14 August 2026</p>
+<p style="margin:8px 0;"><strong>Version:</strong> 1.0</p>
+<p style="margin:8px 0;">This app (the "RME App") is an internal operational tool used by Amazon Reliability &amp; Maintenance Engineering (RME) at the LCY2 (Tilbury) fulfilment centre to track condition-based monitoring, equipment, parts, routes and maintenance jobs. This policy explains what personal information the app collects, why, where it is stored, and your choices. It applies to everyone who registers for and uses the app.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">1. Who is responsible</h2>
+<p style="margin:8px 0;">The app is built and administered by the RME team at LCY2. For any question about your data, or to exercise the rights below, contact the administrator:</p>
+<p style="margin:8px 0;"><strong>Tittus Streuti — RME Technician, LCY2 Tilbury — strtt@amazon.com</strong></p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">2. What we collect</h2>
+<p style="margin:8px 0;"><strong>When you register:</strong></p>
+<ul style="margin:6px 0 6px;padding-left:22px;">
+<li style="margin:3px 0;">Your name</li>
+<li style="margin:3px 0;">Your Amazon email address</li>
+<li style="margin:3px 0;">Your login ID (your Amazon alias)</li>
+<li style="margin:3px 0;">A numeric PIN, which is your account password. Your PIN is handled by Firebase Authentication and stored only as a secure one-way hash. It is never visible to administrators or other users.</li>
+</ul>
+<p style="margin:8px 0;"><strong>When you use the app:</strong></p>
+<ul style="margin:6px 0 6px;padding-left:22px;">
+<li style="margin:3px 0;">Records you create or edit (thermal readings, equipment/position details, parts, routes, maintenance jobs, notes, observations and any photos you upload).</li>
+<li style="margin:3px 0;">An activity log that records what action was taken, what it affected, your login ID and the date/time. This exists so maintenance records can be trusted and traced.</li>
+<li style="margin:3px 0;">Attribution of the parts you link to positions and the jobs assigned to you (your login ID is stored against them).</li>
+</ul>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">3. Why we collect it (purpose)</h2>
+<ul style="margin:6px 0 6px;padding-left:22px;">
+<li style="margin:3px 0;">To control who can access the app (registration, email confirmation, and administrator approval).</li>
+<li style="margin:3px 0;">To run the RME reliability and condition-based-monitoring workflow at LCY2.</li>
+<li style="margin:3px 0;">To keep maintenance records accurate and auditable by attributing entries to the person who made them.</li>
+</ul>
+<p style="margin:8px 0;">The lawful basis is Amazon's legitimate operational interest in maintaining and monitoring its equipment safely and reliably.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">4. Where it is stored</h2>
+<ul style="margin:6px 0 6px;padding-left:22px;">
+<li style="margin:3px 0;">Account details and app data are stored in <strong>Google Firebase</strong> (Firebase Authentication and the Firebase Realtime Database), hosted in Google Cloud's <strong>europe-west1 (Belgium)</strong> region.</li>
+<li style="margin:3px 0;">The app itself is served as a static web page from GitHub Pages.</li>
+<li style="margin:3px 0;">Data is transmitted over encrypted (HTTPS/WSS) connections.</li>
+</ul>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">5. Who can see it</h2>
+<ul style="margin:6px 0 6px;padding-left:22px;">
+<li style="margin:3px 0;">Other authorised RME users of the app can see the operational records in it (equipment, parts, routes, readings, jobs).</li>
+<li style="margin:3px 0;">Administrators can additionally see the user list (names, emails and roles) and the full activity log.</li>
+<li style="margin:3px 0;">We do not sell your data or share it with third parties for marketing. Google (as the hosting provider) processes it on our behalf under its own security terms.</li>
+</ul>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">6. How long we keep it</h2>
+<ul style="margin:6px 0 6px;padding-left:22px;">
+<li style="margin:3px 0;">Activity-log entries older than <strong>365 days</strong> are automatically deleted.</li>
+<li style="margin:3px 0;">Deleted records are first moved to a "recently deleted" area (soft delete) and can be permanently removed by an administrator.</li>
+<li style="margin:3px 0;">Your account and its personal details are kept while your account is active; contact the administrator to have them removed.</li>
+</ul>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">7. Your choices and rights</h2>
+<p style="margin:8px 0;">You can ask the administrator to:</p>
+<ul style="margin:6px 0 6px;padding-left:22px;">
+<li style="margin:3px 0;">See what personal data the app holds about you.</li>
+<li style="margin:3px 0;">Correct your name or email.</li>
+<li style="margin:3px 0;">Reset your PIN (the app also has a self-service "Forgot PIN" option).</li>
+<li style="margin:3px 0;">Delete your account and associated personal details.</li>
+</ul>
+<p style="margin:8px 0;">Your use of your Amazon credentials and any Amazon data within the app is also governed by Amazon's own privacy, data-handling and information-security policies, which apply in addition to this notice.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">8. Security</h2>
+<p style="margin:8px 0;">Access requires a verified account. Actions are logged and attributed. PINs are stored only as hashes. Please keep your PIN confidential and never share your login.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">9. Important limitations</h2>
+<p style="margin:8px 0;">This is an internal support tool for authorised RME personnel. It is <strong>not</strong> an official Amazon system of record and must <strong>not</strong> be relied on for safety-critical decisions in place of official maintenance, isolation and safety procedures or official Amazon systems.</p>
+<h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">10. Changes to this policy</h2>
+<p style="margin:8px 0;">We may update this policy. Material changes will be noted in the app. Continuing to use the app after a change means you accept the updated policy.</p>
+<p style="margin:8px 0;"><em>Contact: Tittus Streuti, strtt@amazon.com</em></p></div>
     <div class="header" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;">
         <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="goHome()" title="Home">
             <img src="data:image/png;base64,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" alt="amazon rme" style="height:28px;width:auto;display:block;">
@@ -428,7 +549,7 @@
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
                     <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.18)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; New tabbed layout: <strong>Home</strong>, <strong>Positions</strong>, <strong>CBM</strong> and <strong>Parts</strong>.<br>&bull; Your <strong>Job list</strong> now lives on the Home screen, right under the dashboard.<br>&bull; New <strong>Parts</strong> tab: browse the whole catalogue with a filter box on every column.<br>&bull; Add a job straight from a Position: choose <strong>PM or FWO</strong>, attach a photo, add notes and pick the parts you need.</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; New tabbed layout: <strong>Home</strong>, <strong>Positions</strong>, <strong>CBM</strong> and <strong>Parts</strong>.<br>&bull; Your <strong>Job list</strong> now lives on the Home screen, right under the dashboard.<br>&bull; New <strong>Parts</strong> tab: browse the whole catalogue with a filter box on every column.<br>&bull; Raise a job from a Position: choose <strong>PM or FWO</strong>, attach a photo, add notes and pick the parts you need.<br>&bull; <strong>FWO jobs</strong> keep their own job details; parts you add are recorded on the job (link them to the position yourself once confirmed).<br>&bull; <strong>Stay signed in</strong> on your own device; tick <strong>&quot;shared device&quot;</strong> at sign-in to be logged out when you close the app.<br>&bull; If your account is idle for over <strong>7 days</strong> you will be asked for your <strong>PIN</strong> again.<br>&bull; Admins can now <strong>remove a user</strong> in Manage Users.<br>&bull; New sign-ups now accept the <strong>Terms &amp; Conditions</strong> and <strong>Privacy Policy</strong>; both are in the menu under Help.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -447,6 +568,8 @@
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Help</div>
                 <div role="button" tabindex="0" onclick="toggleBurgerMenu();startTour();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Take the Tour</div>
                 <div role="button" tabindex="0" onclick="toggleBurgerMenu();openHelpPage();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Help & Reference</div>
+                <div role="button" tabindex="0" onclick="toggleBurgerMenu();openTerms();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Terms &amp; Conditions</div>
+                <div role="button" tabindex="0" onclick="toggleBurgerMenu();openPrivacy();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Privacy Policy</div>
                 <div onclick="window.open('https://github.com/lcy2reliability-dev/reliability-app/blob/main/CHANGELOG.md','_blank')" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Changelog</div>
                 <div style="height:1px;background:#e5e7eb;margin:8px 20px;"></div>
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Account</div>
@@ -824,7 +947,16 @@
 
     let db = null, firebaseReady = false, currentUser = null, lastSearchResultCount = 0;
     var _saveReadingsCooldown = false; // rate-limit: 5s cooldown between thermal saves
-    var auth = null, currentUid = null, currentRole = 'technician', currentReviewed = true, currentName = '', currentEmailVerified = false;
+    var auth = null, currentUid = null, currentRole = 'technician', currentReviewed = true, currentName = '', currentEmailVerified = false, _registeringUid = null;
+    var SESSION_IDLE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days idle -> require PIN again
+    var _lastActiveWrite = 0;
+    function stampActive(){ var n = Date.now(); if(n - _lastActiveWrite > 60000){ _lastActiveWrite = n; try{ localStorage.setItem('reliability_last_active', String(n)); }catch(_e){} } }
+    function _sessionIdleExceeded(){ var last = parseInt(localStorage.getItem('reliability_last_active') || '0', 10); return last > 0 && (Date.now() - last) > SESSION_IDLE_MS; }
+    async function _relockForIdle(){
+        try{ var u = auth && auth.currentUser; if(u){ var rid = (u.email || '').split('@')[0]; if(rid && localStorage.getItem('reliability_shared_device') !== '1') localStorage.setItem('reliability_app_user', rid); } }catch(_e){}
+        try{ if(auth) await auth.signOut(); }catch(_e){}
+        showToast('You have been away for a while. Please re-enter your PIN.', 'info');
+    }
     (function initFirebase() {
         if (_isPreview) return;
         try {
@@ -912,6 +1044,8 @@
         var ln = document.getElementById('login-new'); if(ln) ln.style.display = 'block';
         var li = document.getElementById('login-input'); if(li) li.value = last;
         var lp = document.getElementById('login-pin'); if(lp) lp.value = '';
+        var ls = document.getElementById('login-shared'); if(ls) ls.checked = false;
+        var lt = document.getElementById('login-terms'); if(lt) lt.checked = false;
         var pt = document.getElementById('login-prompt-text'); if(pt) pt.textContent = 'Enter your Login ID and PIN';
         var pinLbl = document.getElementById('login-pin-label');
         var hint = document.getElementById('login-hint');
@@ -923,7 +1057,7 @@
             if(idLbl) idLbl.textContent = 'Your name';
             if(li) li.placeholder = 'Your name';
             if(pt) pt.textContent = 'Enter your name to continue';
-            ['login-name-label','login-name','login-email-label','login-email','login-pin-confirm-label','login-pin-confirm','login-links'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display='none'; });
+            ['login-name-label','login-name','login-email-label','login-email','login-pin-confirm-label','login-pin-confirm','login-links','login-shared-row','login-terms-row'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display='none'; });
         } else {
             if(lp) lp.style.display = '';
             if(pinLbl) pinLbl.style.display = '';
@@ -940,6 +1074,7 @@
     function confirmLogin() { initLogin(); }
 
     // ===== v1.17 login / self-service (email-confirmation gate) =====
+    var TERMS_VERSION = '1.0';
     var _loginMode = 'signin';
     function setLoginMode(mode){
         _loginMode = (mode === 'register') ? 'register' : 'signin';
@@ -949,6 +1084,7 @@
         show('login-email-label', reg); show('login-email', reg);
         show('login-id-label', !reg); show('login-input', !reg);
         show('login-pin-confirm-label', reg); show('login-pin-confirm', reg);
+        show('login-terms-row', reg); var _lt=document.getElementById('login-terms'); if(_lt) _lt.checked=false;
         show('login-forgot', !reg);
         var links = document.getElementById('login-links'); if(links) links.style.display = 'flex';
         var pt = document.getElementById('login-prompt-text'); if(pt) pt.textContent = reg ? 'Set up your login' : 'Enter your Login ID and PIN';
@@ -969,14 +1105,20 @@
         if(!/^[a-z0-9][a-z0-9._-]*@amazon\.[a-z][a-z.]*$/i.test(email)){ showToast('Enter your Amazon email (e.g. jeff@amazon.com)', 'error'); return; }
         if(!/^\d{6,}$/.test(pin)){ showToast('PIN must be 6+ digits (numbers only)', 'error'); return; }
         if(pin !== conf){ showToast('The two PINs do not match', 'error'); return; }
+        if(!(document.getElementById('login-terms') && document.getElementById('login-terms').checked)){ showToast('Please accept the Terms & Conditions and Privacy Policy to continue', 'error'); return; }
         if(!firebaseReady || !auth){ showToast('Sign-up unavailable right now', 'error'); return; }
         var alias = email.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '');
         if(!alias){ showToast('That email has no valid Login ID', 'error'); return; }
         var credEmail = loginIdToEmail(alias);
         showLoading();
         try {
+            var _shared = !!(document.getElementById('login-shared') && document.getElementById('login-shared').checked);
+            try{ await auth.setPersistence(_shared ? firebase.auth.Auth.Persistence.SESSION : firebase.auth.Auth.Persistence.LOCAL); }catch(_pe){}
+            try{ localStorage.setItem('reliability_shared_device', _shared ? '1' : '0'); if(_shared) localStorage.removeItem('reliability_app_user'); else localStorage.setItem('reliability_app_user', alias); }catch(_e){}
             var cred = await auth.createUserWithEmailAndPassword(credEmail, pin);
-            await db.ref('users/' + cred.user.uid).set({ loginId: alias, name: name, email: email, role: 'technician', status: 'active', reviewed: false, createdAt: new Date().toISOString() });
+            _registeringUid = cred.user.uid;
+            try{ localStorage.setItem('reliability_last_active', String(Date.now())); }catch(_e){}
+            await db.ref('users/' + cred.user.uid).set({ loginId: alias, name: name, email: email, role: 'technician', status: 'active', reviewed: false, createdAt: new Date().toISOString(), termsAccepted: true, termsVersion: TERMS_VERSION, termsAcceptedAt: new Date().toISOString() });
             try { await cred.user.sendEmailVerification(); } catch(_e){}
             showToast('Account created. Check your Amazon inbox for a confirmation link to unlock editing.', 'success');
         } catch(e){
@@ -1062,6 +1204,9 @@
     }
     window.addEventListener('focus', recheckEmailVerified);
     document.addEventListener('visibilitychange', function(){ if(!document.hidden) recheckEmailVerified(); });
+    ['click','keydown','touchstart'].forEach(function(ev){ try{ document.addEventListener(ev, stampActive, {passive:true}); }catch(_e){ document.addEventListener(ev, stampActive); } });
+    document.addEventListener('visibilitychange', function(){ if(document.hidden) return; if(currentUid && _sessionIdleExceeded()){ _relockForIdle(); } else { stampActive(); } });
+    setInterval(function(){ if(currentUid && _sessionIdleExceeded()){ _relockForIdle(); } }, 5 * 60 * 1000);
     async function submitLogin() {
         var id = (document.getElementById('login-input').value || '').trim().toLowerCase();
         if (!AUTH_ENABLED) {
@@ -1079,7 +1224,11 @@
         var email = loginIdToEmail(id);
         showLoading();
         try {
+            var _shared = !!(document.getElementById('login-shared') && document.getElementById('login-shared').checked);
+            try{ await auth.setPersistence(_shared ? firebase.auth.Auth.Persistence.SESSION : firebase.auth.Auth.Persistence.LOCAL); }catch(_pe){}
+            try{ localStorage.setItem('reliability_shared_device', _shared ? '1' : '0'); if(_shared) localStorage.removeItem('reliability_app_user'); else localStorage.setItem('reliability_app_user', id); }catch(_e){}
             await auth.signInWithEmailAndPassword(email, pin);
+            try{ localStorage.setItem('reliability_last_active', String(Date.now())); }catch(_e){}
             // onAuthStateChanged finishes login
         } catch (e) {
             var code = e && e.code ? e.code : '';
@@ -1101,12 +1250,26 @@
         auth.onAuthStateChanged(async function(user) {
             if (user) {
                 try {
+                    if (_sessionIdleExceeded()) {
+                        try{ var _rid = (user.email || '').split('@')[0]; if(_rid && localStorage.getItem('reliability_shared_device') !== '1') localStorage.setItem('reliability_app_user', _rid); }catch(_e){}
+                        hideLoading();
+                        try { await auth.signOut(); } catch(_e){}
+                        showToast('You have been away for a while. Please re-enter your PIN.', 'info');
+                        return;
+                    }
                     var snap = await db.ref('users/' + user.uid).once('value');
                     var u = snap.val();
-                    if (!u) {
-                        var derived = (user.email || '').split('@')[0];
-                        u = { loginId: derived, role: 'technician', status: 'active', reviewed: false, createdAt: new Date().toISOString() };
-                        await db.ref('users/' + user.uid).set(u);
+                    if (!u && _registeringUid === user.uid) {
+                        // Registration is writing the full profile right now — wait briefly and re-read.
+                        await new Promise(function(res){ setTimeout(res, 500); });
+                        u = (await db.ref('users/' + user.uid).once('value')).val();
+                    }
+                    if (!u || u.status === 'removed') {
+                        // No profile: login was never set up here, or an admin removed it. Do NOT auto-create — lock out.
+                        hideLoading();
+                        try { await auth.signOut(); } catch(_e){}
+                        showToast('This login is not set up or was removed. Use "Set up your login" to register.', 'error');
+                        return;
                     }
                     currentUid = user.uid;
                     currentUser = (u.loginId || (user.email || '').split('@')[0] || '').toLowerCase();
@@ -1115,7 +1278,8 @@
                     currentName = (u.name || '');
                     currentEmailVerified = !!(user.emailVerified);
                     if (currentRole === 'technician' && currentEmailVerified && u.reviewed !== true) { try { db.ref('users/' + user.uid + '/reviewed').set(true); currentReviewed = true; logAudit('emailVerified','user',user.uid,{}); } catch(_e){} }
-                    localStorage.setItem('reliability_app_user', currentUser);
+                    if (localStorage.getItem('reliability_shared_device') === '1') { try{ localStorage.removeItem('reliability_app_user'); }catch(_e){} } else { localStorage.setItem('reliability_app_user', currentUser); }
+                    try{ localStorage.setItem('reliability_last_active', String(Date.now())); }catch(_e){}
                     var ov = document.getElementById('login-overlay'); if (ov) ov.style.display = 'none';
                     var bu = document.getElementById('burger-user');
                     if (bu) bu.innerHTML = '&#128100; ' + escapeHtml(currentUser) + ' <span style=\"font-size:11px;color:#6b7280;\">(' + escapeHtml(currentRole) + ')</span>';
@@ -4729,6 +4893,7 @@ function liveSearchSuggest(query,scope){
                 ['technician','admin'].forEach(function(r){html+='<option value="'+r+'"'+(r===role?' selected':'')+'>'+r+'</option>';});
                 html+='</select>';
                 if(needsReview)html+='<button class="btn btn-secondary btn-sm" onclick="markUserReviewed(\x27'+uid+'\x27)">Mark reviewed</button>';
+                if(uid!==currentUid)html+='<button class="btn btn-danger btn-sm" onclick="removeUser(\x27'+uid+'\x27,\x27'+escapeAttrArg(u.loginId||uid)+'\x27)">Remove</button>';
                 html+='</div></div>';
             });
             html+='</div>';
@@ -4761,6 +4926,26 @@ function liveSearchSuggest(query,scope){
             updateRoleReviewBadge();
             openUsersScreen();
         }catch(e){showToast('Error: '+e.message,'error');}
+    }
+    async function removeUser(uid, lid) {
+        if(!requireAdmin())return;
+        if(!checkFirebase())return;
+        if(uid===currentUid){showToast('You cannot remove your own account','error');return;}
+        var nm=lid||uid;
+        var ok=await showCustomModal('Remove user', '<p style="font-size:14px;color:#374151;line-height:1.5;">Remove <strong>'+escapeHtml(nm)+'</strong> from the app?</p><p style="font-size:13px;color:#6b7280;line-height:1.5;margin-top:8px;">They will be signed out and locked to look-only until they set up their login again. This removes their access here but does not delete their Firebase login account - do that in the Firebase console if a full removal is needed.</p>', [
+            {label:'Cancel',class:'btn-secondary',value:false},
+            {label:'Remove',class:'btn-danger',value:true}
+        ]);
+        if(!ok)return;
+        showLoading();
+        try {
+            await db.ref('users/'+uid).remove();
+            logAudit('removeUser','user',uid,{loginId:nm});
+            showToast('User removed','success');
+            updateRoleReviewBadge();
+            await openUsersScreen();
+        }catch(e){hideLoading();showToast('Error: '+e.message,'error');}
+        hideLoading();
     }
     async function updateRoleReviewBadge() {
         var badge=document.getElementById('role-review-badge');
@@ -6807,6 +6992,15 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     // HELP & REFERENCE PAGE
     // ============================================================
+    function openTerms(){ _showLegal('Terms & Conditions','legal-terms-src'); }
+    function openPrivacy(){ _showLegal('Privacy Policy','legal-privacy-src'); }
+    function _showLegal(title, srcId){
+        var s=document.getElementById(srcId), b=document.getElementById('legal-body');
+        if(s && b) b.innerHTML = s.innerHTML;
+        var t=document.getElementById('legal-title'); if(t) t.textContent = title;
+        var ov=document.getElementById('legal-overlay'); if(ov){ ov.style.display='block'; ov.scrollTop=0; }
+    }
+    function closeLegal(){ var ov=document.getElementById('legal-overlay'); if(ov) ov.style.display='none'; }
     function openHelpPage() {
         var html = '<div style="padding:0 16px 40px;max-width:700px;margin:0 auto;">';
         html += '<h1 style="font-size:22px;color:#1e293b;margin-bottom:4px;">Help & Reference</h1>';
@@ -6902,9 +7096,10 @@ function liveSearchSuggest(query,scope){
     // WHAT'S NEW BADGE
     // ============================================================
     var APP_VERSION = '1.18';
+    var WHATS_NEW_REV = '1.18.1'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
-        if (seen !== APP_VERSION) {
+        if (seen !== WHATS_NEW_REV) {
             var dot = document.getElementById('whats-new-dot');
             var banner = document.getElementById('whats-new-banner');
             if (dot) dot.classList.add('active');
@@ -6912,7 +7107,7 @@ function liveSearchSuggest(query,scope){
         }
     }
     function dismissWhatsNew() {
-        localStorage.setItem('seenVersion', APP_VERSION);
+        localStorage.setItem('seenVersion', WHATS_NEW_REV);
         var dot = document.getElementById('whats-new-dot');
         var banner = document.getElementById('whats-new-banner');
         if (dot) dot.classList.remove('active');
