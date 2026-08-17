@@ -5598,7 +5598,7 @@ function liveSearchSuggest(query,scope){
             if(dup){showToast('Already in Job list!','error');closeModal();return;}
             var imgEl=document.getElementById('jw-img-file');
             if(imgEl&&imgEl.files&&imgEl.files[0]){
-                try{var b64=await fileToBase64(imgEl.files[0]);await db.ref('equipmentImages/'+sanitizeKey(key)).set(b64);invalidateEquipmentCache();}
+                try{var b64=await fileToBase64(imgEl.files[0]);await db.ref('equipmentImages/'+sanitizeKey(key)).set(b64);await db.ref('equipmentImageMeta/'+sanitizeKey(key)).set({ addedBy: currentUser, addedAt: new Date().toISOString() });invalidateEquipmentCache();}
                 catch(e){showToast(e.message||'Image upload failed','error');}
             }
             var eqKey=sanitizeKey(name);
@@ -6175,6 +6175,7 @@ function liveSearchSuggest(query,scope){
         }
     }
     async function confirmQuickSS(type, key) {
+        if(!requireWrite())return;
         var file = document.getElementById('quick-ss-file').files[0];
         if (!file) { showToast('No image selected', 'error'); return; }
         showLoading();
@@ -6182,6 +6183,7 @@ function liveSearchSuggest(query,scope){
             var imageUrl = await fileToBase64(file);
             var path = type === 'route' ? 'routeImages/' + key : 'equipmentImages/' + key;
             await db.ref(path).set(imageUrl);
+            await db.ref((type === 'route' ? 'routeImageMeta/' : 'equipmentImageMeta/') + key).set({ addedBy: currentUser, addedAt: new Date().toISOString() });
             if (type === 'route') invalidateRoutesCache(); else invalidateEquipmentCache();
             logAudit('addScreenshot',type,key,null);showToast('Screenshot saved!', 'success');
             // Refresh detail page
