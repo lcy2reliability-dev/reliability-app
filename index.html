@@ -6967,6 +6967,21 @@ function liveSearchSuggest(query,scope){
                     tooltip.style.left = Math.max(16, rect.left - 340) + 'px';
                 }
                 tooltip.style.transform = 'none';
+                // Keep the tooltip on-screen: if the chosen spot runs past the viewport
+                // (e.g. a tall element highlighted near the bottom, like the Job list),
+                // measure the rendered tooltip and nudge it back in. Shifting the inline
+                // top/left by the rendered overflow works whatever coordinate space we are in.
+                var _m = 12;
+                var _tr = tooltip.getBoundingClientRect();
+                var _dy = 0, _dx = 0;
+                if (_tr.bottom > window.innerHeight - _m) _dy = (window.innerHeight - _m) - _tr.bottom;
+                if (_tr.top + _dy < _m) _dy = _m - _tr.top;
+                if (_tr.right > window.innerWidth - _m) _dx = (window.innerWidth - _m) - _tr.right;
+                if (_tr.left + _dx < _m) _dx = _m - _tr.left;
+                if (_dy || _dx) {
+                    tooltip.style.top = (parseFloat(tooltip.style.top || '0') + _dy) + 'px';
+                    tooltip.style.left = (parseFloat(tooltip.style.left || '0') + _dx) + 'px';
+                }
             } else {
                 highlight.style.display = 'none';
                 tooltip.style.top = '50%';
