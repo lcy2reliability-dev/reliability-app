@@ -1912,9 +1912,7 @@
                     routeResults.forEach(item=>{
                         var r=item.data;
                         html+='<tr><td data-label="Route"><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(r.routeNumber)+'</a>'+(routeReadingRequired(r)?' <span class="rspark" data-rk="'+item.key+'"></span>':'')+'</td><td data-label="Type">'+escapeHtml(r.type)+'</td><td data-label="Equipment">'+escapeHtml(r.notes||'\u2014')+'</td><td data-label="Start">'+escapeHtml(r.startPoint)+'</td><td data-label="End">'+escapeHtml(r.endPoint||'\u2014')+'</td>';
-                        if(routeReadingRequired(r)){
-                            html+='<td data-label="Action"><a class="search-link" href="#" onclick="goRecordThermal(\x27'+r.routeNumber+'\x27);return false;" style="font-size:12px;">🌡 Record</a></td>';
-                        } else { html+='<td data-label="Action"></td>'; }
+                        html+='<td data-label="Action"><a class="search-link" href="#" onclick="addToWorkFromSearch(\x27route\x27,\x27'+item.key+'\x27,\x27'+escapeAttrArg(r.routeNumber)+'\x27,this);return false;" style="font-size:12px;color:#10b981;font-weight:600;">+ Add to Job list</a></td>';
                         html+='</tr>';
                     });
                     html+='</tbody></table></div>';
@@ -5625,7 +5623,7 @@ function liveSearchSuggest(query,scope){
             openDetail('equipment',key);
         }catch(e){showToast('Error adding to Job list: '+(e.message||e),'error');}
     }
-    async function addToWorkFromSearch(type, key, title) { if(!requireWrite())return;
+    async function addToWorkFromSearch(type, key, title, stayEl) { if(!requireWrite())return;
         if (!firebaseReady) { showToast('Firebase not ready', 'error'); return; }
         if (!currentUser) { showToast('Not logged in', 'error'); return; }
         try {
@@ -5657,7 +5655,7 @@ function liveSearchSuggest(query,scope){
             await db.ref('workAssigned').push(jobData);logAudit('addJob','job',itemName,{type:type});
             updateWorkCount();
             showToast('Added to Job list!', 'success');
-            openDetail(type, key); // re-render: button flips to Remove from Job list
+            if(stayEl){ stayEl.textContent='\u2713 In Job list'; stayEl.style.color='#10b981'; stayEl.style.pointerEvents='none'; stayEl.onclick=null; } else { openDetail(type, key); }
         } catch(e) {
             showToast('Error adding to Job list: ' + e.message, 'error');
         }
@@ -7119,6 +7117,26 @@ function liveSearchSuggest(query,scope){
         var ov=document.getElementById('legal-overlay'); if(ov){ ov.style.display='block'; ov.scrollTop=0; }
     }
     function closeLegal(){ var ov=document.getElementById('legal-overlay'); if(ov) ov.style.display='none'; }
+    function populateFaqAdmins(){
+        try{
+            if(!firebaseReady||typeof db==='undefined')return;
+            db.ref('users').once('value').then(function(snap){
+                var el=document.getElementById('faq-admin-list'); if(!el)return;
+                var users=snap.val()||{}; var admins=[];
+                Object.keys(users).forEach(function(uid){
+                    var u=users[uid]||{};
+                    if(u.role==='admin' && u.status!=='inactive'){
+                        var first=String(u.name||u.loginId||'').trim().split(/\s+/)[0]||'';
+                        var lid=String(u.loginId||'').trim().toLowerCase();
+                        var lbl=first?(lid?first+' ('+lid+')':first):(lid||'');
+                        if(lbl)admins.push(lbl);
+                    }
+                });
+                admins.sort(function(a,b){return a.toLowerCase()<b.toLowerCase()?-1:(a.toLowerCase()>b.toLowerCase()?1:0);});
+                if(admins.length)el.textContent=admins.join(' or ');
+            }).catch(function(){});
+        }catch(e){}
+    }
     function openHelpPage() {
         var admin = (typeof isAdmin === 'function' && isAdmin());
         var html = '<div style="padding:0 16px 40px;max-width:700px;margin:0 auto;">';
@@ -7276,7 +7294,7 @@ function liveSearchSuggest(query,scope){
             ['Do I stay signed in?', 'On your own device, yes. Tick "shared device" when you sign in and you will be logged out when you close the app. Either way, if your account is idle for more than 7 days you will be asked for your PIN again.'],
             ['I forgot my PIN, or want to change it.', 'Use Forgot PIN on the sign-in screen to get a reset email, or Change PIN under Account in the menu once you are signed in.'],
             ['Something looks out of date.', 'Reload the page \u2014 the app updates live from the database. If a number looks stuck, a hard refresh clears it.'],
-            ['Who do I contact about the app?', 'The LCY2 RME Reliability Team \u2014 Tittus (strtt) or Alex (vladesca).']
+            ['Who do I contact about the app?', 'The app admins \u2014 <span id="faq-admin-list">Tittus (strtt) or Alex (vladesca)</span>.']
         ];
         faq.forEach(function(qa){
             html += '<div style="margin-bottom:12px;"><div style="font-size:13px;font-weight:700;color:#1e293b;">' + qa[0] + '</div><div style="font-size:13px;color:#374151;line-height:1.7;margin-top:2px;">' + qa[1] + '</div></div>';
@@ -7288,6 +7306,7 @@ function liveSearchSuggest(query,scope){
 
         // Show in the detail overlay
         document.getElementById('detail-content').innerHTML = html;
+        populateFaqAdmins();
         document.getElementById('detail-overlay').classList.add('active');
         document.getElementById('detail-title').textContent = 'Help & Reference';
         history.pushState({view:'help'}, '', '#help');
