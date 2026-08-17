@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- RME App v1.14 - Updated 2026-08-06 -->
+<!-- RME Shift Personal Tracker v1.14 - Updated 2026-08-06 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://*.googleapis.com https://www.gstatic.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://*.firebaseio.com https://*.firebasedatabase.app; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.googleapis.com https://www.gstatic.com https://cdn.jsdelivr.net;">
-    <title>RME App</title>
+    <title>RME Shift Personal Tracker</title>
     <script>var _isPreview=false;try{_isPreview=(window.self!==window.top)}catch(e){_isPreview=true}</script>
     <script>if(!_isPreview)document.write('\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" integrity="sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh" crossorigin="anonymous">\x3C/script>\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" integrity="sha384-f6/UpzjTjIXASlp20cArQsaRh1EvHVJd5kegy/gYR9W2D0a32TnEqUEiW4Zm/5O0" crossorigin="anonymous">\x3C/script>\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" integrity="sha384-xD1t9dGSVKobUztxDkv6xUI0H4AnFz0NxwlgDJJ7FDlblG9xxr1Z9iauCZuJYj6p" crossorigin="anonymous">\x3C/script>')</script>
     <style>
@@ -386,7 +386,7 @@
     <!-- LOGIN OVERLAY -->
     <div class="login-overlay" id="login-overlay" role="dialog" aria-modal="true" aria-label="Sign in" style="display:none;">
         <div class="login-card" id="login-card">
-            <h2>RME App</h2>
+            <h2>RME Shift Personal Tracker</h2>
             <p id="login-prompt-text">Enter your Login ID to get started</p>
             <div id="login-returning" style="display:none;">
                 <p style="font-size:16px;margin-bottom:16px;">Welcome back, <strong id="login-returning-name"></strong>!</p>
@@ -394,6 +394,10 @@
                 <button class="btn btn-secondary" onclick="showNewLogin()">Someone else</button>
             </div>
             <div id="login-new">
+                <div id="login-apm-note" style="display:none;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:12px 14px;margin-bottom:14px;text-align:left;">
+                    <div style="font-size:15px;font-weight:800;color:#92400e;margin-bottom:4px;">This app does NOT replace APM</div>
+                    <div style="font-size:13px;color:#78350f;line-height:1.5;">It is a personal tool to help you track your jobs during the shift. Nothing you do here is sent to or recorded in APM. Keep completing your APM checklists, booking labour and parts, and everything else in APM exactly as you do now.</div>
+                </div>
                 <label id="login-name-label" for="login-name" style="font-size:12px;color:#6b7280;display:none;margin-bottom:4px;">Your name</label>
                 <input type="text" id="login-name" placeholder="Your name (e.g. Jeff)" maxlength="60" autocomplete="name" style="display:none;">
                 <label id="login-email-label" for="login-email" style="font-size:12px;color:#6b7280;display:none;margin-top:10px;margin-bottom:4px;">Amazon email</label>
@@ -430,12 +434,12 @@
         <div id="legal-body" style="max-width:760px;margin:0 auto;padding:16px 18px 24px;font-size:14px;line-height:1.6;color:#374151;"></div>
         <div style="max-width:760px;margin:0 auto;padding:0 18px 56px;"><button class="btn btn-primary" onclick="closeLegal()">Close</button></div>
     </div>
-    <div id="legal-terms-src" style="display:none;"><h1 style="font-size:20px;color:#1e293b;margin:0 0 6px;">Terms &amp; Conditions of Use — RME CBM Reliability App (LCY2 Tilbury)</h1>
+    <div id="legal-terms-src" style="display:none;"><h1 style="font-size:20px;color:#1e293b;margin:0 0 6px;">Terms &amp; Conditions of Use — RME Shift Personal Tracker (LCY2 Tilbury)</h1>
 <p style="margin:8px 0;"><strong>Effective date:</strong> 14 August 2026</p>
 <p style="margin:8px 0;"><strong>Version:</strong> 1.0</p>
 <p style="margin:8px 0;">Please read these Terms before you register. By ticking "I agree" and creating an account you confirm that you have read, understood and accept these Terms and the accompanying Privacy Policy. If you do not agree, do not register or use the app.</p>
 <h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">1. What this app is</h2>
-<p style="margin:8px 0;">The "RME App" is an internal operational tool used by Amazon Reliability &amp; Maintenance Engineering (RME) at the LCY2 (Tilbury) fulfilment centre to record and track condition-based monitoring, equipment, parts, routes and maintenance jobs.</p>
+<p style="margin:8px 0;">The "RME Shift Personal Tracker" is an internal operational tool used by Amazon Reliability &amp; Maintenance Engineering (RME) at the LCY2 (Tilbury) fulfilment centre to record and track condition-based monitoring, equipment, parts, routes and maintenance jobs.</p>
 <h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">2. Who may use it</h2>
 <p style="margin:8px 0;">Use is limited to authorised Amazon RME personnel (and authorised contractors) working at or supporting LCY2. Access is granted only after you register, confirm your email address, and — where required — are approved by an administrator. Access may be refused or withdrawn at any time.</p>
 <h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">3. Your account</h2>
@@ -473,10 +477,10 @@
 <p style="margin:8px 0;">These Terms may be updated. Material changes will be noted in the app. Continuing to use the app after a change means you accept the updated Terms.</p>
 <h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">12. Contact</h2>
 <p style="margin:8px 0;">Administrator: <strong>Tittus Streuti — RME Technician, LCY2 Tilbury — strtt@amazon.com</strong></p></div>
-    <div id="legal-privacy-src" style="display:none;"><h1 style="font-size:20px;color:#1e293b;margin:0 0 6px;">Privacy Policy — RME CBM Reliability App (LCY2 Tilbury)</h1>
+    <div id="legal-privacy-src" style="display:none;"><h1 style="font-size:20px;color:#1e293b;margin:0 0 6px;">Privacy Policy — RME Shift Personal Tracker (LCY2 Tilbury)</h1>
 <p style="margin:8px 0;"><strong>Effective date:</strong> 14 August 2026</p>
 <p style="margin:8px 0;"><strong>Version:</strong> 1.0</p>
-<p style="margin:8px 0;">This app (the "RME App") is an internal operational tool used by Amazon Reliability &amp; Maintenance Engineering (RME) at the LCY2 (Tilbury) fulfilment centre to track condition-based monitoring, equipment, parts, routes and maintenance jobs. This policy explains what personal information the app collects, why, where it is stored, and your choices. It applies to everyone who registers for and uses the app.</p>
+<p style="margin:8px 0;">This app (the "RME Shift Personal Tracker") is an internal operational tool used by Amazon Reliability &amp; Maintenance Engineering (RME) at the LCY2 (Tilbury) fulfilment centre to track condition-based monitoring, equipment, parts, routes and maintenance jobs. This policy explains what personal information the app collects, why, where it is stored, and your choices. It applies to everyone who registers for and uses the app.</p>
 <h2 style="font-size:16px;color:#1e293b;margin:22px 0 8px;">1. Who is responsible</h2>
 <p style="margin:8px 0;">The app is built and administered by the RME team at LCY2. For any question about your data, or to exercise the rights below, contact the administrator:</p>
 <p style="margin:8px 0;"><strong>Tittus Streuti — RME Technician, LCY2 Tilbury — strtt@amazon.com</strong></p>
@@ -539,7 +543,7 @@
         <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="goHome()" title="Home">
             <img src="data:image/png;base64,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" alt="amazon rme" style="height:28px;width:auto;display:block;">
         </div>
-        <h1 class="header-title" style="font-size:20px;font-weight:600;position:absolute;left:50%;transform:translateX(-50%);">RME App</h1>
+        <h1 class="header-title" style="font-size:20px;font-weight:600;position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;">RME Shift Personal Tracker</h1>
         <button onclick="toggleBurgerMenu()" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;padding:4px 8px;position:relative;" title="Menu">&#9776;<span class="whats-new-dot" id="whats-new-dot"></span></button>
         <div id="burger-menu" style="display:none;position:fixed;top:0;right:0;width:280px;height:100%;background:white;box-shadow:-4px 0 12px rgba(0,0,0,0.15);z-index:10000;overflow-y:auto;transition:transform 0.3s;">
             <div style="padding:16px 20px;background:#1a1a2e;color:white;display:flex;justify-content:space-between;align-items:center;">
@@ -549,7 +553,7 @@
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
                     <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.18)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;">&bull; New tabbed layout: <strong>Home</strong>, <strong>Positions</strong>, <strong>CBM</strong> and <strong>Parts</strong>.<br>&bull; Your <strong>Job list</strong> now lives on the Home screen, right under the dashboard.<br>&bull; New <strong>Parts</strong> tab: browse the whole catalogue with a filter box on every column.<br>&bull; Raise a job from a Position: choose <strong>PM or FWO</strong>, attach a photo, add notes and pick the parts you need.<br>&bull; <strong>FWO jobs</strong> keep their own job details; parts you add are recorded on the job (link them to the position yourself once confirmed).<br>&bull; <strong>Stay signed in</strong> on your own device; tick <strong>&quot;shared device&quot;</strong> at sign-in to be logged out when you close the app.<br>&bull; If your account is idle for over <strong>7 days</strong> you will be asked for your <strong>PIN</strong> again.<br>&bull; Admins can now <strong>remove a user</strong> in Manage Users.<br>&bull; New sign-ups now accept the <strong>Terms &amp; Conditions</strong> and <strong>Privacy Policy</strong>; both are in the menu under Help.</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM. Keep completing APM checklists, booking labour and parts, and everything else in APM exactly as you do now.<br>&bull; New tabbed layout: <strong>Home</strong>, <strong>Positions</strong>, <strong>CBM</strong> and <strong>Parts</strong>.<br>&bull; Your <strong>Job list</strong> now lives on the Home screen, right under the dashboard.<br>&bull; New <strong>Parts</strong> tab: browse the whole catalogue with a filter box on every column.<br>&bull; Add a job to <strong>your Job list</strong> from a Position: choose <strong>PM or FWO</strong>, attach a photo, add notes and pick the parts you need.<br>&bull; <strong>FWO jobs</strong> keep their own job details; parts you add are recorded on the job (link them to the position yourself once confirmed).<br>&bull; <strong>Stay signed in</strong> on your own device; tick <strong>&quot;shared device&quot;</strong> at sign-in to be logged out when you close the app.<br>&bull; If your account is idle for over <strong>7 days</strong> you will be asked for your <strong>PIN</strong> again.<br>&bull; Admins can now <strong>remove a user</strong> in Manage Users.<br>&bull; New sign-ups now accept the <strong>Terms &amp; Conditions</strong> and <strong>Privacy Policy</strong>; both are in the menu under Help.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -1057,7 +1061,7 @@
             if(idLbl) idLbl.textContent = 'Your name';
             if(li) li.placeholder = 'Your name';
             if(pt) pt.textContent = 'Enter your name to continue';
-            ['login-name-label','login-name','login-email-label','login-email','login-pin-confirm-label','login-pin-confirm','login-links','login-shared-row','login-terms-row'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display='none'; });
+            ['login-name-label','login-name','login-email-label','login-email','login-pin-confirm-label','login-pin-confirm','login-links','login-shared-row','login-terms-row','login-apm-note'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display='none'; });
         } else {
             if(lp) lp.style.display = '';
             if(pinLbl) pinLbl.style.display = '';
@@ -1085,6 +1089,7 @@
         show('login-id-label', !reg); show('login-input', !reg);
         show('login-pin-confirm-label', reg); show('login-pin-confirm', reg);
         show('login-terms-row', reg); var _lt=document.getElementById('login-terms'); if(_lt) _lt.checked=false;
+        show('login-apm-note', reg);
         show('login-forgot', !reg);
         var links = document.getElementById('login-links'); if(links) links.style.display = 'flex';
         var pt = document.getElementById('login-prompt-text'); if(pt) pt.textContent = reg ? 'Set up your login' : 'Enter your Login ID and PIN';
@@ -2198,7 +2203,7 @@
         entries.sort(function(a, b){ var ta = (a && a.timestamp) ? a.timestamp : ''; var tb = (b && b.timestamp) ? b.timestamp : ''; return ta < tb ? -1 : (ta > tb ? 1 : 0); });
         entries.forEach(function(e){ if (e && e.readings && e.readings[compKey] != null){ var v = parseFloat(e.readings[compKey]); if (!isNaN(v)) out.values.push(v); } });
         out.count = out.values.length;
-        if (out.count){ out.last = out.values[out.values.length - 1]; out.avg = out.values.reduce(function(a, b){ return a + b; }, 0) / out.count; }
+        if (out.count){ out.last = out.values[out.values.length - 1]; var _sv = out.values.slice().sort(function(a, b){ return a - b; }); var _n = _sv.length; out.avg = (_n % 2) ? _sv[(_n - 1) / 2] : (_sv[_n / 2 - 1] + _sv[_n / 2]) / 2; } /* .avg = MEDIAN (robust to one-off spikes) since v1.18 */
         return out;
     }
     function _recFieldHtml(component, idx, label, histVal, routeKey){
@@ -2208,7 +2213,7 @@
         var hint;
         if (st.count > 0){
             hint = 'last ' + _rtemp(st.last) + '\u00b0C';
-            if (st.count >= 2) hint += ' \u00b7 avg ' + _rtemp(st.avg) + '\u00b0C';
+            if (st.count >= 2) hint += ' \u00b7 median ' + _rtemp(st.avg) + '\u00b0C';
             hint += ' \u00b7 n=' + st.count;
             if (st.count < 3) hint += ' (3+ for alerts)';
         } else { hint = 'no history yet'; }
@@ -2342,7 +2347,7 @@
     }
 
     // ============================================================
-    // OPEN ALERTS (v1.10): routes whose latest reading breaches the 10 C baseline
+    // OPEN ALERTS (v1.10): routes whose latest reading breaches the 10 C median threshold
     // ============================================================
     var _thermalScan = null, _thermalScanTime = 0, _ALERTS_TTL = 120000;
     function invalidateAlertsCache(){ _thermalScan = null; _thermalScanTime = 0; }
@@ -2496,7 +2501,7 @@
             var b = document.getElementById('burger-alerts-badge');
             if (b){ if (alerts.length){ b.textContent = alerts.length; b.style.display = ''; } else { b.style.display = 'none'; } }
             var html = '<div class="card"><h2>Open Thermal Alerts</h2>';
-            html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Routes whose most recent reading is more than 10\u00b0C from that component\x27s own baseline (ISO 13373). Needs at least 3 earlier readings per component.</p>';
+            html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Routes whose most recent reading is more than 10\u00b0C from that component\x27s own median - its typical reading (ISO 13373). Needs at least 3 earlier readings per component.</p>';
             if (!alerts.length){
                 html += '<div class="empty-state">&#9989; No open alerts \u2014 every recorded route is within range.</div>';
             } else {
@@ -2512,7 +2517,7 @@
                     html += '</div>';
                     rr.alerts.forEach(function(a){
                         var col = a.isHot ? '#b91c1c' : '#1d4ed8';
-                        html += '<div style="margin-top:8px;font-size:13px;color:#374151;"><span style="color:' + col + ';font-weight:700;">' + (a.isHot ? '\u25b2' : '\u25bc') + '</span> ' + escapeHtml(a.disp) + ' \u2014 <strong>' + a.val + '\u00b0C</strong> vs avg <strong>' + a.avg.toFixed(1) + '\u00b0C</strong> (<strong style="color:' + col + ';">' + a.dirSign + a.diff + '\u00b0C</strong>, n=' + a.count + ')</div>';
+                        html += '<div style="margin-top:8px;font-size:13px;color:#374151;"><span style="color:' + col + ';font-weight:700;">' + (a.isHot ? '\u25b2' : '\u25bc') + '</span> ' + escapeHtml(a.disp) + ' \u2014 <strong>' + a.val + '\u00b0C</strong> vs median <strong>' + a.avg.toFixed(1) + '\u00b0C</strong> (<strong style="color:' + col + ';">' + a.dirSign + a.diff + '\u00b0C</strong>, n=' + a.count + ')</div>';
                     });
                     html += '<div style="display:flex;gap:8px;margin-top:10px;">';
                     html += '<button class="btn btn-secondary btn-sm" onclick="openDetail(\x27route\x27,\x27' + rr.routeKey + '\x27)">View route</button>';
@@ -2586,7 +2591,7 @@
                 if (comps.length && recent.length){
                     h += '<table class="pr-tbl"><thead><tr><th>Component</th>';
                     recent.forEach(function(e){ var d = e.timestamp ? new Date(e.timestamp).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit'}) : '?'; h += '<th>' + escapeHtml(d) + '</th>'; });
-                    h += '<th>Avg</th></tr></thead><tbody>';
+                    h += '<th>Median</th></tr></thead><tbody>';
                     comps.forEach(function(c){
                         var sk = sanitizeKey(c);
                         h += '<tr><td>' + escapeHtml(c) + '</td>';
@@ -2602,8 +2607,8 @@
                     var latest = entries[0], prior = entries.slice(1), al = [];
                     comps.forEach(function(c){ var sk = sanitizeKey(c); var lv = latest.readings ? latest.readings[sk] : null; if (lv == null) return; var a = _detectAnomaly(sk, lv, prior, c); if (a) al.push(a); });
                     if (al.length){
-                        h += '<div class="pr-alert"><strong>' + al.length + ' anomaly flag' + (al.length === 1 ? '' : 's') + ' on the latest reading (more than 10\u00b0C vs baseline):</strong><ul>';
-                        al.forEach(function(a){ h += '<li>' + escapeHtml(a.disp) + ': ' + a.val + '\u00b0C vs avg ' + a.avg.toFixed(1) + '\u00b0C (' + a.dirSign + a.diff + '\u00b0C)</li>'; });
+                        h += '<div class="pr-alert"><strong>' + al.length + ' anomaly flag' + (al.length === 1 ? '' : 's') + ' on the latest reading (more than 10\u00b0C vs its median):</strong><ul>';
+                        al.forEach(function(a){ h += '<li>' + escapeHtml(a.disp) + ': ' + a.val + '\u00b0C vs median ' + a.avg.toFixed(1) + '\u00b0C (' + a.dirSign + a.diff + '\u00b0C)</li>'; });
                         h += '</ul></div>';
                     }
                 }
@@ -2619,7 +2624,7 @@
                 });
                 h += '</div>';
             }
-            h += '<div class="pr-foot">Generated by the RME CBM Reliability App \u00b7 ' + escapeHtml(now.toLocaleString('en-GB')) + '</div></div>';
+            h += '<div class="pr-foot">Generated by the RME Shift Personal Tracker \u00b7 ' + escapeHtml(now.toLocaleString('en-GB')) + '</div></div>';
             var root = document.getElementById('print-root');
             root.innerHTML = h;
             hideLoading();
@@ -4127,6 +4132,7 @@
     async function detailEdit(type, key) {
         if(!requireWrite())return;
         if (!checkFirebase()) return;
+        var _isAdmin = (typeof isAdmin==='function' && isAdmin());
         showLoading();
         var refPath = type === 'equipment' ? 'equipment/' + key : (type === 'route' ? 'routes/' + key : 'parts/' + key);
         db.ref(refPath).once('value').then(async function(snap) {
@@ -4136,6 +4142,7 @@
             var html = '<div class="card">';
             
             if (type === 'equipment') {
+              if(_isAdmin){
                 html += '<div class="form-group"><label>Position ID</label><input type="text" id="edit-pos-id" value="' + (data.conveyorNumber||'') + '"></div>';
                 html += '<div class="form-group"><label>Type</label><select id="edit-pos-type">';
                 var types = ['','Nitta','Transnorm','Transport conveyor','V-Belt','Intralox','SL2','Manual Induct Belt 1','Manual Induct Belt 2-4','Manual Induct Finger Belts','ECC','SC3','Ambaflex Spiral','Gappers','Fives','SWD','Other'];
@@ -4154,7 +4161,7 @@
                     html += '<div class="file-upload" onclick="document.getElementById(\x27edit-pos-file\x27).click()"><input type="file" id="edit-pos-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-pos-preview\x27)"><p>Drag & drop, paste, or click</p></div>';
                     html += '<img id="edit-pos-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
                 }
-                var _eqActive = data.active !== false;
+                if(_isAdmin){ var _eqActive = data.active !== false;
                 html += '<div style="margin-top:16px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;">';
                 html += '<span style="font-size:14px;font-weight:500;">Position Active</span>';
                 html += '<label style="position:relative;display:inline-block;width:50px;height:26px;cursor:pointer;">';
@@ -4162,12 +4169,35 @@
                 html += '<span class="toggle-bg" style="position:absolute;top:0;left:0;right:0;bottom:0;background:' + (_eqActive?'#10b981':'#d1d5db') + ';border-radius:26px;transition:0.3s;"></span>';
                 html += '<span class="toggle-dot" style="position:absolute;top:3px;left:' + (_eqActive?'27px':'3px') + ';width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>';
                 html += '</label>';
-                html += '</div>';
+                html += '</div>'; } 
                 html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditPosition(\x27' + key + '\x27)">Save Changes</button>';
                 html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27equipment\x27,\x27' + key + '\x27)">Cancel</button>';
                 
                 html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#6b7280;">Loading linked parts...</p></div>';
+              } else {
+              html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">You can add or update the SCADA screenshot here. To change any other details, use the position page (admins manage position details). To add notes, use the notes box on the position page.</p>';
+              html += '<div class="form-group"><label>Position</label><input type="text" value="' + escapeHtml(data.conveyorNumber||'') + '" disabled style="background:#f3f4f6;color:#6b7280;cursor:not-allowed;"></div>';
+              var _eqEditImg = await getEquipmentImage(key);
+              var _canPosImg = await canManageImage('equipment', key);
+              if (_eqEditImg) {
+                  html += '<div class="form-group"><label>SCADA Screenshot</label><img src="' + _eqEditImg + '" alt="SCADA screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
+                  if (_canPosImg) {
+                      html += '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\x27edit-pos-file\x27).click()">Replace Screenshot</button>';
+                      html += '<input type="file" id="edit-pos-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-pos-preview\x27)"><img id="edit-pos-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
+                  } else {
+                      html += '<p style="font-size:12px;color:#6b7280;">Only an admin (or whoever added it) can replace this screenshot.</p></div>';
+                  }
+              } else {
+                  html += '<div class="form-group"><label>SCADA Screenshot</label>';
+                  html += '<div class="file-upload" onclick="document.getElementById(\x27edit-pos-file\x27).click()"><input type="file" id="edit-pos-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-pos-preview\x27)"><p>Drag & drop, paste, or click</p></div>';
+                  html += '<img id="edit-pos-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
+              }
+              html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditPosition(\x27' + key + '\x27)">Save Changes</button>';
+              html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27equipment\x27,\x27' + key + '\x27)">Cancel</button>';
+              html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#6b7280;">Loading linked parts...</p></div>';
+              }
             } else if (type === 'route') {
+              if(_isAdmin){
                 html += '<div class="form-group"><label>Route Number</label><input type="text" id="edit-route-num" value="' + escapeHtml(data.routeNumber||'') + '"></div>';
                 html += '<div class="form-group"><label>Type</label><select id="edit-route-type">';
                 ['','Ultrasound','Thermal','Oil','Ranger','Strobe','Vibration','Other'].forEach(function(t) { html += '<option' + (t===data.type?' selected':'') + '>' + (t||'Select...') + '</option>'; });
@@ -4205,17 +4235,38 @@
                 html += '</label>';
                 html += '</div>';
                 }
-                var isActive = data.active !== false;
+                if(_isAdmin){ var isActive = data.active !== false;
                 html += '<div style="margin-top:16px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;">';
                 html += '<span style="font-size:14px;font-weight:500;">Route Active</span>';
                 html += '<label style="position:relative;display:inline-block;width:50px;height:26px;cursor:pointer;">';
                 html += '<input type="checkbox" id="edit-route-active" ' + (isActive?'checked':'') + ' style="opacity:0;width:0;height:0;" onchange="this.parentElement.querySelector(\x27.toggle-bg\x27).style.background=this.checked?\x27#10b981\x27:\x27#d1d5db\x27;this.parentElement.querySelector(\x27.toggle-dot\x27).style.left=this.checked?\x2727px\x27:\x273px\x27">';
                 html += '<span class="toggle-bg" style="position:absolute;top:0;left:0;right:0;bottom:0;background:' + (isActive?'#10b981':'#d1d5db') + ';border-radius:26px;transition:0.3s;"></span>';
                 html += '<span class="toggle-dot" style="position:absolute;top:3px;left:' + (isActive?'27px':'3px') + ';width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>';
-                html += '</label></div>';
+                html += '</label></div>'; } 
                 // Save/Cancel
                 html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditRoute(\x27' + key + '\x27)">Save Changes</button>';
                 html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27route\x27,\x27' + key + '\x27)">Cancel</button>';
+              } else {
+              html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">You can add or update the route screenshot here. To change any route details, use the route page (admins manage route details). To add notes, use the notes box on the route page.</p>';
+              html += '<div class="form-group"><label>Route</label><input type="text" value="' + escapeHtml(data.routeNumber||'') + '" disabled style="background:#f3f4f6;color:#6b7280;cursor:not-allowed;"></div>';
+              var _rtEditImg = await getRouteImage(key);
+              var _canRtImg = await canManageImage('route', key);
+              if (_rtEditImg) {
+                  html += '<div class="form-group"><label>Route Screenshot</label><img src="' + _rtEditImg + '" alt="Route screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
+                  if (_canRtImg) {
+                      html += '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\x27edit-route-file\x27).click()">Replace Screenshot</button>';
+                      html += '<input type="file" id="edit-route-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-route-preview\x27)"><img id="edit-route-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
+                  } else {
+                      html += '<p style="font-size:12px;color:#6b7280;">Only an admin (or whoever added it) can replace this screenshot.</p></div>';
+                  }
+              } else {
+                  html += '<div class="form-group"><label>Route Screenshot</label>';
+                  html += '<div class="file-upload" onclick="document.getElementById(\x27edit-route-file\x27).click()"><input type="file" id="edit-route-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-route-preview\x27)"><p>Drag & drop, paste, or click</p></div>';
+                  html += '<img id="edit-route-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
+              }
+              html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditRoute(\x27' + key + '\x27)">Save Changes</button>';
+              html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27route\x27,\x27' + key + '\x27)">Cancel</button>';
+              }
                 
             } else if (type === 'part') {
                 // Read-only fields (greyed out)
@@ -4234,7 +4285,8 @@
                 // Editable fields
                 html += '<hr style="border:none;border-top:2px solid #2563eb;margin:20px 0;">';
                 html += '<p style="font-size:12px;color:#2563eb;font-weight:600;margin-bottom:12px;">EDITABLE FIELDS</p>';
-                html += '<div class="form-group"><label>APN</label><input type="text" id="edit-part-apn" value="' + escapeHtml(data.apn||'') + '"></div>';
+                html += '<div class="form-group"><label>APN</label><input type="text" id="edit-part-apn" value="' + escapeHtml(data.apn||'') + '"' + (_isAdmin?'':' disabled style="background:#f3f4f6;color:#6b7280;cursor:not-allowed;"') + '></div>';
+                if(!_isAdmin) html += '<p style="font-size:11px;color:#6b7280;margin:-8px 0 8px;">APN is managed by admins.</p>';
                 if(data.previousApn) html += '<p style="font-size:11px;color:#6b7280;margin:-8px 0 8px;">Previous: ' + escapeHtml(data.previousApn) + '</p>';
                 html += '<div class="form-group"><label>Bin Location</label><input type="text" id="edit-part-bin" value="' + escapeHtml(data.binLocation||data.location||'') + '"></div>';
                 // Repairable toggle
@@ -4247,27 +4299,27 @@
                 html += '<span class="toggle-dot" style="position:absolute;top:3px;left:' + (_repVal?'27px':'3px') + ';width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>';
                 html += '</label></div>';
                 // Active toggle
-                var _ptActive = data.active !== false;
+                if(_isAdmin){ var _ptActive = data.active !== false;
                 html += '<div style="margin-top:12px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;">';
                 html += '<span style="font-size:14px;font-weight:500;">Part Active</span>';
                 html += '<label style="position:relative;display:inline-block;width:50px;height:26px;cursor:pointer;">';
                 html += '<input type="checkbox" id="edit-part-active" ' + (_ptActive?'checked':'') + ' style="opacity:0;width:0;height:0;" onchange="this.parentElement.querySelector(\x27.toggle-bg\x27).style.background=this.checked?\x27#10b981\x27:\x27#d1d5db\x27;this.parentElement.querySelector(\x27.toggle-dot\x27).style.left=this.checked?\x2727px\x27:\x273px\x27">';
                 html += '<span class="toggle-bg" style="position:absolute;top:0;left:0;right:0;bottom:0;background:' + (_ptActive?'#10b981':'#d1d5db') + ';border-radius:26px;transition:0.3s;"></span>';
                 html += '<span class="toggle-dot" style="position:absolute;top:3px;left:' + (_ptActive?'27px':'3px') + ';width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>';
-                html += '</label></div>';
+                html += '</label></div>'; } 
                 html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditPart(\x27' + key + '\x27)">Save Changes</button>';
                 html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27part\x27,\x27' + key + '\x27)">Cancel</button>';
                 html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#6b7280;">Loading linked positions...</p></div>';
             }
             
             // Danger Zone (all types)
-            html += '<div style="margin-top:40px;padding:20px;border:2px solid #fca5a5;border-radius:10px;background:#fef2f2;">';
+            if(_isAdmin){ html += '<div style="margin-top:40px;padding:20px;border:2px solid #fca5a5;border-radius:10px;background:#fef2f2;">';
             html += '<h3 style="color:#dc2626;font-size:14px;margin-bottom:8px;">\u26A0\uFE0F Danger Zone</h3>';
             html += '<p style="font-size:12px;color:#6b7280;margin-bottom:12px;">This action cannot be undone. Type <strong>DELETE</strong> to confirm.</p>';
             html += '<div style="display:flex;gap:8px;align-items:center;">';
             html += '<input type="text" id="delete-confirm-input" placeholder="Type DELETE" style="padding:8px 12px;border:1px solid #fca5a5;border-radius:6px;font-size:13px;flex:1;">';
             html += '<button class="btn btn-danger btn-sm" onclick="confirmDetailDelete(\x27' + type + '\x27,\x27' + key + '\x27)" style="white-space:nowrap;">Delete Permanently</button>';
-            html += '</div></div>';
+            html += '</div></div>'; } 
             
             html += '</div>';
             document.getElementById('detail-title').textContent = title;
@@ -4409,6 +4461,28 @@
     async function invalidateRoutesCache() { routesCache = null; routesCacheTime = 0; }
     async function getRouteImage(key){ if(!firebaseReady||!key)return null; try{ var s=await db.ref('routeImages/'+key).once('value'); if(s.val())return s.val(); var l=await db.ref('routes/'+key+'/routeImageUrl').once('value'); return l.val()||null; }catch(e){ return null; } }
     async function getEquipmentImage(key){ if(!firebaseReady||!key)return null; try{ var s=await db.ref('equipmentImages/'+key).once('value'); if(s.val())return s.val(); var l=await db.ref('equipment/'+key+'/imageUrl').once('value'); return l.val()||null; }catch(e){ return null; } }
+    async function getImageMeta(type, key){ if(!firebaseReady||!key)return null; try{ var p=(type==='route')?'routeImageMeta/':'equipmentImageMeta/'; var s=await db.ref(p+key).once('value'); return s.val()||null; }catch(e){ return null; } }
+    async function canManageImage(type, key){ if(isAdmin())return true; var img=(type==='route')?await getRouteImage(key):await getEquipmentImage(key); if(!img)return true; var m=await getImageMeta(type,key); return !!(m && m.addedBy===currentUser); }
+    async function saveTechImage(type, key){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        var fi=document.getElementById((type==='route')?'edit-route-file':'edit-pos-file');
+        var file=fi ? (fi.files[0] || fi._pastedFile || null) : null;
+        if(!file){ showToast('No changes to save. Add or replace the screenshot, or press Cancel.'); return; }
+        var ok=await canManageImage(type, key);
+        if(!ok){ showToast('Only an admin can replace this screenshot. Contact an admin (Tittus/strtt or Alex/vladesca) if you think this is wrong.','error'); return; }
+        showLoading();
+        try{
+            var img=await fileToBase64(file);
+            await db.ref((type==='route'?'routeImages/':'equipmentImages/')+key).set(img);
+            await db.ref((type==='route'?'routeImageMeta/':'equipmentImageMeta/')+key).set({ addedBy: currentUser, addedAt: new Date().toISOString() });
+            if(type==='route') invalidateRoutesCache(); else invalidateEquipmentCache();
+            logAudit('editImage',(type==='route'?'route':'position'),key,{});
+            showToast('Screenshot updated!','success');
+            openDetail(type, key);
+        }catch(e){ showToast('Error: '+e.message,'error'); }
+        hideLoading();
+    }
     async function getWorkAssignedData() {
         if (_waData !== null) return _waData;
         try { const snap = await db.ref('workAssigned').once('value'); return snap.val() || {}; }
@@ -5315,8 +5389,9 @@ function liveSearchSuggest(query,scope){
         var hv = [];
         Object.values(readings).forEach(function(entry){ if (entry.readings && entry.readings[component] != null){ var v = parseFloat(entry.readings[component]); if (!isNaN(v) && v >= TEMP_MIN) hv.push(v); } });
         if (hv.length < 3) return null;
-        var avg = hv.reduce(function(a, b){ return a + b; }, 0) / hv.length;
-        var threshold = 10; // 10 C deviation from baseline = investigate (ISO 13373)
+        var _hs = hv.slice().sort(function(a, b){ return a - b; }); var _hn = _hs.length;
+        var avg = (_hn % 2) ? _hs[(_hn - 1) / 2] : (_hs[_hn / 2 - 1] + _hs[_hn / 2]) / 2; /* MEDIAN (robust to spikes); var kept .avg for compatibility */
+        var threshold = 10; // 10 C deviation from the median = investigate (ISO 13373)
         var isHot = val > avg + threshold, isCold = val < avg - threshold;
         if (!isHot && !isCold) return null;
         var diff = Math.abs(val - avg).toFixed(1);
@@ -5326,7 +5401,7 @@ function liveSearchSuggest(query,scope){
         if (!anomalies || anomalies.length === 0) return;
         var n = anomalies.length;
         showToast(n + ' thermal alert' + (n === 1 ? '' : 's') + ' detected \u2014 review before closing', 'error');
-        var body = '<div style="font-size:13px;color:#374151;margin-bottom:10px;">' + n + ' reading' + (n === 1 ? '' : 's') + ' beyond the 10\u00b0C baseline threshold (ISO 13373):</div>';
+        var body = '<div style="font-size:13px;color:#374151;margin-bottom:10px;">' + n + ' reading' + (n === 1 ? '' : 's') + ' more than 10\u00b0C from the median (ISO 13373):</div>';
         anomalies.forEach(function(a){
             var alertColor = a.isHot ? '#b91c1c' : '#1d4ed8';
             var alertBg = a.isHot ? '#fef2f2' : '#eff6ff';
@@ -5334,7 +5409,7 @@ function liveSearchSuggest(query,scope){
             body += '<div style="margin-bottom:10px;padding:10px 12px;background:' + alertBg + ';border:1px solid ' + alertBorder + ';border-radius:8px;">'
                 + '<div style="font-weight:700;color:' + alertColor + ';font-size:13px;">' + (a.isHot ? '\u25b2 Over-temperature' : '\u25bc Under-temperature') + '</div>'
                 + '<div style="font-size:13px;color:#111827;margin-top:2px;">' + escapeHtml(a.disp) + '</div>'
-                + '<div style="font-size:12px;color:#374151;margin-top:4px;">Reading <strong>' + a.val + '\u00b0C</strong> &middot; avg (last ' + a.count + ') <strong>' + a.avg.toFixed(1) + '\u00b0C</strong> &middot; <strong style="color:' + alertColor + ';">' + a.dirSign + a.diff + '\u00b0C</strong></div>'
+                + '<div style="font-size:12px;color:#374151;margin-top:4px;">Reading <strong>' + a.val + '\u00b0C</strong> &middot; median (last ' + a.count + ') <strong>' + a.avg.toFixed(1) + '\u00b0C</strong> &middot; <strong style="color:' + alertColor + ';">' + a.dirSign + a.diff + '\u00b0C</strong></div>'
                 + '</div>';
         });
         body += '<div class="form-group"><label>Add a note to this route (optional \u2014 applies to all alerts above)</label>'
@@ -5348,7 +5423,7 @@ function liveSearchSuggest(query,scope){
             var userNote = (noteEl && noteEl.value.trim()) ? noteEl.value.trim() : '';
             for (var i = 0; i < anomalies.length; i++){
                 var a = anomalies[i];
-                var line = '[THERMAL ALERT] ' + a.component + ': ' + a.val + '\u00b0C (avg ' + a.avg.toFixed(1) + '\u00b0C, ' + a.dirSign + a.diff + '\u00b0C)';
+                var line = '[THERMAL ALERT] ' + a.component + ': ' + a.val + '\u00b0C (median ' + a.avg.toFixed(1) + '\u00b0C, ' + a.dirSign + a.diff + '\u00b0C)';
                 if (userNote) line += ' \u2014 ' + userNote;
                 try { await db.ref('notes/routes/' + routeKey).push({ text: line, author: currentUser, createdAt: new Date().toISOString() }); } catch(e){}
             }
@@ -5436,6 +5511,7 @@ function liveSearchSuggest(query,scope){
         try{var s=await db.ref('equipmentImages/'+sanitizeKey(key)).once('value');hasImg=!!s.val();}catch(e){}
         var body=''+
             '<div style="font-size:13px;color:#374151;margin-bottom:10px;">Position <strong>'+escapeHtml(_jwName)+'</strong></div>'+
+            '<div style="font-size:12px;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.4;">Adds this job to <strong>your Job list</strong> only. It does <strong>not</strong> create anything in APM - keep doing your APM checklists, labour and parts booking as normal.</div>'+
             '<div class="form-group"><label>Job type</label><div style="display:flex;gap:8px;">'+
                 '<button type="button" id="jw-pm-btn" class="btn btn-primary btn-sm" style="flex:1;" onclick="jwSetType(\x27PM\x27)">PM</button>'+
                 '<button type="button" id="jw-fwo-btn" class="btn btn-secondary btn-sm" style="flex:1;" onclick="jwSetType(\x27FWO\x27)">FWO</button>'+
@@ -5529,7 +5605,10 @@ function liveSearchSuggest(query,scope){
             }
             var eqKey=sanitizeKey(name);
             var eqSnap=await db.ref('equipment/'+eqKey).once('value');
-            if(!eqSnap.val())await db.ref('equipment/'+eqKey).set({conveyorNumber:name,type:'',description:'',notes:'',updatedAt:new Date().toISOString()});
+            if(!eqSnap.val()){
+                if(!isAdmin()){ showToast('This position isn\x27t in the app yet. Ask an admin (Tittus/strtt or Alex/vladesca) to add it first. Contact them if you think this is wrong.','error'); return; }
+                await db.ref('equipment/'+eqKey).set({conveyorNumber:name,type:'',description:'',notes:'',updatedAt:new Date().toISOString()});
+            }
             var workData={workType:type,equipment:name,assignedTo:currentUser.toLowerCase(),status:'pending',createdAt:new Date().toISOString()};
             var noteText='';
             if(type==='PM'){var pe=document.getElementById('jw-pm-notes');noteText=(pe&&pe.value||'').trim();}
@@ -5896,6 +5975,7 @@ function liveSearchSuggest(query,scope){
     // ADD FORM OVERLAY (from burger menu)
     // ============================================================
     function openAddForm(type) {
+        if(!isAdmin()){ showToast('Only an admin can create new records. Ask an admin (Tittus/strtt or Alex/vladesca) to add it. Contact them if you think this is wrong.','error'); return; }
         var _bm=document.getElementById('burger-menu');if(_bm&&_bm.style.display!=='none')toggleBurgerMenu();
         var title = '';
         var html = '<div class="card">';
@@ -6122,6 +6202,7 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     async function saveEditPosition(key) { if(!requireWrite())return;
         if (!checkFirebase()) return;
+        if (!isAdmin()) { return saveTechImage('equipment', key); }
         var id = document.getElementById('edit-pos-id').value.trim();
         var type = document.getElementById('edit-pos-type').value;
         var desc = document.getElementById('edit-pos-desc').value.trim();
@@ -6131,7 +6212,7 @@ function liveSearchSuggest(query,scope){
         if (!id) { showToast('Position ID required', 'error'); return; }
         showLoading();
         try {
-            var activeChecked = document.getElementById('edit-pos-active'); var updates = { conveyorNumber: id, type: type, description: desc, notes: notes, active: activeChecked ? activeChecked.checked : true, updatedAt: new Date().toISOString() };
+            var activeChecked = document.getElementById('edit-pos-active'); var updates = { conveyorNumber: id, type: type, description: desc, notes: notes, updatedAt: new Date().toISOString() }; if (activeChecked) updates.active = activeChecked.checked;
             var _posImg = file ? await fileToBase64(file) : null;
             var newKey = sanitizeKey(id);
             if (newKey !== key) {
@@ -6142,26 +6223,30 @@ function liveSearchSuggest(query,scope){
                 await db.ref('equipment/' + newKey).set(Object.assign(existingData, updates));
                 var _posOldImg = _posImg || await getEquipmentImage(key);
                 if (_posOldImg) await db.ref('equipmentImages/' + newKey).set(_posOldImg);
+                var _posMeta = _posImg ? { addedBy: currentUser, addedAt: new Date().toISOString() } : await getImageMeta('equipment', key);
+                if (_posMeta) await db.ref('equipmentImageMeta/' + newKey).set(_posMeta);
+                await db.ref('equipmentImageMeta/' + key).remove();
                 await db.ref('equipmentImages/' + key).remove();
                 await db.ref('equipment/' + key).remove();
             } else {
                 await db.ref('equipment/' + key).update(updates);
-                if (_posImg) await db.ref('equipmentImages/' + key).set(_posImg);
+                if (_posImg) { await db.ref('equipmentImages/' + key).set(_posImg); await db.ref('equipmentImageMeta/' + key).set({ addedBy: currentUser, addedAt: new Date().toISOString() }); }
             }
             invalidateEquipmentCache();
-            logAudit('edit','position',id,{active:(activeChecked?activeChecked.checked:true)});showToast('Position updated!', 'success');
+            logAudit('edit','position',id,{active:(activeChecked?activeChecked.checked:'unchanged')});showToast('Position updated!', 'success');
             openDetail('equipment', newKey || key);
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
         hideLoading();
     }
     async function saveEditRoute(key) { if(!requireWrite())return;
         if (!checkFirebase()) return;
+        if (!isAdmin()) { return saveTechImage('route', key); }
         var num = document.getElementById('edit-route-num').value.trim();
         var type = document.getElementById('edit-route-type').value;
         var desc = document.getElementById('edit-route-desc').value.trim();
         var start = document.getElementById('edit-route-start').value.trim();
         var end = document.getElementById('edit-route-end').value.trim();
-        var active = document.getElementById('edit-route-active').checked;
+        var activeEl = document.getElementById('edit-route-active');
         if (!num || !type || !start) { showToast('Route Number, Type, and Start Point required', 'error'); return; }
         var waypoints = [];
         document.querySelectorAll('.edit-wp').forEach(function(inp) { if(inp.value.trim()) waypoints.push(inp.value.trim()); });
@@ -6178,10 +6263,11 @@ function liveSearchSuggest(query,scope){
             var updates = {
                 routeNumber: num, type: type, notes: desc,
                 startPoint: start, endPoint: end || '', waypoints: waypoints,
-                motors: motors, needsTemp: _rrEdit, active: active,
+                motors: motors, needsTemp: _rrEdit,
                 readingRequired: _rrEdit,
                 updatedAt: new Date().toISOString()
             };
+            if (activeEl) updates.active = activeEl.checked;
             var _rEditImg = routeFile ? await fileToBase64(routeFile) : null;
             if (newKey !== key) {
                 var existing = await db.ref('routes/' + key).once('value');
@@ -6193,14 +6279,17 @@ function liveSearchSuggest(query,scope){
                 if (readSnap.val()) { await db.ref('readings/' + newKey).set(readSnap.val()); await db.ref('readings/' + key).remove(); }
                 var _rOldImg = _rEditImg || await getRouteImage(key);
                 if (_rOldImg) await db.ref('routeImages/' + newKey).set(_rOldImg);
+                var _rMeta = _rEditImg ? { addedBy: currentUser, addedAt: new Date().toISOString() } : await getImageMeta('route', key);
+                if (_rMeta) await db.ref('routeImageMeta/' + newKey).set(_rMeta);
+                await db.ref('routeImageMeta/' + key).remove();
                 await db.ref('routeImages/' + key).remove();
                 await db.ref('routes/' + key).remove();
             } else {
                 await db.ref('routes/' + key).update(updates);
-                if (_rEditImg) await db.ref('routeImages/' + key).set(_rEditImg);
+                if (_rEditImg) { await db.ref('routeImages/' + key).set(_rEditImg); await db.ref('routeImageMeta/' + key).set({ addedBy: currentUser, addedAt: new Date().toISOString() }); }
             }
             invalidateRoutesCache();
-            logAudit('edit','route',num,{active:active});showToast('Route updated!', 'success');
+            logAudit('edit','route',num,{active:(activeEl?activeEl.checked:'unchanged')});showToast('Route updated!', 'success');
             openDetail('route', newKey || key);
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
         hideLoading();
@@ -6210,22 +6299,22 @@ function liveSearchSuggest(query,scope){
         var newApn = document.getElementById('edit-part-apn').value.trim();
         var newBin = document.getElementById('edit-part-bin').value.trim();
         var repairable = document.getElementById('edit-part-repairable').checked;
-        var active = document.getElementById('edit-part-active').checked;
+        var activeEl = document.getElementById('edit-part-active');
         if (!newApn || !newBin) { showToast('APN and Bin Location required', 'error'); return; }
         showLoading();
         try {
             // Get current data to check if APN changed
             var snap = await db.ref('parts/' + key).once('value');
             var currentData = snap.val() || {};
-            var updates = { binLocation: newBin, repairable: repairable, active: active, updatedAt: new Date().toISOString() };
-            // If APN changed, store old as previousApn
-            if (newApn !== currentData.apn) {
+            var updates = { binLocation: newBin, repairable: repairable, updatedAt: new Date().toISOString() }; if (activeEl) updates.active = activeEl.checked;
+            // If APN changed, store old as previousApn (admins only)
+            if (isAdmin() && newApn !== currentData.apn) {
                 updates.previousApn = currentData.previousApn ? currentData.previousApn + ',' + currentData.apn : currentData.apn;
                 updates.apn = newApn;
             }
             await db.ref('parts/' + key).update(updates);
             invalidatePartsCache();
-            logAudit('edit','part',newApn,{active:active,bin:newBin});showToast('Part updated!', 'success');
+            logAudit('edit','part',newApn,{active:(activeEl?activeEl.checked:'unchanged'),bin:newBin});showToast('Part updated!', 'success');
             openDetail('part', key);
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
         hideLoading();
@@ -6516,7 +6605,8 @@ function liveSearchSuggest(query,scope){
         } else {
             _linkPartAttempts++;
             if (_linkPartAttempts >= 2) {
-                resultDiv.innerHTML = '<div style="padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;"><p style="font-weight:600;color:#dc2626;">Part not found</p><p style="font-size:13px;">APN "' + escapeHtml(apnQuery) + '" was not found after multiple attempts.</p><button class="btn btn-primary" style="margin-top:8px;" onclick="_linkPartAttempts=0;openAddForm(\x27part\x27)">Add New Part</button> <button class="btn btn-secondary" style="margin-top:8px;" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(conveyorNumber) + '\x27)">Cancel</button></div>';
+                var _addPartBtn = isAdmin() ? '<button class="btn btn-primary" style="margin-top:8px;" onclick="_linkPartAttempts=0;openAddForm(\x27part\x27)">Add New Part</button> ' : '<p style="font-size:13px;color:#92400e;margin:8px 0;">This part isn\x27t in the catalogue. Ask an admin (Tittus/strtt or Alex/vladesca) to add it. Contact them if you think this is wrong.</p>';
+                resultDiv.innerHTML = '<div style="padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;"><p style="font-weight:600;color:#dc2626;">Part not found</p><p style="font-size:13px;">APN "' + escapeHtml(apnQuery) + '" was not found after multiple attempts.</p>' + _addPartBtn + '<button class="btn btn-secondary" style="margin-top:8px;" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(conveyorNumber) + '\x27)">Cancel</button></div>';
             } else {
                 resultDiv.innerHTML = '<div style="padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;"><p style="font-weight:600;color:#92400e;">Not found</p><p style="font-size:13px;">No part with APN "' + escapeHtml(apnQuery) + '" found. Please check and try again.</p></div>';
             }
@@ -6779,6 +6869,7 @@ function liveSearchSuggest(query,scope){
             var partKey = null;
             Object.entries(allParts).forEach(function(e){ if(String(e[1].apn||'').toLowerCase()===String(apn).toLowerCase()) partKey=e[0]; });
             if(!partKey){
+                if(!isAdmin()){ hideLoading(); showToast('This part isn\x27t in the catalogue. Ask an admin (Tittus/strtt or Alex/vladesca) to add it first. Contact them if you think this is wrong.','error'); return; }
                 var newRef = await db.ref('parts').push({
                     apn: String(entry.apn), partDescription: entry.description||'', partClass: entry.partType||'',
                     organization: 'LCY2', active: true, conveyors: [], createdAt: new Date().toISOString(), createdFrom: 'associated-import'
@@ -6816,63 +6907,75 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     function baseTourSteps() { return [
         {
-            target: '#search-conveyor',
-            title: 'Global search',
-            text: 'The search box on Home is your quick escape hatch: type a position number, APN, part description, manufacturer reference, route number or keyword and jump straight to it. For focused browsing, use the tabs below.',
-            position: 'bottom'
+            target: null,
+            title: 'Welcome',
+            text: 'This is your RME Shift Personal Tracker: a quick way to find equipment and parts, record CBM readings, and stay on top of your jobs during the shift. Important - it does NOT replace APM. Nothing you do here is sent to or recorded in APM, so keep completing checklists and booking labour and parts in APM exactly as you do now. Let\'s take a quick look around.',
+            position: 'center'
         },
         {
             target: '.tabs',
             title: 'Four tabs',
-            text: 'Home (dashboard + your Job list + global search), Positions (find equipment and raise jobs), CBM (browse routes and add route checks), and Parts (browse the full catalogue).',
+            text: 'Home (your dashboard, Job list and global search), Positions (find equipment and add jobs), CBM (browse routes and record readings), and Parts (browse the full catalogue). Tap between them any time.',
+            position: 'bottom'
+        },
+        {
+            target: '#search-conveyor',
+            title: 'Search anything',
+            text: 'The search box on Home is your quick escape hatch: type a position number, APN, part description, manufacturer reference, route number or keyword and jump straight to it. Multiple words all have to match. Tip: use * as a wildcard on an ID - e.g. CB.SRT.01.*.01 - to pin a middle or end segment. For focused browsing, use the tabs.',
             position: 'bottom'
         },
         {
             target: null,
-            title: 'Positions & raising a job',
-            text: 'Open the Positions tab, search for any equipment, and tap it. On the detail view, "+ Add to Job list" lets you raise a PM or a FWO: pick the type, optionally add a photo of the position, notes, and (for a FWO) the parts you\'ll need. The CBM tab works the same way for route checks.',
+            title: 'Detail view',
+            text: 'Tap any result to open it. On a position you\'ll see its full name, criticality, linked parts, active CBM routes, photos and notes. Add a photo by pasting a screenshot (Ctrl+V) or uploading one in Edit mode; tap any photo to view it fullscreen (pinch to zoom on mobile). Hit Edit to add a screenshot and notes. The descriptive fields (ID, type, description) are managed by admins - if one is wrong, ask an admin (Tittus / strtt or Alex / vladesca) to fix it.',
+            position: 'center'
+        },
+        {
+            target: null,
+            title: 'Add to your Job list',
+            text: 'On a position or route, "+ Add to Job list" puts a PM or a FWO on your own Job list for the shift. For a FWO assigned to you in APM, note the job details and the parts you\'ll need so you have them to hand on the floor. Spotted something that needs a new FWO? Add it here with a note to make raising it in APM easier later. Either way this only builds your personal list - it does not create or change anything in APM.',
+            position: 'center'
+        },
+        {
+            target: null,
+            title: 'Recording CBM readings',
+            text: 'On the CBM tab, open a thermal route and tap Record New Readings. Enter the Motor and Gearbox temperature at each point - use Step-by-step mode to go one field at a time - add any notes, then Save. A running counter shows how many readings you\'ve entered. Remember to also enter them into APM in the route\'s checklist; this app does not send them to APM.',
+            position: 'center'
+        },
+        {
+            target: null,
+            title: 'Anomaly flags & Open Alerts',
+            text: 'When you save a reading more than 10\u00b0C above or below that component\'s own median - its typical reading, worked out from the last few (ISO 13373) - the app flags it and asks you to note what you saw. Every open flag collects under Open Alerts, in the menu and on your dashboard with a red count, so nothing slips through.',
             position: 'center'
         },
         {
             target: null,
             title: 'Parts catalogue',
-            text: 'The Parts tab lists the whole catalogue, 100 at a time. Type in the filter box under any column (APN, Description, Class, Bin, Criticality) to narrow it down — filters combine — and page through with Prev / Next. Tap any APN to open the part.',
-            position: 'center'
-        },
-        {
-            target: null,
-            title: 'Detail view',
-            text: 'Click any result to open its detail view. You\'ll see full information, linked parts, routes, photos, and notes. Click the Edit button to modify allowed fields.',
-            position: 'center'
-        },
-        {
-            target: null,
-            title: 'Parts — what you can edit',
-            text: 'On parts, only 3 fields are editable: APN, Bin Location, and Repairable. Everything else (description, manufacturer, supplier, criticality) is system-managed and greyed out. Changing an APN saves the old one so it\'s still searchable.',
+            text: 'The Parts tab lists the whole catalogue, 100 at a time. Type in the filter box under any column (APN, Description, Class, Bin, Criticality) to narrow it down - filters combine - and page through with Prev / Next. Tap any APN to open the part. On a part you can edit the Bin Location and the Repairable toggle; the APN and everything else are managed by admins.',
             position: 'center'
         },
         {
             target: null,
             title: 'Linking parts to positions',
-            text: 'On a Position detail view, you\'ll see a "Linked Parts" section with a "+ Link Part" button. Search by APN, confirm the link. Click ✕ to unlink (the part isn\'t deleted, just disconnected). You can unlink parts you linked yourself; admins can unlink any link.',
+            text: 'On a Position detail view you\'ll see a "Linked Parts" section with a "+ Link Part" button. Search by APN and confirm the link. Click \u2715 to unlink (the part isn\'t deleted, just disconnected). You can unlink parts you linked yourself; admins can unlink any link.',
             position: 'center'
         },
         {
             target: '#home-joblist',
             title: 'Job list',
-            text: 'Your personal task queue, right here on Home. Jobs you raise from the Positions and CBM tabs land here. Toggle the switch to mark a job complete (it moves to the bottom). Comments are always visible; tap a card to add a note or edit it.',
+            text: 'Your personal task queue, right here on Home - and nothing here is sent to or recorded in APM. Jobs you add from the Positions and CBM tabs land here. Toggle the switch to mark a job complete (it moves to the bottom). Completed jobs are cleared automatically at the daily 4am sweep; anything you leave unfinished carries over and shows in red as overdue until you complete it (then it clears at the next 4am sweep). Comments are always visible; tap a card to add a note or edit it.',
             position: 'bottom'
         },
         {
             target: '[title="Menu"]',
-            title: 'Menu',
-            text: 'Open Alerts, Download Backup, Help & Reference, and your account settings (Change PIN, Logout) all live here.',
+            title: 'The menu',
+            text: 'Tap the menu for everything else: Open Alerts, Download Backup, Help & Reference (a full guide plus a FAQ), the Terms & Conditions and Privacy Policy, and your account settings - Change PIN and Logout.',
             position: 'left'
         },
         {
             target: null,
             title: 'Quick tips',
-            text: '• Tap any screenshot to view fullscreen (pinch to zoom on mobile)\n• "More results" links are clickable — expand to see all\n• Inactive routes won\'t show on position detail views\n• Use the browser Back button to navigate — it stays in the app',
+            text: '\u2022 Tap any screenshot to view fullscreen (pinch to zoom on mobile)\n\u2022 "More results" links are clickable - expand to see all\n\u2022 Inactive routes won\'t show on position detail views\n\u2022 Use the browser Back button to navigate - it stays in the app\n\u2022 New here? Help & Reference in the menu has a full guide and a FAQ',
             position: 'center'
         }
     ]; }
@@ -6880,7 +6983,7 @@ function liveSearchSuggest(query,scope){
         {
             target: '[title="Menu"]',
             title: 'Admin Tools',
-            text: 'As an admin you also get Add New (Position, Part, Route), Manage Users, the Activity Log (a full record of who changed what and when), Manage Inactive Items and Recently Deleted.',
+            text: 'As an admin you also get Add New (Position, Part, Route), Manage Users, the Activity Log (a full record of who changed what and when), Manage Inactive Items and Recently Deleted. On any Position, Route or Part you can edit every field, decommission it (the Active toggle) or delete it - things technicians can\'t do.',
             position: 'left'
         }
     ]; }
@@ -7017,85 +7120,169 @@ function liveSearchSuggest(query,scope){
     }
     function closeLegal(){ var ov=document.getElementById('legal-overlay'); if(ov) ov.style.display='none'; }
     function openHelpPage() {
+        var admin = (typeof isAdmin === 'function' && isAdmin());
         var html = '<div style="padding:0 16px 40px;max-width:700px;margin:0 auto;">';
         html += '<h1 style="font-size:22px;color:#1e293b;margin-bottom:4px;">Help & Reference</h1>';
-        html += '<p style="color:#6b7280;font-size:13px;margin-bottom:24px;">LCY2 Reliability App — Quick reference guide</p>';
+        html += '<p style="color:#6b7280;font-size:13px;margin-bottom:16px;">LCY2 RME Shift Personal Tracker \u2014 how it works, feature by feature.</p>';
+
+        // Does not replace APM
+        html += '<div class="card" style="border-left:4px solid #f59e0b;background:#fffbeb;">';
+        html += '<p style="font-size:13px;color:#374151;line-height:1.7;margin:0;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to help you find equipment and parts, record CBM readings and track your own jobs during the shift. Nothing you do here is sent to or recorded in APM \u2014 keep completing your checklists and booking labour and parts in APM exactly as you do now.</p></div>';
+
+        // Getting around
+        html += '<div class="card"><h2>\uD83E\uDDED Getting around</h2>';
+        html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
+        html += '<li><strong>Home</strong> \u2014 your dashboard, global search box and your Job list</li>';
+        html += '<li><strong>Positions</strong> \u2014 find equipment and add jobs to your list</li>';
+        html += '<li><strong>CBM</strong> \u2014 browse routes and record thermal readings</li>';
+        html += '<li><strong>Parts</strong> \u2014 browse the whole parts catalogue</li>';
+        html += '<li>The menu (\u2630, top-right) holds Open Alerts, Download Backup, this Help page, the Terms & Conditions and Privacy Policy, and your account settings</li>';
+        html += '</ul></div>';
 
         // Search
-        html += '<div class="card"><h2>🔍 Search</h2>';
+        html += '<div class="card"><h2>\uD83D\uDD0D Search</h2>';
         html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
-        html += '<li><strong>Positions</strong> — search by conveyor number, type, or description</li>';
-        html += '<li><strong>Parts</strong> — search by APN (current or previous), part description, manufacturer reference, supplier description, part class, or bin location</li>';
-        html += '<li><strong>Routes</strong> — search by route number, type name, or synonyms (e.g. "ultrasound 03")</li>';
+        html += '<li><strong>Positions</strong> \u2014 search by conveyor number, type, or description</li>';
+        html += '<li><strong>Parts</strong> \u2014 search by APN (current or previous), description, manufacturer reference, supplier description, part class, or bin location</li>';
+        html += '<li><strong>Routes</strong> \u2014 search by route number, type name, or synonyms (e.g. "ultrasound 03")</li>';
         html += '<li>Multiple words = all must match (e.g. "bearing A05" finds bearings in aisle A05)</li>';
-        html += '<li>"More results" links are clickable — expand to see all matches</li>';
-        html += '</ul></div>';
-
-        // Parts
-        html += '<div class="card"><h2>🔧 Parts</h2>';
-        html += '<table style="font-size:13px;width:100%;"><thead><tr><th style="text-align:left;">Field</th><th style="text-align:left;">Editable?</th><th style="text-align:left;">Notes</th></tr></thead><tbody>';
-        html += '<tr><td>APN</td><td style="color:#16a34a;font-weight:600;">Yes</td><td>Old APN saved as "Previous APN" and remains searchable</td></tr>';
-        html += '<tr><td>Bin Location</td><td style="color:#16a34a;font-weight:600;">Yes</td><td>Update if part moves to a new bin</td></tr>';
-        html += '<tr><td>Repairable</td><td style="color:#16a34a;font-weight:600;">Yes</td><td>Toggle switch</td></tr>';
-        html += '<tr><td>Active</td><td style="color:#16a34a;font-weight:600;">Yes</td><td>Deactivate obsolete parts (still searchable via Manage Inactive)</td></tr>';
-        html += '<tr><td>Description, Class, Criticality, Store, Weight, Manufacturer, Supplier</td><td style="color:#dc2626;">No</td><td>System-managed from stores database</td></tr>';
-        html += '</tbody></table></div>';
-
-        // Linking
-        html += '<div class="card"><h2>🔗 Linking Parts to Positions</h2>';
-        html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
-        html += '<li>Open a Position → scroll to "Linked Parts" → click <strong>+ Link Part</strong></li>';
-        html += '<li>Type the APN → system shows part details → click <strong>Confirm Link</strong></li>';
-        html += '<li>If APN not found after 2 attempts, you can add it as a new part</li>';
-        html += '<li>To unlink: click the red <strong>✕</strong> next to the part (from either Position or Part detail view)</li>';
-        html += '<li>Unlinking does NOT delete the part — it just removes the connection</li>';
-        html += '</ul></div>';
-
-        // Job list
-        html += '<div class="card"><h2>📋 Job list</h2>';
-        html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
-        html += '<li>Add jobs from search results (click "+ Add to Job list" on a position or route)</li>';
-        html += '<li>Tap a job card to expand — see actions, add comments</li>';
-        html += '<li>Toggle the switch to <strong>mark complete</strong> (turns green, moves to bottom)</li>';
-        html += '<li>Comments: prompted to save permanently to the item\'s detail page</li>';
-        html += '<li>Jobs overdue after 12 hours turn red</li>';
-        html += '<li>Duplicate prevention: can\'t add the same item twice</li>';
+        html += '<li><strong>Wildcard:</strong> put a <strong>*</strong> in an ID to stand for anything, e.g. <code>CB.SRT.01.*.01</code> pins the middle and end segments</li>';
+        html += '<li>"More results" links are clickable \u2014 expand to see all matches</li>';
         html += '</ul></div>';
 
         // Positions
-        html += '<div class="card"><h2>📍 Positions</h2>';
+        html += '<div class="card"><h2>\uD83D\uDCCD Positions</h2>';
         html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
-        html += '<li>All fields editable (conveyor number, type, description, screenshot)</li>';
-        html += '<li>Detail view shows: linked parts, active CBM routes, notes history, criticality</li>';
+        html += '<li>The detail view shows the full name, criticality, linked parts, active CBM routes, photos and notes history</li>';
         html += '<li>Criticality is colour-coded: <span style="color:#dc2626;font-weight:600;">HIGH</span>, <span style="color:#d97706;font-weight:600;">MED</span>, <span style="color:#16a34a;font-weight:600;">LOW</span></li>';
-        html += '<li>Screenshot: tap to view fullscreen, pinch to zoom on mobile</li>';
+        html += '<li>Tap <strong>Edit</strong> to add a screenshot (if there isn\'t one, or to replace one you added yourself) and to add notes' + (admin ? '. As an admin you can also change the conveyor number, type and description' : '. The conveyor number, type and description are managed by admins') + '</li>';
+        html += '<li><strong>Photos:</strong> paste a screenshot with Ctrl+V (the clipboard listener is always on) or upload one in Edit mode; tap any photo to view it fullscreen, pinch to zoom on mobile</li>';
+        html += (admin ? '<li>Untick <strong>Active</strong> in Edit to mark a position inactive (decommissioned); reactivate it later from Manage Inactive Items</li>' : '<li>Decommissioning (marking inactive), deleting and reactivating positions are admin-only \u2014 ask an admin (Tittus / strtt or Alex / vladesca) if one is needed</li>');
         html += '</ul></div>';
 
-        // Routes
-        html += '<div class="card"><h2>🛤️ CBM Routes</h2>';
+        // Linking
+        html += '<div class="card"><h2>\uD83D\uDD17 Linking parts to positions</h2>';
+        html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
+        html += '<li>Open a Position \u2192 scroll to "Linked Parts" \u2192 tap <strong>+ Link Part</strong></li>';
+        html += '<li>Type the APN \u2192 the system shows the part details \u2192 tap <strong>Confirm Link</strong></li>';
+        html += '<li>To unlink: tap the <strong>\u2715</strong> next to the part (from either the Position or the Part detail view)</li>';
+        html += '<li>Unlinking does NOT delete the part \u2014 it only removes the connection</li>';
+        html += '<li>You can unlink parts you linked yourself; an admin can unlink any link</li>';
+        html += '<li>"Linked Parts" are connections made in this app; "Parts Associated" is the reference list imported from APM \u2014 they are separate</li>';
+        html += '</ul></div>';
+
+        // Parts
+        html += '<div class="card"><h2>\uD83D\uDD27 Parts</h2>';
+        html += '<p style="font-size:13px;color:#374151;line-height:1.7;">The Parts tab lists the whole catalogue, 100 at a time. Type in the filter box under any column to narrow it down (filters combine), and page through with Prev / Next. Tap any APN to open the part.</p>';
+        html += '<table style="font-size:13px;width:100%;"><thead><tr><th style="text-align:left;">Field</th><th style="text-align:left;">Editable?</th><th style="text-align:left;">Notes</th></tr></thead><tbody>';
+        html += '<tr><td>APN</td>' + (admin ? '<td style="color:#16a34a;font-weight:600;">Yes</td><td>Old APN saved as "Previous APN" and stays searchable</td>' : '<td style="color:#dc2626;">Admin</td><td>Managed by admins \u2014 the old APN stays searchable as a "Previous APN"</td>') + '</tr>';
+        html += '<tr><td>Bin Location</td><td style="color:#16a34a;font-weight:600;">Yes</td><td>Update if the part moves to a new bin</td></tr>';
+        html += '<tr><td>Repairable</td><td style="color:#16a34a;font-weight:600;">Yes</td><td>Toggle switch</td></tr>';
+        html += '<tr><td>Active</td>' + (admin ? '<td style="color:#16a34a;font-weight:600;">Yes</td><td>Untick to mark a part inactive; reactivate from Manage Inactive Items</td>' : '<td style="color:#dc2626;">Admin</td><td>Decommissioning is admin-only</td>') + '</tr>';
+        html += '<tr><td>Description, Class, Criticality, Store, Weight, Manufacturer, Supplier</td><td style="color:#dc2626;">No</td><td>System-managed from the stores database</td></tr>';
+        html += '</tbody></table></div>';
+
+        // CBM Routes
+        html += '<div class="card"><h2>\uD83D\uDEE4\uFE0F CBM routes</h2>';
         html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
         html += '<li>Routes are inspection paths with waypoints</li>';
         html += '<li>Types: Thermal, Ultrasound, Oil, Ranger, Strobe, Vibration</li>';
-        html += '<li>Thermal routes: can record readings directly from the app</li>';
+        html += '<li><strong>Thermal routes:</strong> you can record readings directly in the app. <strong style="color:#b45309;">The readings still need to be entered into APM in the route\'s checklist</strong> \u2014 this app does not send anything to APM.</li>';
         html += '<li>Inactive routes are hidden from position detail views</li>';
-        html += '<li>Waypoints can be reordered (drag ≡ handle in Edit mode)</li>';
+        html += '<li>' + (admin ? 'Tap <strong>Edit</strong> on a route to change its number, type, waypoints, the temperature-reading-required toggle or the screenshot, and to decommission or delete it' : 'On a route you can add a screenshot (or replace one you added yourself) and add notes; the number, type and waypoints are managed by admins') + '</li>';
         html += '</ul></div>';
 
-        // General
-        html += '<div class="card"><h2>💡 Tips</h2>';
+        // Recording readings & alerts
+        html += '<div class="card"><h2>\uD83C\uDF21\uFE0F Recording readings & alerts</h2>';
         html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
-        html += '<li>Browser Back button works within the app (won\'t leave the page)</li>';
-        html += '<li>Paste screenshots anywhere — clipboard listener is always active</li>';
-        html += '<li>Add items from the burger menu (☰) → Add New</li>';
-        html += '<li>Manage Inactive Items from the burger menu → Tools</li>';
-        html += '<li>Backup your data from the burger menu → Tools → Backup Data</li>';
-        html += '<li>Notes are timestamped and author-tagged — only your own can be edited/deleted</li>';
+        html += '<li>On the CBM tab, open a thermal route and tap <strong>Record New Readings</strong></li>';
+        html += '<li>Enter the <strong>Motor</strong> and <strong>Gearbox</strong> temperature at each point; use <strong>Step-by-step</strong> mode to go one field at a time. A counter shows how many you have entered.</li>';
+        html += '<li>As you type, the field tints green / amber / red so you can see at a glance if a value is drifting</li>';
+        html += '<li><strong>Anomaly flags:</strong> when you save a reading more than <strong>10\u00b0C</strong> above or below that component\'s own <strong>median</strong> (its typical reading, worked out from the last few, ISO 13373 \u2014 needs at least 3 past readings), the app flags it and asks you to note what you saw</li>';
+        html += '<li><strong>Open Alerts:</strong> every open flag collects in the menu under Open Alerts and on your dashboard, with a red count</li>';
+        html += '<li>Median is used (not a plain average) so a single freak reading in the history cannot hide the next real fault</li>';
         html += '</ul></div>';
 
-        html += '<div class="card"><h2>📋 Changelog</h2>';
-        html += '<p style="font-size:13px;color:#374151;line-height:1.8;">See all updates, bug fixes, and new features:</p>';
+        // Job list
+        html += '<div class="card"><h2>\uD83D\uDCCB Job list</h2>';
+        html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
+        html += '<li><strong>Personal tracker, not APM</strong> \u2014 nothing you add here is sent to or recorded in APM</li>';
+        html += '<li>Add a job from a position or route with <strong>+ Add to Job list</strong>, then choose <strong>PM</strong> or <strong>FWO</strong></li>';
+        html += '<li><strong>PM</strong> = a routine planned task. <strong>FWO</strong> = a follow-up work order assigned to you in APM \u2014 adding it here gives you the equipment, job instructions and parts to hand while you are on the floor</li>';
+        html += '<li>Spotted something that needs a new FWO? Add a job with a note so raising it in APM afterwards is quick and clear</li>';
+        html += '<li>Tap a job card to expand it, add comments, or (for a FWO) see the job details and parts</li>';
+        html += '<li>Toggle the switch to <strong>mark it done</strong> (turns green, moves to the bottom)</li>';
+        html += '<li>Comments can be saved permanently to the item\'s detail page when prompted</li>';
+        html += '<li>Completed jobs clear automatically at the daily <strong>4am sweep</strong>; unfinished jobs carry over and show in <strong>red as overdue</strong> until done</li>';
+        html += '<li>You cannot add the same item to your list twice</li>';
+        html += '</ul></div>';
+
+        // Account
+        html += '<div class="card"><h2>\uD83D\uDD10 Your account</h2>';
+        html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
+        html += '<li><strong>Stay signed in</strong> on your own device. Tick <strong>"shared device"</strong> at sign-in to be logged out when the app is closed.</li>';
+        html += '<li>If your account is idle for more than <strong>7 days</strong>, you will be asked for your PIN again</li>';
+        html += '<li><strong>Change PIN</strong> under Account in the menu</li>';
+        html += '<li>Forgot your PIN? Use <strong>Forgot PIN</strong> on the sign-in screen to get a reset email</li>';
+        html += '</ul></div>';
+
+        // Tips
+        html += '<div class="card"><h2>\uD83D\uDCA1 Tips</h2>';
+        html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
+        html += '<li>The browser Back button works within the app (it will not leave the page)</li>';
+        html += '<li>Paste screenshots anywhere \u2014 the clipboard listener is always active</li>';
+        html += '<li>Download a backup of the data any time from the menu \u2192 <strong>Download Backup</strong></li>';
+        html += '<li>Notes are timestamped and author-tagged \u2014 only your own can be edited or deleted</li>';
+        if (admin) {
+            html += '<li>Add new positions, parts and routes from the menu \u2192 <strong>Add New</strong></li>';
+            html += '<li>Restore decommissioned items from the menu \u2192 <strong>Manage Inactive Items</strong></li>';
+        }
+        html += '</ul></div>';
+
+        // Admin-only tools
+        if (admin) {
+            html += '<div class="card" style="border-left:4px solid #2563eb;"><h2>\uD83D\uDEE0\uFE0F Admin tools</h2>';
+            html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
+            html += '<li><strong>Add New</strong> \u2014 add a Position, Part or Route</li>';
+            html += '<li><strong>Manage Users</strong> \u2014 review new sign-ups, set roles and remove users</li>';
+            html += '<li><strong>Activity Log</strong> \u2014 a full record of who changed what and when</li>';
+            html += '<li><strong>Manage Inactive Items</strong> \u2014 find and reactivate decommissioned positions, parts and routes</li>';
+            html += '<li><strong>Recently Deleted</strong> \u2014 restore items that were deleted</li>';
+            html += '</ul></div>';
+        }
+
+        // Changelog
+        html += '<div class="card"><h2>\uD83D\uDCDC Changelog</h2>';
+        html += '<p style="font-size:13px;color:#374151;line-height:1.8;">See all updates, bug fixes and new features:</p>';
         html += '<a href="https://github.com/lcy2reliability-dev/reliability-app/blob/main/CHANGELOG.md" target="_blank" style="display:inline-block;margin-top:8px;padding:8px 16px;background:#2563eb;color:white;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;">View Changelog on GitHub</a>';
         html += '</div>';
+
+        // FAQ
+        html += '<div class="card"><h2>\u2753 Frequently asked questions</h2>';
+        var faq = [
+            ['Does this app replace APM?', 'No. It is a personal tool to help you track your own jobs and readings during the shift. Nothing you do here is sent to or recorded in APM, so keep completing your checklists and booking labour and parts in APM exactly as you do now.'],
+            ['What is the difference between a PM and a FWO on my Job list?', 'A PM (planned maintenance) is a routine scheduled task. A FWO is a follow-up work order that has been assigned to you in APM \u2014 adding it here gives you a handy note of the equipment, job instructions and parts while you are out on the floor, so you do not get caught out. And if you spot something out on the floor that needs a new FWO, add a job here with a note so raising it in APM afterwards is quick and clear. Either way, nothing is sent to APM.'],
+            ['When do jobs leave my Job list?', 'Completed jobs are cleared automatically at the daily 4am sweep. Anything you leave unfinished carries over to the next day and shows in red as overdue until you complete it \u2014 then it clears at the next 4am sweep.'],
+            ['How do I record thermal readings?', 'Go to the CBM tab, open a thermal route and tap Record New Readings. Enter the Motor and Gearbox temperature at each point (Step-by-step mode takes you one field at a time), add any notes and Save. Remember to also enter the readings into APM in the route\'s checklist \u2014 this app does not send them to APM.'],
+            ['What is an anomaly flag / Open Alert?', 'When you save a reading more than 10\u00b0C above or below that component\'s own median \u2014 its typical reading, worked out from the last few (ISO 13373, needs at least 3 past readings) \u2014 the app flags it and asks you to note what you saw. Open flags collect under Open Alerts, in the menu and on your dashboard. Median is used rather than a plain average because a single past spike (the very thing you are looking for) would drag an average up and hide the next fault.'],
+            ['Which part fields can I edit?', 'Bin Location and Repairable. APN and everything else (description, class, criticality, manufacturer, supplier) are managed by admins from the stores database. Changing an APN, an admin action, keeps the old one searchable as a "Previous APN".'],
+            ['Why can\'t I change the ID, type or description?', 'Those descriptive fields are managed by admins so the data stays consistent with APM and the stores database. As a technician you can add a screenshot and notes on any position, route or part. If a descriptive field is wrong, ask an admin (Tittus / strtt or Alex / vladesca) to correct it.'],
+            ['I made a mistake \u2014 can I fix it myself?', 'Yes, for anything you own: edit or delete your own notes, and replace a screenshot you added yourself. Decommissioning, deleting records and editing the descriptive fields are admin-only, so ask an admin if one of those needs putting right.'],
+            ['Can I change a screenshot someone else added?', 'You can add a screenshot when there isn\'t one yet, and replace one you added yourself. Only the person who added a screenshot, or an admin, can replace it, so nobody\'s photo is overwritten by accident. Older screenshots with no recorded owner can only be replaced by an admin.'],
+            ['The position or part I need isn\'t in the app.', 'Adding brand-new positions, parts and routes is an admin job. Ask an admin (Tittus / strtt or Alex / vladesca) to add it and it will appear for everyone. If you try to add a FWO for a position that is not in the app, or link a part whose APN is not in the catalogue, the app will point you to an admin.'],
+            ['What is the difference between "Linked Parts" and "Parts Associated"?', 'Linked Parts are parts you or a colleague have connected to that position in the app. Parts Associated is the reference list imported from APM. Linking or unlinking a part never deletes it \u2014 it only changes the connection.'],
+            ['How do I add a photo?', 'On a position, route or part, open Edit, then paste a screenshot with Ctrl+V (the clipboard listener is always on) or use the upload button. You can add a photo when there isn\'t one, and replace one you added yourself. Tap any photo to view it fullscreen; pinch to zoom on mobile.'],
+            ['How do I search faster?', 'Type any position number, APN, description, manufacturer reference or route number \u2014 multiple words all have to match. Use * as a wildcard on an ID, e.g. CB.SRT.01.*.01, to pin a middle or end segment.'],
+            ['Do I stay signed in?', 'On your own device, yes. Tick "shared device" when you sign in and you will be logged out when you close the app. Either way, if your account is idle for more than 7 days you will be asked for your PIN again.'],
+            ['I forgot my PIN, or want to change it.', 'Use Forgot PIN on the sign-in screen to get a reset email, or Change PIN under Account in the menu once you are signed in.'],
+            ['Something looks out of date.', 'Reload the page \u2014 the app updates live from the database. If a number looks stuck, a hard refresh clears it.'],
+            ['Who do I contact about the app?', 'The LCY2 RME Reliability Team \u2014 Tittus (strtt) or Alex (vladesca).']
+        ];
+        faq.forEach(function(qa){
+            html += '<div style="margin-bottom:12px;"><div style="font-size:13px;font-weight:700;color:#1e293b;">' + qa[0] + '</div><div style="font-size:13px;color:#374151;line-height:1.7;margin-top:2px;">' + qa[1] + '</div></div>';
+        });
+        html += '</div>';
+
         html += '<div style="text-align:center;margin-top:24px;"><button class="btn btn-primary" onclick="startTour()">Take the Tour Again</button></div>';
         html += '</div>';
 
