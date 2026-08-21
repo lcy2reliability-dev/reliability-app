@@ -553,7 +553,7 @@
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
                     <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.18)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM. Keep completing APM checklists, booking labour and parts, and everything else in APM exactly as you do now.<br>&bull; New tabbed layout: <strong>Home</strong>, <strong>Positions</strong>, <strong>CBM</strong> and <strong>Parts</strong>.<br>&bull; Your <strong>Job list</strong> now lives on the Home screen, right under the dashboard.<br>&bull; New <strong>Parts</strong> tab: browse the whole catalogue with a filter box on every column.<br>&bull; Add a job to <strong>your Job list</strong> from a Position: choose <strong>PM or FWO</strong>, attach a photo, add notes and pick the parts you need.<br>&bull; <strong>FWO jobs</strong> keep their own job details; parts you add are recorded on the job (link them to the position yourself once confirmed).<br>&bull; <strong>Stay signed in</strong> on your own device; tick <strong>&quot;shared device&quot;</strong> at sign-in to be logged out when you close the app.<br>&bull; If your account is idle for over <strong>7 days</strong> you will be asked for your <strong>PIN</strong> again.<br>&bull; Admins can now <strong>remove a user</strong> in Manage Users.<br>&bull; New sign-ups now accept the <strong>Terms &amp; Conditions</strong> and <strong>Privacy Policy</strong>; both are in the menu under Help.</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM. Keep completing APM checklists, booking labour and parts, and everything else in APM exactly as you do now.<br>&bull; <strong>Repair Kit</strong>: on any part marked <em>Repairable</em>, you can now link its component parts (bearings, shaft, etc.) via a <strong>+ Link Part</strong> button on the part detail page - type or scan an APN to add each sub-part.<br>&bull; <strong>QR / barcode scan</strong> now on the Link Part popup, the Repair Kit "+ Link Part" popup, the raise-a-job wizard, and the Add/Edit Position, Part and Route forms - tap the &#128247; button next to any of those fields.<br>&bull; New tabbed layout: <strong>Home</strong>, <strong>Positions</strong>, <strong>CBM</strong> and <strong>Parts</strong>.<br>&bull; Your <strong>Job list</strong> now lives on the Home screen, right under the dashboard.<br>&bull; New <strong>Parts</strong> tab: browse the whole catalogue with a filter box on every column.<br>&bull; Add a job to <strong>your Job list</strong> from a Position: choose <strong>PM or FWO</strong>, attach a photo, add notes and pick the parts you need.<br>&bull; <strong>FWO jobs</strong> keep their own job details; parts you add are recorded on the job (link them to the position yourself once confirmed).<br>&bull; <strong>Stay signed in</strong> on your own device; tick <strong>&quot;shared device&quot;</strong> at sign-in to be logged out when you close the app.<br>&bull; If your account is idle for over <strong>7 days</strong> you will be asked for your <strong>PIN</strong> again.<br>&bull; Admins can now <strong>remove a user</strong> in Manage Users.<br>&bull; New sign-ups now accept the <strong>Terms &amp; Conditions</strong> and <strong>Privacy Policy</strong>; both are in the menu under Help.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -631,7 +631,7 @@
                 <div class="form-group">
                     <label>Search Position</label>
                     <div style="position:relative;">
-                        <input type="text" id="eq-conveyor" placeholder="Type to search (e.g. 703010, SLAM.314...)" maxlength="60" style="width:100%;" oninput="autocompletePosition(this.value,'eq-autocomplete','eq-conveyor')" autocomplete="off">
+                        <div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="eq-conveyor" placeholder="Type to search (e.g. 703010, SLAM.314...)" maxlength="60" style="flex:1;min-width:0;" oninput="autocompletePosition(this.value,'eq-autocomplete','eq-conveyor')" autocomplete="off"><button type="button" class="btn btn-secondary" onclick="openScannerForInput('eq-conveyor',function(v){document.getElementById('eq-conveyor').value=v;autocompletePosition(v,'eq-autocomplete','eq-conveyor');})" title="Scan QR / barcode" aria-label="Scan QR code" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">&#128247;</button></div>
                         <div id="eq-autocomplete" class="autocomplete-dropdown" style="display:none;"></div>
                     </div>
                     <div id="eq-status-badge" style="margin-top:4px;font-size:12px;"></div>
@@ -707,13 +707,13 @@
                 <h2>Add Part</h2>
                 <div class="form-group" style="position:relative;">
                     <label>Position</label>
-                    <input type="text" id="part-conveyor" placeholder="e.g. 703010 or SLAM.314.DVT1" oninput="autocompletePartPosition(this.value)" onblur="setTimeout(()=>{document.getElementById('part-autocomplete').style.display='none';},200)" autocomplete="off">
+                    <div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="part-conveyor" placeholder="e.g. 703010 or SLAM.314.DVT1" oninput="autocompletePartPosition(this.value)" onblur="setTimeout(()=>{document.getElementById('part-autocomplete').style.display='none';},200)" autocomplete="off" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput('part-conveyor',function(v){document.getElementById('part-conveyor').value=v;autocompletePartPosition(v);})" title="Scan QR / barcode" aria-label="Scan QR code" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">&#128247;</button></div>
                     <span id="part-pos-status" style="font-size:12px;margin-top:4px;display:block;"></span>
                     <div id="part-autocomplete" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #d1d5db;border-radius:8px;max-height:200px;overflow-y:auto;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
                 </div>
                 <div class="form-group">
                     <label>APN (Asset Part Number)</label>
-                    <input type="text" id="part-apn" placeholder="Enter APN" maxlength="50">
+                    <div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="part-apn" placeholder="Enter APN" maxlength="50" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput('part-apn')" title="Scan QR / barcode" aria-label="Scan QR code" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">&#128247;</button></div>
                 </div>
                 <div class="form-group">
                     <label>Part Type</label>
@@ -774,7 +774,7 @@
                     </div>
                     <div class="form-group">
                         <label>Starting Point <span style="color:#ef4444;">*</span></label>
-                        <input type="text" id="route-start" placeholder="e.g. 703010 or CB.SRT.01.ID11.01" maxlength="60" onblur="loadRouteImage('route-start-img', this.value)">
+                        <div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="route-start" placeholder="e.g. 703010 or CB.SRT.01.ID11.01" maxlength="60" onblur="loadRouteImage('route-start-img', this.value)" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput('route-start',function(v){document.getElementById('route-start').value=v;loadRouteImage('route-start-img',v);})" title="Scan QR / barcode" aria-label="Scan QR code" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">&#128247;</button></div>
                         <img id="route-start-img" class="img-preview" style="display:none;">
                     </div>
                     <div class="form-group">
@@ -784,7 +784,7 @@
                     </div>
                     <div class="form-group">
                         <label>End Point <span style="font-size:11px;color:#6b7280;">— optional, leave blank if same as start</span></label>
-                        <input type="text" id="route-end" placeholder="e.g. 180050 (leave blank if same as start)" maxlength="60" onblur="loadRouteImage('route-end-img', this.value)">
+                        <div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="route-end" placeholder="e.g. 180050 (leave blank if same as start)" maxlength="60" onblur="loadRouteImage('route-end-img', this.value)" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput('route-end',function(v){document.getElementById('route-end').value=v;loadRouteImage('route-end-img',v);})" title="Scan QR / barcode" aria-label="Scan QR code" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">&#128247;</button></div>
                         <img id="route-end-img" class="img-preview" style="display:none;">
                     </div>
                 </div>
@@ -2689,7 +2689,7 @@
 
     // Parts popup from Equipment tab
     async function showPartsPopup() {
-        const bodyHtml = '<div class="form-group"><label>APN</label><input type="text" id="popup-apn" placeholder="Enter APN"></div>'+
+        const bodyHtml = '<div class="form-group"><label>APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="popup-apn" placeholder="Enter APN" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27popup-apn\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
             '<div class="form-group"><label>Part Type</label><select id="popup-part-type"><option value="">Select...</option><option>Drive roller</option><option>End roller</option><option>Tension roller</option><option>Snubber roller</option><option>Bearing</option><option>Motor gearbox</option><option>Pulley A</option><option>Pulley B</option><option>Pulley C</option><option>Pulley D</option><option>Pulley E</option><option>Pulley F</option><option>Pulley G</option><option>Pulley H</option><option>Idle roller</option><option>Belt</option><option>Blank</option><option>Other</option></select></div>'+
             '<div class="form-group"><label>Store Location</label><input type="text" id="popup-location" placeholder="e.g. C05-C-28"></div>'+
             '<div class="form-group"><label>Description</label><input type="text" id="popup-desc" placeholder="Part description"></div>';
@@ -3763,13 +3763,13 @@
         const type=document.getElementById('work-type-select').value;
         const container=document.getElementById('work-dynamic-fields');
         if(type==='FWO'){
-            container.innerHTML='<div class="form-group"><label>Position Number</label><input type="text" id="work-equipment" placeholder="e.g. 703010 or CB.SRT.01.ID11.01"></div>'+
+            container.innerHTML='<div class="form-group"><label>Position Number</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="work-equipment" placeholder="e.g. 703010 or CB.SRT.01.ID11.01" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27work-equipment\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
                 '<div class="form-group"><label>Part Type</label><select id="work-part-type"><option value="">Select...</option><option>Drive roller</option><option>End roller</option><option>Tension roller</option><option>Snubber roller</option><option>Bearing</option><option>Motor gearbox</option><option>Pulley A</option><option>Pulley B</option><option>Pulley C</option><option>Pulley D</option><option>Pulley E</option><option>Pulley F</option><option>Pulley G</option><option>Pulley H</option><option>Idle roller</option><option>Belt</option><option>Blank</option><option>Other</option></select></div>'+
-                '<div class="form-group"><label>APN</label><input type="text" id="work-apn" placeholder="Enter APN"></div>'+
+                '<div class="form-group"><label>APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="work-apn" placeholder="Enter APN" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27work-apn\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
                 '<div class="form-group"><label>Store Location</label><input type="text" id="work-location" placeholder="e.g. C05-C-28"></div>'+
                 '<div class="form-group"><label>Part Description</label><input type="text" id="work-part-desc" placeholder="Optional"></div>'+'<div class="form-group"><label>Job details</label><textarea id="work-fwo-details" rows="2" placeholder="What needs doing (optional)"></textarea></div>';
         } else if(type==='PM'){
-            container.innerHTML='<div class="form-group"><label>Position Number</label><input type="text" id="work-equipment" placeholder="e.g. 703010 or CB.SRT.01.ID11.01"></div>'+
+            container.innerHTML='<div class="form-group"><label>Position Number</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="work-equipment" placeholder="e.g. 703010 or CB.SRT.01.ID11.01" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27work-equipment\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
                 '<div class="form-group"><label>Add SCADA location screenshot?</label><div class="file-upload" onclick="document.getElementById(\'work-img-file\').click()" style="padding:10px;"><input type="file" id="work-img-file" accept="image/*" onchange="previewImage(this,\'work-img-preview\')"><p style="font-size:12px;">Click to upload (optional)</p></div><img id="work-img-preview" class="img-preview" style="display:none;max-height:150px;"></div>';
         } else if(type==='CBM'){
             container.innerHTML='<div class="form-group"><label>CBM Type</label><select id="work-cbm-type" onchange="populateRouteDatalist()"><option>Ultrasound</option><option>Thermal</option><option>Other</option></select></div>'+
@@ -4062,6 +4062,39 @@
                     html+='<p class="empty-state">Not linked to any position</p>';
                 }
                 html+='</div>';
+                // Repair Kit card - only for parts flagged repairable
+                if(data.repairable===true){
+                    var _comps=data.components||{};
+                    var _cKeys=Object.keys(_comps);
+                    var _pcache=await getPartsCache();
+                    html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Repair Kit ('+_cKeys.length+') <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkComponentPopup(\x27'+key+'\x27)">+ Link Part</button></h2>';
+                    if(_cKeys.length>0){
+                        html+='<table class="rtable" style="width:100%;font-size:13px;border-collapse:collapse;"><thead><tr style="background:#f8fafc;"><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;">APN</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;">Class</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;">Bin</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;">Qty</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;">Description</th><th style="padding:6px;border-bottom:1px solid #e2e8f0;"></th></tr></thead><tbody>';
+                        _cKeys.sort();
+                        _cKeys.forEach(function(ck){
+                            var meta=_comps[ck]||{};
+                            var childApn=meta.apn||ck;
+                            var childPart=_pcache[ck]||{};
+                            var canManage=isAdmin()||(meta.addedBy&&String(meta.addedBy).toLowerCase()===String(currentUser||'').toLowerCase());
+                            html+='<tr>';
+                            html+='<td data-label="APN" style="padding:6px;border-bottom:1px solid #f1f5f9;"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+escapeAttrArg(ck)+'\x27);return false;">'+escapeHtml(childApn)+'</a></td>';
+                            html+='<td data-label="Class" style="padding:6px;border-bottom:1px solid #f1f5f9;">'+escapeHtml(childPart.partClass||childPart.partType||'')+'</td>';
+                            html+='<td data-label="Bin" style="padding:6px;border-bottom:1px solid #f1f5f9;">'+escapeHtml(childPart.binLocation||childPart.location||'')+'</td>';
+                            html+='<td data-label="Qty" style="padding:6px;border-bottom:1px solid #f1f5f9;">'+(meta.qty||1)+'</td>';
+                            html+='<td data-label="Description" style="padding:6px;border-bottom:1px solid #f1f5f9;">'+escapeHtml(childPart.partDescription||childPart.notes||'')+'</td>';
+                            html+='<td style="padding:6px;border-bottom:1px solid #f1f5f9;white-space:nowrap;text-align:right;">';
+                            html+='<button class="btn btn-sm" onclick="editComponentQty(\x27'+key+'\x27,\x27'+escapeAttrArg(ck)+'\x27)" style="padding:4px 8px;font-size:11px;background:#e5e7eb;color:#374151;border:none;border-radius:4px;cursor:pointer;">Edit Qty</button> ';
+                            if(canManage){
+                                html+='<button class="btn btn-sm btn-danger" onclick="unlinkComponent(\x27'+key+'\x27,\x27'+escapeAttrArg(ck)+'\x27)" style="padding:4px 8px;font-size:11px;">Unlink</button>';
+                            }
+                            html+='</td></tr>';
+                        });
+                        html+='</tbody></table>';
+                    } else {
+                        html+='<p class="empty-state">No components linked yet. Use <strong>+ Link Part</strong> to add bearings, shafts, or other sub-parts.</p>';
+                    }
+                    html+='</div>';
+                }
 } else if(type==='route'){
                 title='Route: '+data.routeNumber+' ('+data.type+')';
                 html+='<div class="detail-field"><label>Route Number</label><div class="value">'+escapeHtml(data.routeNumber)+'</div></div>';
@@ -4201,11 +4234,11 @@
                 ['','Ultrasound','Thermal','Oil','Ranger','Strobe','Vibration','Other'].forEach(function(t) { html += '<option' + (t===data.type?' selected':'') + '>' + (t||'Select...') + '</option>'; });
                 html += '</select></div>';
                 html += '<div class="form-group"><label>Equipment Description</label><input type="text" id="edit-route-desc" value="' + escapeHtml(data.notes||'') + '"></div>';
-                html += '<div class="form-group"><label>Start Point</label><input type="text" id="edit-route-start" value="' + escapeHtml(data.startPoint||'') + '"></div>';
+                html += '<div class="form-group"><label>Start Point</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="edit-route-start" value="' + escapeHtml(data.startPoint||'') + '" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27edit-route-start\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
                 html += '<div id="edit-route-waypoints">';
                 if (data.waypoints) { data.waypoints.forEach(function(w) { html += '<div class="waypoint-row" draggable="true" style="margin-bottom:6px;display:flex;align-items:center;gap:6px;cursor:grab;" ondragstart="this.style.opacity=0.5;event.dataTransfer.effectAllowed=\x27move\x27;window._dragWp=this;" ondragend="this.style.opacity=1;window._dragWp=null;" ondragover="event.preventDefault();this.style.borderTop=\x272px solid #2563eb\x27;" ondragleave="this.style.borderTop=\x27\x27;" ondrop="event.preventDefault();this.style.borderTop=\x27\x27;if(window._dragWp&&window._dragWp!==this){this.parentElement.insertBefore(window._dragWp,this);}"><span style="cursor:grab;color:#6b7280;font-size:16px;user-select:none;">\u2261</span><input type="text" class="edit-wp" value="' + escapeHtml(w) + '" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;"> <button class="btn-remove" onclick="this.parentElement.remove()">X</button></div>'; }); }
                 html += '</div><button class="btn btn-add" onclick="addEditWaypoint()" style="margin-bottom:12px;">+ Add Waypoint</button>';
-                html += '<div class="form-group"><label>End Point</label><input type="text" id="edit-route-end" value="' + escapeHtml(data.endPoint||'') + '"></div>';
+                html += '<div class="form-group"><label>End Point</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="edit-route-end" value="' + escapeHtml(data.endPoint||'') + '" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27edit-route-end\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
                                 // Route Screenshot
                 var _rtEditImg = await getRouteImage(key);
                 if (_rtEditImg) {
@@ -4283,7 +4316,7 @@
                 // Editable fields
                 html += '<hr style="border:none;border-top:2px solid #2563eb;margin:20px 0;">';
                 html += '<p style="font-size:12px;color:#2563eb;font-weight:600;margin-bottom:12px;">EDITABLE FIELDS</p>';
-                html += '<div class="form-group"><label>APN</label><input type="text" id="edit-part-apn" value="' + escapeHtml(data.apn||'') + '"' + (_isAdmin?'':' disabled style="background:#f3f4f6;color:#6b7280;cursor:not-allowed;"') + '></div>';
+                html += '<div class="form-group"><label>APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="edit-part-apn" value="' + escapeHtml(data.apn||'') + '"' + (_isAdmin?' style="flex:1;min-width:0;"':' disabled style="flex:1;min-width:0;background:#f3f4f6;color:#6b7280;cursor:not-allowed;"') + '>' + (_isAdmin?'<button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27edit-part-apn\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button>':'') + '</div></div>';
                 if(!_isAdmin) html += '<p style="font-size:11px;color:#6b7280;margin:-8px 0 8px;">APN is managed by admins.</p>';
                 if(data.previousApn) html += '<p style="font-size:11px;color:#6b7280;margin:-8px 0 8px;">Previous: ' + escapeHtml(data.previousApn) + '</p>';
                 html += '<div class="form-group"><label>Bin Location</label><input type="text" id="edit-part-bin" value="' + escapeHtml(data.binLocation||data.location||'') + '"></div>';
@@ -5519,7 +5552,7 @@ function liveSearchSuggest(query,scope){
             '<div id="jw-fwo-fields" style="display:none;">'+
                 '<div class="form-group"><label>Job details (optional)</label><textarea id="jw-fwo-desc" rows="2" placeholder="What needs doing..."></textarea></div>'+
                 '<div class="form-group"><label>Parts needed (optional)</label>'+
-                    '<div style="position:relative;"><input type="text" id="jw-parts-input" placeholder="Search APN or description, or type free text" oninput="jwPartsSuggest(this.value)" onkeydown="jwPartsKey(event)" autocomplete="off">'+
+                    '<div style="position:relative;"><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="jw-parts-input" placeholder="Search APN or description, or type free text" oninput="jwPartsSuggest(this.value)" onkeydown="jwPartsKey(event)" autocomplete="off" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27jw-parts-input\x27,function(v){jwPartsSuggest(v);})" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div>'+
                     '<div id="jw-parts-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:200px;overflow:auto;z-index:10;"></div></div>'+
                     '<div id="jw-parts-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>'+
                 '</div>'+
@@ -6558,7 +6591,7 @@ function liveSearchSuggest(query,scope){
         var html = '<div style="padding:20px;">';
         html += '<h2 style="margin-top:0;">Link Part to ' + escapeHtml(conveyorNumber) + '</h2>';
         html += '<p style="font-size:13px;color:#6b7280;">Search by APN to find and link a spare part.</p>';
-        html += '<div class="form-group"><label>Enter APN</label><input type="text" id="link-part-apn" placeholder="Type APN..." onkeydown="if(event.key===\x27Enter\x27)searchPartToLink(\x27'+conveyorNumber+'\x27)"></div>';
+        html += '<div class="form-group"><label>Enter APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="link-part-apn" placeholder="Type APN or scan..." onkeydown="if(event.key===\x27Enter\x27)searchPartToLink(\x27'+conveyorNumber+'\x27)" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27link-part-apn\x27,function(v){document.getElementById(\x27link-part-apn\x27).value=v;searchPartToLink(\x27'+conveyorNumber+'\x27);})" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
         html += '<button class="btn btn-primary" onclick="searchPartToLink(\x27'+conveyorNumber+'\x27)">Search</button>';
         html += '<div id="link-part-result" style="margin-top:16px;"></div>';
         html += '</div>';
@@ -6726,6 +6759,143 @@ function liveSearchSuggest(query,scope){
         }catch(e){ hideLoading(); showToast('Error: '+e.message,'error'); }
     }
 
+
+    // ============================================================
+    // REPAIR KIT (component parts of repairable parts)
+    // ============================================================
+    var _linkCompAttempts = 0;
+    async function openLinkComponentPopup(parentKey) {
+        if (!requireWrite()) return;
+        var _apn = '';
+        try { var _ps = await db.ref('parts/'+parentKey+'/apn').once('value'); _apn = _ps.val() || ''; } catch(e){}
+        var html = '<div style="padding:20px;">';
+        html += '<h2 style="margin-top:0;">Link Component to ' + escapeHtml(_apn||'part') + '</h2>';
+        html += '<p style="font-size:13px;color:#6b7280;">Search by APN to add a sub-part (bearing, shaft, etc.) to this repair kit.</p>';
+        html += '<div class="form-group"><label>Enter component APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="link-comp-apn" placeholder="Type APN or scan..." onkeydown="if(event.key===\x27Enter\x27)searchComponentToLink(\x27'+parentKey+'\x27)" style="flex:1;min-width:0;padding:8px;border:1px solid #d1d5db;border-radius:6px;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27link-comp-apn\x27,function(v){document.getElementById(\x27link-comp-apn\x27).value=v;searchComponentToLink(\x27'+parentKey+'\x27);})" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
+        html += '<button class="btn btn-primary" onclick="searchComponentToLink(\x27'+parentKey+'\x27)">Search</button>';
+        html += ' <button class="btn btn-secondary" onclick="openDetail(\x27part\x27,\x27'+parentKey+'\x27)">Cancel</button>';
+        html += '<div id="link-comp-result" style="margin-top:16px;"></div>';
+        html += '</div>';
+        document.getElementById('detail-content').innerHTML = html;
+        _linkCompAttempts = 0;
+    }
+    async function searchComponentToLink(parentKey) {
+        var apnQuery = document.getElementById('link-comp-apn').value.trim();
+        if (!apnQuery) { showToast('Enter an APN', 'error'); return; }
+        if (!checkFirebase()) return;
+        var allParts = await getPartsCache();
+        var found = null, foundKey = null;
+        Object.entries(allParts).forEach(function(kv){
+            var k = kv[0], p = kv[1];
+            if ((p.apn||'').toLowerCase() === apnQuery.toLowerCase()) { found = p; foundKey = k; }
+            else if (p.previousApn && p.previousApn.toLowerCase().split(',').indexOf(apnQuery.toLowerCase()) >= 0) { found = p; foundKey = k; }
+        });
+        var resultDiv = document.getElementById('link-comp-result');
+        if (found) {
+            _linkCompAttempts = 0;
+            if (foundKey === parentKey) {
+                resultDiv.innerHTML = '<div style="padding:12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;"><p style="font-weight:600;color:#92400e;">Cannot link a part to itself</p><p style="font-size:13px;">A part cannot appear inside its own repair kit.</p></div>';
+                return;
+            }
+            var _exSnap = await db.ref('parts/'+parentKey+'/components/'+foundKey).once('value');
+            if (_exSnap.exists()) {
+                resultDiv.innerHTML = '<div style="padding:12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;"><p style="font-weight:600;color:#92400e;">Already in kit</p><p style="font-size:13px;">'+escapeHtml(found.apn||'')+' is already linked to this repair kit.</p></div>';
+                return;
+            }
+            var html = '<div style="padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">';
+            html += '<p style="font-weight:700;font-size:16px;margin-bottom:8px;">' + escapeHtml(found.apn||'') + '</p>';
+            html += '<p style="font-size:13px;margin:4px 0;">' + escapeHtml(found.partDescription||found.notes||'') + '</p>';
+            html += '<p style="font-size:13px;margin:4px 0;"><span style="padding:1px 8px;background:#eff6ff;color:#1d4ed8;border-radius:8px;font-size:11px;">' + escapeHtml(found.partClass||found.partType||'') + '</span></p>';
+            html += '<p style="font-size:13px;margin:4px 0;">Bin: <strong>' + escapeHtml(found.binLocation||found.location||'') + '</strong></p>';
+            html += '<hr style="margin:12px 0;border:none;border-top:1px solid #d1fae5;">';
+            html += '<p style="font-size:13px;font-weight:600;">Add this component to the repair kit?</p>';
+            html += '<div class="form-group" style="margin-top:12px;"><label>Quantity per repair</label><input type="number" id="link-comp-qty" placeholder="e.g. 2" min="1" value="1" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
+            html += '<button class="btn btn-primary" style="margin-top:8px;" onclick="confirmLinkComponent(\x27'+parentKey+'\x27,\x27'+escapeAttrArg(foundKey)+'\x27,\x27'+escapeAttrArg(found.apn||'')+'\x27)">Confirm Link</button>';
+            html += ' <button class="btn btn-secondary" style="margin-top:8px;" onclick="openDetail(\x27part\x27,\x27'+parentKey+'\x27)">Cancel</button>';
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        } else {
+            _linkCompAttempts++;
+            if (_linkCompAttempts >= 2) {
+                var _msg = isAdmin() ? '<button class="btn btn-primary" style="margin-top:8px;" onclick="_linkCompAttempts=0;openAddForm(\x27part\x27)">Add New Part</button> ' : '<p style="font-size:13px;color:#92400e;margin:8px 0;">This part isn\x27t in the catalogue. Ask an admin (Tittus/strtt or Alex/vladesca) to add it first, then come back to link it.</p>';
+                resultDiv.innerHTML = '<div style="padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;"><p style="font-weight:600;color:#dc2626;">Part not found</p><p style="font-size:13px;">APN "' + escapeHtml(apnQuery) + '" was not found after multiple attempts.</p>' + _msg + '<button class="btn btn-secondary" style="margin-top:8px;" onclick="openDetail(\x27part\x27,\x27'+parentKey+'\x27)">Cancel</button></div>';
+            } else {
+                resultDiv.innerHTML = '<div style="padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;"><p style="font-weight:600;color:#92400e;">Not found</p><p style="font-size:13px;">No part with APN "' + escapeHtml(apnQuery) + '" found. Please check and try again.</p></div>';
+            }
+        }
+    }
+    async function confirmLinkComponent(parentKey, childKey, childApn) {
+        if (!requireWrite()) return;
+        if (!checkFirebase()) return;
+        if (childKey === parentKey) { showToast('Cannot link a part to itself','error'); return; }
+        var qtyEl = document.getElementById('link-comp-qty');
+        var qty = qtyEl ? parseInt(qtyEl.value, 10) : 1;
+        if (!qty || qty < 1) qty = 1;
+        showLoading();
+        try {
+            await db.ref('parts/'+parentKey+'/components/'+childKey).set({
+                apn: childApn,
+                qty: qty,
+                addedBy: auditUser(),
+                addedAt: new Date().toISOString()
+            });
+            logAudit('linkComponent','part',parentKey,{childApn:childApn, qty:qty});
+            showToast('Component added to repair kit','success');
+            invalidatePartsCache();
+            hideLoading();
+            openDetail('part', parentKey);
+        } catch(e) { hideLoading(); showToast('Error: '+e.message,'error'); }
+    }
+    async function unlinkComponent(parentKey, childKey) {
+        if (!checkFirebase()) return;
+        var metaSnap = await db.ref('parts/'+parentKey+'/components/'+childKey).once('value');
+        var meta = metaSnap.val() || {};
+        var owner = meta.addedBy ? String(meta.addedBy).toLowerCase() : '';
+        var me = String(currentUser||'').toLowerCase();
+        var canMgt = isAdmin() || (owner && owner === me);
+        if (!canMgt) {
+            showToast(owner ? ('Only '+owner+' or an admin can unlink this') : 'Only an admin can unlink this','error');
+            return;
+        }
+        var res = await showCustomModal('Unlink component', '<p>Remove <strong>'+escapeHtml(meta.apn||childKey)+'</strong> from this repair kit?</p>', [
+            { label:'Cancel', class:'btn-secondary', value:'cancel' },
+            { label:'Unlink', class:'btn-danger', value:'ok' }
+        ]);
+        if (res !== 'ok') return;
+        showLoading();
+        try {
+            await db.ref('parts/'+parentKey+'/components/'+childKey).remove();
+            logAudit('unlinkComponent','part',parentKey,{childApn:meta.apn||childKey});
+            showToast('Component unlinked','success');
+            invalidatePartsCache();
+            hideLoading();
+            openDetail('part', parentKey);
+        } catch(e) { hideLoading(); showToast('Error: '+e.message,'error'); }
+    }
+    async function editComponentQty(parentKey, childKey) {
+        if (!requireWrite()) return;
+        if (!checkFirebase()) return;
+        var metaSnap = await db.ref('parts/'+parentKey+'/components/'+childKey).once('value');
+        var meta = metaSnap.val() || {};
+        var curQty = meta.qty || 1;
+        var body = '<p>APN: <strong>'+escapeHtml(meta.apn||childKey)+'</strong></p><div class="form-group"><label>Quantity per repair</label><input type="number" id="edit-comp-qty" value="'+curQty+'" min="1" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;"></div>';
+        var res = await showCustomModal('Edit component quantity', body, [
+            { label:'Cancel', class:'btn-secondary', value:'cancel' },
+            { label:'Save', class:'btn-primary', value:'ok' }
+        ]);
+        if (res !== 'ok') return;
+        var newQty = parseInt(document.getElementById('edit-comp-qty').value, 10);
+        if (!newQty || newQty < 1) { showToast('Quantity must be at least 1','error'); return; }
+        showLoading();
+        try {
+            await db.ref('parts/'+parentKey+'/components/'+childKey).update({ qty: newQty, updatedAt: new Date().toISOString() });
+            logAudit('editComponent','part',parentKey,{childApn:meta.apn||childKey, qty:newQty});
+            showToast('Quantity updated','success');
+            invalidatePartsCache();
+            hideLoading();
+            openDetail('part', parentKey);
+        } catch(e) { hideLoading(); showToast('Error: '+e.message,'error'); }
+    }
 
     // ============================================================
     // UNLINK PART FROM POSITION
@@ -7319,7 +7489,7 @@ function liveSearchSuggest(query,scope){
     // WHAT'S NEW BADGE
     // ============================================================
     var APP_VERSION = '1.18';
-    var WHATS_NEW_REV = '1.18.1'; // bump to re-show the What's New banner without changing the displayed version
+    var WHATS_NEW_REV = '1.18.2'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== WHATS_NEW_REV) {
