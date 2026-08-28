@@ -49,6 +49,12 @@
 - **Parts Associated shows the catalogue's Class and Description.** When an associated part's APN matches a part in the Parts database, its Class and Description now come from that catalogue record (the Bin column already did this), falling back to the imported text when there is no match.
 - No version change (bug fix / mobile polish); the What's New banner is not re-shown.
 
+### Security + orphan-cleanup fixes (Council follow-up, 2026-08-28)
+- **Search-result buttons now escape the item name.** The "+ Add to Job list" / "Remove from Job list" buttons in the search results build their onclick handler from the position, route or part name. That name is now passed through the same attribute-escaping helper used everywhere else in the app (escapeAttrArg), closing a self-injection gap and bringing these three buttons in line with the rest of the code. No visible change for ordinary names.
+- **Deleting a part now clears it out of other parts' Repair Kits.** Previously, permanently deleting a part left a dangling entry in any *other* part's Repair Kit that referenced it - a row with a dead APN link and blank class / bin / description. Deleting a part now also removes it from every Repair Kit that listed it, so no orphaned components are left behind. (Admin-only action. The part's own Repair Kit still travels with it into Recently Deleted, so a restore is unaffected; it does not, however, restore the deleted part back into other kits it used to be in.)
+- **Source version comment corrected.** The HTML comment at the very top of the file still read v1.14; it now reads v1.19.
+- No version change (security hardening + bug fix); the What's New banner is not re-shown.
+
 
 ## v1.18 — 2026-08-14
 

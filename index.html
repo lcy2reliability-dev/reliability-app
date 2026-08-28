@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- RME Shift Personal Tracker v1.14 - Updated 2026-08-06 -->
+<!-- RME Shift Personal Tracker v1.19 - Updated 2026-08-28 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -3994,8 +3994,8 @@
             try{pushRecent(type,key,_itemName);}catch(e){}
             var _isInWork = Object.values(_waAll).some(function(j){ return j && (j.assignedTo||'').toLowerCase()===currentUser.toLowerCase() && ((j.routeNumber&&j.routeNumber===_itemName)||(j.equipment&&j.equipment===_itemName)); });
             if(type!=='part'){
-                if(!_isInWork){if(type==='equipment'){html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="openJobWizard(\x27equipment\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">+ Add to Job list</button>';}else{html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="addToWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">+ Add to Job list</button>';}}
-                else{html+='<button class="btn btn-secondary btn-sm" style="background:#ef4444;color:white;border:none;" onclick="removeFromWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+_itemName+'\x27)">\u2212 Remove from Job list</button>';}
+                if(!_isInWork){if(type==='equipment'){html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="openJobWizard(\x27equipment\x27,\x27'+key+'\x27,\x27'+escapeAttrArg(_itemName)+'\x27)">+ Add to Job list</button>';}else{html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="addToWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+escapeAttrArg(_itemName)+'\x27)">+ Add to Job list</button>';}}
+                else{html+='<button class="btn btn-secondary btn-sm" style="background:#ef4444;color:white;border:none;" onclick="removeFromWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+escapeAttrArg(_itemName)+'\x27)">\u2212 Remove from Job list</button>';}
             }
             
             html+='</div><div class="card">';
@@ -5959,6 +5959,17 @@ function liveSearchSuggest(query,scope){
             var _cddCol = type === 'part' ? 'parts' : (type === 'route' ? 'routes' : 'equipment');
             if (_cddData) await db.ref('trash/' + _cddCol + '/' + key).set({...(_cddData), deletedAt: new Date().toISOString()});
             await db.ref(refPath).remove();
+            if(type==='part'){
+                try{
+                    var _allPS=await db.ref('parts').once('value');var _allP=_allPS.val()||{};
+                    var _casc={};
+                    Object.keys(_allP).forEach(function(_pk){
+                        var _pc=_allP[_pk]&&_allP[_pk].components;
+                        if(_pc&&Object.prototype.hasOwnProperty.call(_pc,key)){_casc[_pk+'/components/'+key]=null;}
+                    });
+                    if(Object.keys(_casc).length){await db.ref('parts').update(_casc);}
+                }catch(_ce){}
+            }
             if(type==='equipment')invalidateEquipmentCache();else if(type==='part')invalidatePartsCache();else invalidateRoutesCache();
             logAudit('delete',type,key,{label:label});showToast(label.charAt(0).toUpperCase() + label.slice(1) + ' permanently deleted.');
             closeDetail();
