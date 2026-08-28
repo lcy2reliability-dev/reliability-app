@@ -36,6 +36,12 @@
 ### Version / banner
 - APP_VERSION — 1.19; WHATS_NEW_REV — 1.19.0. The What's New banner re-shows to everyone once and now lists the v1.19 changes.
 
+### Mobile fixes (same-day follow-up, 2026-08-28)
+- **Sort chips now show on the phone, on every parts table.** On a phone these tables collapse to cards, so sorting is done from a row of "Sort:" chips above the table rather than by tapping a column header. A CSS ordering bug (a base "hide" rule sitting after the mobile rule) was hiding those chips on every screen size, so sorting looked broken on mobile. The chips now appear on the phone as intended, and they have been added to all three parts tables on a position's detail page - **Linked Parts**, **Parts Associated** and the **Repair Kit** - so you can sort any of them by Bin on your phone and walk the stores in one pass.
+- **Fewer, clearer filter boxes on the phone, standardised across all three tables.** On mobile each per-column filter box now shows its column name instead of the generic "Filter" (the header row is hidden in the card view), and all three parts tables now show the same standard set of filters on the phone: **APN, Class, Bin and Description**. The less useful columns are dropped on mobile to keep the row short (Qty on all three; plus Criticality and Observations on Linked Parts) - they are all still filterable on desktop.
+- **Parts Associated now has a Bin column.** The imported associated-parts list did not carry a bin location, so the Bin column is filled in from the matched part in the Parts database (matched by APN). Where there is no match, or the matched part has no bin recorded, the cell is left blank. This adds Bin to the Parts Associated table on every screen and completes the standard APN / Class / Bin / Description filter set on the phone.
+- No version change (bug fix / mobile polish); the What's New banner is not re-shown.
+
 
 ## v1.18 — 2026-08-14
 
