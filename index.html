@@ -278,7 +278,18 @@
             table.rtable td:empty{ display:none; }
             table.rtable td .search-link{ text-align:right; }
             .search-scan-btn{ display:none !important; }
+            .sort-chip-bar{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center;}
+            #rk-table thead{display:block;}
+            #rk-table thead tr:first-child{display:none;}
+            #rk-table thead tr.filter-row{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0;}
+            #rk-table thead tr.filter-row td{display:block;flex:1 1 30%;padding:2px;}
+            #rk-table thead tr.filter-row td:empty{display:none;}
+            #rk-table thead tr.filter-row input{width:100%;}
         }
+        .sort-chip-bar{display:none;}
+        .sort-chip{min-height:40px;padding:8px 12px;font-size:13px;font-weight:600;border:1px solid #cbd5e1;background:#f8fafc;color:#334155;border-radius:8px;cursor:pointer;}
+        .sort-chip.active{background:#00A8E1;color:#fff;border-color:#00A8E1;}
+        .sort-arrow{font-size:11px;color:#0089b8;}
         /* Print / PDF route report (v1.10): no library, browser print dialog */
         #print-root { display:none; }
         .pr-report { font-family:Arial,Helvetica,sans-serif; color:#111; font-size:12px; }
@@ -552,8 +563,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.18)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM. Keep completing APM checklists, booking labour and parts, and everything else in APM exactly as you do now.<br>&bull; <strong>Repair Kit</strong>: on any part marked <em>Repairable</em>, you can now link its component parts (bearings, shaft, etc.) via a <strong>+ Link Part</strong> button on the part detail page - type or scan an APN to add each sub-part. The kit has a <strong>per-column filter</strong>, just like Linked Parts.<br>&bull; <strong>QR / barcode scan</strong> now on the Link Part popup, the Repair Kit "+ Link Part" popup, the raise-a-job wizard, and the Add/Edit Position, Part and Route forms - tap the &#128247; button next to any of those fields.<br>&bull; New tabbed layout: <strong>Home</strong>, <strong>Positions</strong>, <strong>CBM</strong> and <strong>Parts</strong>.<br>&bull; Your <strong>Job list</strong> now lives on the Home screen, right under the dashboard.<br>&bull; New <strong>Parts</strong> tab: browse the whole catalogue with a filter box on every column.<br>&bull; Add a job to <strong>your Job list</strong> from a Position: choose <strong>PM or FWO</strong>, attach a photo, add notes and pick the parts you need.<br>&bull; <strong>FWO jobs</strong> keep their own job details; parts you add are recorded on the job (link them to the position yourself once confirmed).<br>&bull; <strong>Stay signed in</strong> on your own device; tick <strong>&quot;shared device&quot;</strong> at sign-in to be logged out when you close the app.<br>&bull; If your account is idle for over <strong>7 days</strong> you will be asked for your <strong>PIN</strong> again.<br>&bull; Admins can now <strong>remove a user</strong> in Manage Users.<br>&bull; New sign-ups now accept the <strong>Terms &amp; Conditions</strong> and <strong>Privacy Policy</strong>; both are in the menu under Help.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.19)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM. Keep completing APM checklists, booking labour and parts, and everything else in APM exactly as you do now.<br>&bull; <strong>Sort any table</strong>: tap a column heading in the Linked Parts, Parts Associated or Repair Kit tables to sort by it - tap again to reverse, a third time to clear. On a phone, use the <strong>Sort:</strong> chips above the Repair Kit.<br>&bull; The Repair Kit quantity column is now labelled <strong>Qty/repair</strong>, and its <strong>Edit Qty</strong> / <strong>Unlink</strong> buttons are bigger and easier to tap.<br>&bull; Turning off <strong>Repairable</strong> on a part that still has a repair kit now <strong>warns you first</strong> so components are not hidden by accident.<br>&bull; Barcode / QR scan buttons are more reliable (they no longer fill the wrong field after you cancel) and each has a clear label for screen readers.<br>&bull; Part and position pages load a little faster - screenshots and lists now load in parallel and are cached for the session.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -1608,19 +1619,47 @@
     // SORT & FILTER
     // ============================================================
     let sortState={};
+    let _sortOrig={};
     function sortTable(tableId, colIdx) {
-        const table=document.getElementById(tableId);if(!table)return;
-        const key=tableId+'-'+colIdx;sortState[key]=!sortState[key];
-        const asc=sortState[key],tbody=table.querySelector('tbody');
-        const rows=Array.from(tbody.querySelectorAll('tr'));
-        rows.sort((a,b)=>{
-            const aT=(a.cells[colIdx]?.textContent||'').trim().toLowerCase();
-            const bT=(b.cells[colIdx]?.textContent||'').trim().toLowerCase();
-            const aN=parseFloat(aT),bN=parseFloat(bT);
-            if(!isNaN(aN)&&!isNaN(bN))return asc?aN-bN:bN-aN;
-            return asc?aT.localeCompare(bT):bT.localeCompare(aT);
-        });
-        rows.forEach(r=>tbody.appendChild(r));
+        var table=document.getElementById(tableId);if(!table)return;
+        var tbody=table.querySelector('tbody');if(!tbody)return;
+        var rows=Array.from(tbody.children).filter(function(r){return r.nodeName==='TR';});
+        if(_sortOrig[tableId]&&(!_sortOrig[tableId].length||_sortOrig[tableId][0].parentNode!==tbody)){_sortOrig[tableId]=null;sortState[tableId]=null;}
+        if(!_sortOrig[tableId])_sortOrig[tableId]=rows.slice();
+        var cur=sortState[tableId];
+        var dir;
+        if(!cur||cur.col!==colIdx){dir=1;}
+        else if(cur.dir===1){dir=2;}
+        else{dir=0;}
+        if(dir===0){
+            sortState[tableId]=null;
+            _sortOrig[tableId].forEach(function(r){tbody.appendChild(r);});
+        }else{
+            sortState[tableId]={col:colIdx,dir:dir};
+            rows.slice().sort(function(a,b){
+                var aC=a.cells[colIdx],bC=b.cells[colIdx];
+                var aT=(aC?aC.textContent:'').trim();
+                var bT=(bC?bC.textContent:'').trim();
+                var cmp=naturalCompare(aT,bT);
+                return dir===1?-cmp:cmp;
+            }).forEach(function(r){tbody.appendChild(r);});
+        }
+        updateSortIndicators(tableId,dir===0?-1:colIdx,dir);
+    }
+    function updateSortIndicators(tableId,activeCol,dir){
+        var table=document.getElementById(tableId);if(!table)return;
+        var hdr=table.querySelector('thead tr');
+        if(hdr){Array.prototype.slice.call(hdr.children).forEach(function(th,i){
+            var s=th.querySelector('.sort-arrow');if(s)s.remove();
+            if(i===activeCol&&dir){var sp=document.createElement('span');sp.className='sort-arrow';sp.style.marginLeft='3px';sp.textContent=dir===1?'\u25bc':'\u25b2';th.appendChild(sp);}
+        });}
+        var bar=document.getElementById(tableId+'-sortbar');
+        if(bar){Array.prototype.slice.call(bar.querySelectorAll('.sort-chip')).forEach(function(ch){
+            var ci=parseInt(ch.getAttribute('data-col'),10);
+            var a=ch.querySelector('.sort-arrow');if(a)a.remove();
+            if(ci===activeCol&&dir){ch.classList.add('active');var sp=document.createElement('span');sp.className='sort-arrow';sp.style.marginLeft='3px';sp.textContent=dir===1?'\u25bc':'\u25b2';ch.appendChild(sp);}
+            else{ch.classList.remove('active');}
+        });}
     }
 
     
@@ -2689,7 +2728,7 @@
 
     // Parts popup from Equipment tab
     async function showPartsPopup() {
-        const bodyHtml = '<div class="form-group"><label>APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="popup-apn" placeholder="Enter APN" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27popup-apn\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
+        const bodyHtml = '<div class="form-group"><label>APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="popup-apn" placeholder="Enter APN" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27popup-apn\x27)" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
             '<div class="form-group"><label>Part Type</label><select id="popup-part-type"><option value="">Select...</option><option>Drive roller</option><option>End roller</option><option>Tension roller</option><option>Snubber roller</option><option>Bearing</option><option>Motor gearbox</option><option>Pulley A</option><option>Pulley B</option><option>Pulley C</option><option>Pulley D</option><option>Pulley E</option><option>Pulley F</option><option>Pulley G</option><option>Pulley H</option><option>Idle roller</option><option>Belt</option><option>Blank</option><option>Other</option></select></div>'+
             '<div class="form-group"><label>Store Location</label><input type="text" id="popup-location" placeholder="e.g. C05-C-28"></div>'+
             '<div class="form-group"><label>Description</label><input type="text" id="popup-desc" placeholder="Part description"></div>';
@@ -3366,6 +3405,7 @@
             await db.ref('routes/'+key).set({routeNumber:routeNum,type,notes,startPoint:start,endPoint:end,waypoints,motors,needsTemp,readingRequired:needsTemp,createdAt:new Date().toISOString()});
             if(editingRouteKey&&editingRouteKey!==key)await db.ref('routeImages/'+editingRouteKey).remove();
             if(routeImageUrl)await db.ref('routeImages/'+key).set(routeImageUrl);
+            invalidateRoutesCache();
 
             // Auto-create missing equipment entries
             for(const pt of allPoints){
@@ -3763,13 +3803,13 @@
         const type=document.getElementById('work-type-select').value;
         const container=document.getElementById('work-dynamic-fields');
         if(type==='FWO'){
-            container.innerHTML='<div class="form-group"><label>Position Number</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="work-equipment" placeholder="e.g. 703010 or CB.SRT.01.ID11.01" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27work-equipment\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
+            container.innerHTML='<div class="form-group"><label>Position Number</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="work-equipment" placeholder="e.g. 703010 or CB.SRT.01.ID11.01" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27work-equipment\x27)" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
                 '<div class="form-group"><label>Part Type</label><select id="work-part-type"><option value="">Select...</option><option>Drive roller</option><option>End roller</option><option>Tension roller</option><option>Snubber roller</option><option>Bearing</option><option>Motor gearbox</option><option>Pulley A</option><option>Pulley B</option><option>Pulley C</option><option>Pulley D</option><option>Pulley E</option><option>Pulley F</option><option>Pulley G</option><option>Pulley H</option><option>Idle roller</option><option>Belt</option><option>Blank</option><option>Other</option></select></div>'+
-                '<div class="form-group"><label>APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="work-apn" placeholder="Enter APN" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27work-apn\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
+                '<div class="form-group"><label>APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="work-apn" placeholder="Enter APN" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27work-apn\x27)" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
                 '<div class="form-group"><label>Store Location</label><input type="text" id="work-location" placeholder="e.g. C05-C-28"></div>'+
                 '<div class="form-group"><label>Part Description</label><input type="text" id="work-part-desc" placeholder="Optional"></div>'+'<div class="form-group"><label>Job details</label><textarea id="work-fwo-details" rows="2" placeholder="What needs doing (optional)"></textarea></div>';
         } else if(type==='PM'){
-            container.innerHTML='<div class="form-group"><label>Position Number</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="work-equipment" placeholder="e.g. 703010 or CB.SRT.01.ID11.01" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27work-equipment\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
+            container.innerHTML='<div class="form-group"><label>Position Number</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="work-equipment" placeholder="e.g. 703010 or CB.SRT.01.ID11.01" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27work-equipment\x27)" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
                 '<div class="form-group"><label>Add SCADA location screenshot?</label><div class="file-upload" onclick="document.getElementById(\'work-img-file\').click()" style="padding:10px;"><input type="file" id="work-img-file" accept="image/*" onchange="previewImage(this,\'work-img-preview\')"><p style="font-size:12px;">Click to upload (optional)</p></div><img id="work-img-preview" class="img-preview" style="display:none;max-height:150px;"></div>';
         } else if(type==='CBM'){
             container.innerHTML='<div class="form-group"><label>CBM Type</label><select id="work-cbm-type" onchange="populateRouteDatalist()"><option>Ultrasound</option><option>Thermal</option><option>Other</option></select></div>'+
@@ -3827,6 +3867,7 @@
                 if(imgFile)imageUrl=await fileToBase64(imgFile);
                 await db.ref('equipment/'+eqKey).set({conveyorNumber:eq,type:'',description:'',notes:'',updatedAt:new Date().toISOString()});
                 if(imageUrl)await db.ref('equipmentImages/'+eqKey).set(imageUrl);
+                invalidateEquipmentCache();
             }
         } else if(type==='CBM'){
             const cbmType=document.getElementById('work-cbm-type').value;
@@ -3947,6 +3988,7 @@
 
             if(type==='equipment'){
                 title='Position: '+(data.positionName||data.conveyorNumber);
+                var _pImg=getEquipmentImage(key),_pParts=getPartsCache(),_pRoutes=getRoutesCache();
                 html+='<div class="detail-field"><label>Position</label><div class="value" style="font-size:20px;font-weight:700;">'+escapeHtml(data.positionName||data.conveyorNumber)+'</div>'+((data.positionName&&data.positionName!==data.conveyorNumber)?'<div style="font-size:13px;color:#6b7280;margin-top:2px;">No. '+escapeHtml(data.conveyorNumber)+'</div>':'')+'</div>';
                 html+='<div class="detail-field"><label>Type</label><div class="value">'+escapeHtml(data.type||'Not set')+'</div></div>';
                 html+='<div class="detail-field"><label>Description</label><div class="value">'+escapeHtml(data.description||'None')+'</div></div>';
@@ -3956,16 +3998,16 @@
                 if(data.serialNumber)html+='<div class="detail-field"><label>Serial Number</label><div class="value">'+escapeHtml(data.serialNumber)+'</div></div>';
                 if(data.criticality)html+='<div class="detail-field"><label>Criticality</label><div class="value">'+escapeHtml(data.criticality)+'</div></div>';
                 html+='<div class="detail-field"><label>Notes</label><div class="value">'+escapeHtml(data.notes||'None')+'</div></div>';
-                var _eqDetImg=await getEquipmentImage(key);if(_eqDetImg){html+='<div class="detail-field"><label>SCADA Screenshot</label><img src="'+_eqDetImg+'" alt="SCADA screenshot" class="img-preview" style="display:block;"></div>';}
+                var _eqDetImg=await _pImg;if(_eqDetImg){html+='<div class="detail-field"><label>SCADA Screenshot</label><img src="'+_eqDetImg+'" alt="SCADA screenshot" class="img-preview" style="display:block;"></div>';}
                 else{html+='<div class="detail-field" id="quick-ss-container" data-type="equipment" data-key="'+key+'"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27equipment\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Screenshot missing \u2014 click to add</a></div>';}
                 html+='</div>';
                 // Linked Parts
-                var allParts=await getPartsCache();
+                var allParts=await _pParts;
                 var _apnIdx={};Object.entries(allParts).forEach(function(pr){var a=(pr[1].apn||'').toString().toLowerCase().trim();if(a&&!_apnIdx[a])_apnIdx[a]=pr[0];});
                 var eqParts=Object.entries(allParts).filter(([k,p])=>p.conveyors&&p.conveyors.indexOf(data.conveyorNumber)>=0);
                 html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Linked Parts <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkPartPopup(\x27'+data.conveyorNumber+'\x27)">+ Link Part</button></h2>';
                 if(eqParts.length>0){
-                    html+='<table id="lp-table"><thead><tr><th>APN</th><th>Class</th><th>Bin</th><th>Qty</th><th>Description</th><th>Criticality</th><th>Observations</th></tr><tr class="filter-row"><td><input class="col-filter" data-col="0" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="1" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="2" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="3" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="4" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="5" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="6" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td></tr></thead><tbody>';
+                    html+='<table id="lp-table"><thead><tr><th onclick="sortTable(\x27lp-table\x27,0)" style="cursor:pointer;user-select:none;" title="Sort">APN</th><th onclick="sortTable(\x27lp-table\x27,1)" style="cursor:pointer;user-select:none;" title="Sort">Class</th><th onclick="sortTable(\x27lp-table\x27,2)" style="cursor:pointer;user-select:none;" title="Sort">Bin</th><th onclick="sortTable(\x27lp-table\x27,3)" style="cursor:pointer;user-select:none;" title="Sort">Qty</th><th onclick="sortTable(\x27lp-table\x27,4)" style="cursor:pointer;user-select:none;" title="Sort">Description</th><th onclick="sortTable(\x27lp-table\x27,5)" style="cursor:pointer;user-select:none;" title="Sort">Criticality</th><th onclick="sortTable(\x27lp-table\x27,6)" style="cursor:pointer;user-select:none;" title="Sort">Observations</th></tr><tr class="filter-row"><td><input class="col-filter" data-col="0" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="1" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="2" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="3" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="4" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="5" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="6" oninput="filterPartsTable(\x27lp-table\x27)" placeholder="Filter"></td></tr></thead><tbody>';
                     eqParts.forEach(([k,p])=>{
                         var cc='#6b7280';
                         if((p.criticality||'').includes('HIGH'))cc='#dc2626';
@@ -3996,7 +4038,7 @@
                         var _canL = canWrite(); var _isAdm = isAdmin();
                         html += '<div class="card assoc-card"><h2 style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>Parts Associated <span style="font-size:12px;font-weight:400;color:#6b7280;">' + _assoc.length + ' imported</span></span>' + (_isAdm ? '<button class="btn btn-sm" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;padding:3px 10px;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;" onclick="event.stopPropagation();var c=this.closest(\x27.assoc-card\x27);var on=c.classList.toggle(\x27assoc-editing\x27);this.textContent=on?\x27Done\x27:\x27Edit list\x27;">Edit list</button>' : '') + '</h2>';
                         html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Imported catalogue reference \u2014 may be inaccurate. Link the ones that belong here and they move up to Linked Parts.</p>';
-                        html += '<table id="pa-table"><thead><tr><th>APN</th><th>Class</th><th>Qty</th><th>Description</th><th></th></tr><tr class="filter-row"><td><input class="col-filter" data-col="0" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="1" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="2" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="3" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td></td></tr></thead><tbody>';
+                        html += '<table id="pa-table"><thead><tr><th onclick="sortTable(\x27pa-table\x27,0)" style="cursor:pointer;user-select:none;" title="Sort">APN</th><th onclick="sortTable(\x27pa-table\x27,1)" style="cursor:pointer;user-select:none;" title="Sort">Class</th><th onclick="sortTable(\x27pa-table\x27,2)" style="cursor:pointer;user-select:none;" title="Sort">Qty</th><th onclick="sortTable(\x27pa-table\x27,3)" style="cursor:pointer;user-select:none;" title="Sort">Description</th><th></th></tr><tr class="filter-row"><td><input class="col-filter" data-col="0" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="1" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="2" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="3" oninput="filterPartsTable(\x27pa-table\x27)" placeholder="Filter"></td><td></td></tr></thead><tbody>';
                         _assoc.forEach(function(a){
                             var _aApn=String(a.apn||'');var _aKey=_apnIdx[_aApn.toLowerCase().trim()];
                             (window._assocInfo=window._assocInfo||{})[_aApn]={apn:_aApn,description:a.description||'',partType:a.partType||'',qty:(a.qty!=null?a.qty:'')};
@@ -4014,7 +4056,7 @@
                     }
                 } catch(_ae) {}
                 // Routes containing this equipment
-                var allRoutes=await getRoutesCache();
+                var allRoutes=await _pRoutes;
                 var eqRoutes=Object.entries(allRoutes).filter(([k,r])=>{if(r.active===false)return false;var pts=[r.startPoint,...(r.waypoints||[])];if(r.endPoint)pts.push(r.endPoint);return pts.indexOf(data.conveyorNumber)>=0;});
                 html+='<div class="card"><h2>Routes containing '+escapeHtml(data.conveyorNumber)+'</h2>';
                 if(eqRoutes.length>0){html+='<table><thead><tr><th>Route</th><th>Type</th><th>Start</th><th>End</th></tr></thead><tbody>';eqRoutes.forEach(([k,r])=>{html+='<tr><td><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+k+'\x27);return false;">'+escapeHtml(r.routeNumber)+'</a></td><td>'+escapeHtml(r.type)+'</td><td><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(r.startPoint)+'\x27);return false;">'+escapeHtml(r.startPoint)+'</a></td><td>'+(r.endPoint?'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(r.endPoint)+'\x27);return false;">'+escapeHtml(r.endPoint)+'</a>':'\u2014')+'</td></tr>';});html+='</tbody></table>';}
@@ -4022,6 +4064,7 @@
                 html+='</div>';
             } else if(type==='part'){
                 title='Part: '+data.apn;
+                var _pEqcP=getEquipmentCache(),_pPcP=getPartsCache();
                 // Criticality color
                 var critColor='#6b7280',critBg='#f3f4f6';
                 if((data.criticality||'').includes('HIGH')){critColor='#dc2626';critBg='#fef2f2';}
@@ -4051,7 +4094,7 @@
                 html+='<div class="detail-field"><label>Supplier Part Description</label><div class="value">'+escapeHtml(data.supplierPartDescription||'N/A')+'</div></div>';
                 html+='</div>';
                 // Linked Positions card
-                var _eqc=await getEquipmentCache();
+                var _eqc=await _pEqcP;
                 var conveyors=data.conveyors||(data.conveyorNumber?[data.conveyorNumber]:[]);
                 html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Linked Positions ('+conveyors.length+') <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkPositionPopup(\x27'+key+'\x27)">+ Link Position</button></h2>';
                 if(conveyors.length>0){
@@ -4067,10 +4110,10 @@
                 if(data.repairable===true){
                     var _comps=data.components||{};
                     var _cKeys=Object.keys(_comps);
-                    var _pcache=await getPartsCache();
+                    var _pcache=await _pPcP;
                     html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Repair Kit ('+_cKeys.length+') <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkComponentPopup(\x27'+key+'\x27)">+ Link Part</button></h2>';
                     if(_cKeys.length>0){
-                        html+='<table id="rk-table" class="rtable" style="width:100%;font-size:13px;border-collapse:collapse;"><thead><tr style="background:#f8fafc;"><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;">APN</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;">Class</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;">Bin</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;">Qty</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;">Description</th><th style="padding:6px;border-bottom:1px solid #e2e8f0;"></th></tr><tr class="filter-row"><td><input class="col-filter" data-col="0" oninput="filterPartsTable(\x27rk-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="1" oninput="filterPartsTable(\x27rk-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="2" oninput="filterPartsTable(\x27rk-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="3" oninput="filterPartsTable(\x27rk-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="4" oninput="filterPartsTable(\x27rk-table\x27)" placeholder="Filter"></td><td></td></tr></thead><tbody>';
+                        html+='<div id="rk-table-sortbar" class="sort-chip-bar"><span style="font-size:11px;color:#6b7280;font-weight:700;align-self:center;margin-right:2px;">Sort:</span><button type="button" class="sort-chip" data-col="0" onclick="sortTable(\x27rk-table\x27,0)">APN</button><button type="button" class="sort-chip" data-col="1" onclick="sortTable(\x27rk-table\x27,1)">Class</button><button type="button" class="sort-chip" data-col="2" onclick="sortTable(\x27rk-table\x27,2)">Bin</button><button type="button" class="sort-chip" data-col="3" onclick="sortTable(\x27rk-table\x27,3)">Qty</button><button type="button" class="sort-chip" data-col="4" onclick="sortTable(\x27rk-table\x27,4)">Desc</button></div><table id="rk-table" class="rtable" style="width:100%;font-size:13px;border-collapse:collapse;"><thead><tr style="background:#f8fafc;"><th onclick="sortTable(\x27rk-table\x27,0)" style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;cursor:pointer;user-select:none;" title="Sort">APN</th><th onclick="sortTable(\x27rk-table\x27,1)" style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;cursor:pointer;user-select:none;" title="Sort">Class</th><th onclick="sortTable(\x27rk-table\x27,2)" style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;cursor:pointer;user-select:none;" title="Sort">Bin</th><th onclick="sortTable(\x27rk-table\x27,3)" style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;cursor:pointer;user-select:none;" title="Sort">Qty/repair</th><th onclick="sortTable(\x27rk-table\x27,4)" style="text-align:left;padding:6px;border-bottom:1px solid #e2e8f0;cursor:pointer;user-select:none;" title="Sort">Description</th><th style="padding:6px;border-bottom:1px solid #e2e8f0;"></th></tr><tr class="filter-row"><td><input class="col-filter" data-col="0" oninput="filterPartsTable(\x27rk-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="1" oninput="filterPartsTable(\x27rk-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="2" oninput="filterPartsTable(\x27rk-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="3" oninput="filterPartsTable(\x27rk-table\x27)" placeholder="Filter"></td><td><input class="col-filter" data-col="4" oninput="filterPartsTable(\x27rk-table\x27)" placeholder="Filter"></td><td></td></tr></thead><tbody>';
                         _cKeys.sort();
                         _cKeys.forEach(function(ck){
                             var meta=_comps[ck]||{};
@@ -4081,12 +4124,12 @@
                             html+='<td data-label="APN" style="padding:6px;border-bottom:1px solid #f1f5f9;"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+escapeAttrArg(ck)+'\x27);return false;">'+escapeHtml(childApn)+'</a></td>';
                             html+='<td data-label="Class" style="padding:6px;border-bottom:1px solid #f1f5f9;">'+escapeHtml(childPart.partClass||childPart.partType||'')+'</td>';
                             html+='<td data-label="Bin" style="padding:6px;border-bottom:1px solid #f1f5f9;">'+escapeHtml(childPart.binLocation||childPart.location||'')+'</td>';
-                            html+='<td data-label="Qty" style="padding:6px;border-bottom:1px solid #f1f5f9;">'+(meta.qty||1)+'</td>';
+                            html+='<td data-label="Qty/repair" style="padding:6px;border-bottom:1px solid #f1f5f9;">'+(meta.qty||1)+'</td>';
                             html+='<td data-label="Description" style="padding:6px;border-bottom:1px solid #f1f5f9;">'+escapeHtml(childPart.partDescription||childPart.notes||'')+'</td>';
                             html+='<td style="padding:6px;border-bottom:1px solid #f1f5f9;white-space:nowrap;text-align:right;">';
-                            html+='<button class="btn btn-sm" onclick="editComponentQty(\x27'+key+'\x27,\x27'+escapeAttrArg(ck)+'\x27)" style="padding:4px 8px;font-size:11px;background:#e5e7eb;color:#374151;border:none;border-radius:4px;cursor:pointer;">Edit Qty</button> ';
+                            html+='<button class="btn btn-sm" onclick="editComponentQty(\x27'+key+'\x27,\x27'+escapeAttrArg(ck)+'\x27)" style="padding:9px 12px;font-size:13px;min-height:44px;background:#e5e7eb;color:#374151;border:none;border-radius:4px;cursor:pointer;">Edit Qty</button> ';
                             if(canManage){
-                                html+='<button class="btn btn-sm btn-danger" onclick="unlinkComponent(\x27'+key+'\x27,\x27'+escapeAttrArg(ck)+'\x27)" style="padding:4px 8px;font-size:11px;">Unlink</button>';
+                                html+='<button class="btn btn-sm btn-danger" onclick="unlinkComponent(\x27'+key+'\x27,\x27'+escapeAttrArg(ck)+'\x27)" style="padding:9px 12px;font-size:13px;min-height:44px;">Unlink</button>';
                             }
                             html+='</td></tr>';
                         });
@@ -4098,6 +4141,7 @@
                 }
 } else if(type==='route'){
                 title='Route: '+data.routeNumber+' ('+data.type+')';
+                var _pEqcR=getEquipmentCache(),_pRtImg=getRouteImage(key);
                 html+='<div class="detail-field"><label>Route Number</label><div class="value">'+escapeHtml(data.routeNumber)+'</div></div>';
                 html+='<div class="detail-field"><label>Type</label><div class="value">'+escapeHtml(data.type)+'</div></div>';
                 html+='<div class="detail-field"><label>Equipment Description</label><div class="value">'+escapeHtml(data.notes||'None')+'</div></div>';
@@ -4108,7 +4152,7 @@
                 // Numerical ascending order = the physical walking order; label Start/End by position in that order (Waypoint in between). APM order is kept only in Thermal History.
                 allPts.sort(function(_a,_b){ return naturalCompare(_a,_b); });
                 html+='<div class="detail-field"><label>Route Points ('+allPts.length+')</label><div style="margin-top:6px;">';
-                var _eqCache=await getEquipmentCache();
+                var _eqCache=await _pEqcR;
                 for(var pi=0;pi<allPts.length;pi++){
                     var pt=allPts[pi];var ptKey=sanitizeKey(pt);var label=(pi===0?'Start':(pi===allPts.length-1?'End':'Waypoint'));
                     var indicator='';
@@ -4120,7 +4164,7 @@
                     html+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">'+indicator+'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+ptKey+'\x27);return false;">'+posDisp(_eqCache[ptKey],pt)+'</a><span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span></div>';
                 }
                 html+='</div></div>';
-                var _rtDetImg=await getRouteImage(key);if(_rtDetImg){html+='<div class="detail-field"><label>Route Location</label><img src="'+_rtDetImg+'" alt="Route location screenshot" class="img-preview" style="display:block;"></div>';}
+                var _rtDetImg=await _pRtImg;if(_rtDetImg){html+='<div class="detail-field"><label>Route Location</label><img src="'+_rtDetImg+'" alt="Route location screenshot" class="img-preview" style="display:block;"></div>';}
                 else{html+='<div class="detail-field" id="quick-ss-container"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27route\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Route screenshot missing \u2014 click to add</a></div>';}
                 html+='</div>';
 
@@ -4235,11 +4279,11 @@
                 ['','Ultrasound','Thermal','Oil','Ranger','Strobe','Vibration','Other'].forEach(function(t) { html += '<option' + (t===data.type?' selected':'') + '>' + (t||'Select...') + '</option>'; });
                 html += '</select></div>';
                 html += '<div class="form-group"><label>Equipment Description</label><input type="text" id="edit-route-desc" value="' + escapeHtml(data.notes||'') + '"></div>';
-                html += '<div class="form-group"><label>Start Point</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="edit-route-start" value="' + escapeHtml(data.startPoint||'') + '" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27edit-route-start\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
+                html += '<div class="form-group"><label>Start Point</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="edit-route-start" value="' + escapeHtml(data.startPoint||'') + '" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27edit-route-start\x27)" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
                 html += '<div id="edit-route-waypoints">';
                 if (data.waypoints) { data.waypoints.forEach(function(w) { html += '<div class="waypoint-row" draggable="true" style="margin-bottom:6px;display:flex;align-items:center;gap:6px;cursor:grab;" ondragstart="this.style.opacity=0.5;event.dataTransfer.effectAllowed=\x27move\x27;window._dragWp=this;" ondragend="this.style.opacity=1;window._dragWp=null;" ondragover="event.preventDefault();this.style.borderTop=\x272px solid #2563eb\x27;" ondragleave="this.style.borderTop=\x27\x27;" ondrop="event.preventDefault();this.style.borderTop=\x27\x27;if(window._dragWp&&window._dragWp!==this){this.parentElement.insertBefore(window._dragWp,this);}"><span style="cursor:grab;color:#6b7280;font-size:16px;user-select:none;">\u2261</span><input type="text" class="edit-wp" value="' + escapeHtml(w) + '" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;"> <button class="btn-remove" onclick="this.parentElement.remove()">X</button></div>'; }); }
                 html += '</div><button class="btn btn-add" onclick="addEditWaypoint()" style="margin-bottom:12px;">+ Add Waypoint</button>';
-                html += '<div class="form-group"><label>End Point</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="edit-route-end" value="' + escapeHtml(data.endPoint||'') + '" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27edit-route-end\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
+                html += '<div class="form-group"><label>End Point</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="edit-route-end" value="' + escapeHtml(data.endPoint||'') + '" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27edit-route-end\x27)" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
                                 // Route Screenshot
                 var _rtEditImg = await getRouteImage(key);
                 if (_rtEditImg) {
@@ -4317,7 +4361,7 @@
                 // Editable fields
                 html += '<hr style="border:none;border-top:2px solid #2563eb;margin:20px 0;">';
                 html += '<p style="font-size:12px;color:#2563eb;font-weight:600;margin-bottom:12px;">EDITABLE FIELDS</p>';
-                html += '<div class="form-group"><label>APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="edit-part-apn" value="' + escapeHtml(data.apn||'') + '"' + (_isAdmin?' style="flex:1;min-width:0;"':' disabled style="flex:1;min-width:0;background:#f3f4f6;color:#6b7280;cursor:not-allowed;"') + '>' + (_isAdmin?'<button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27edit-part-apn\x27)" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button>':'') + '</div></div>';
+                html += '<div class="form-group"><label>APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="edit-part-apn" value="' + escapeHtml(data.apn||'') + '"' + (_isAdmin?' style="flex:1;min-width:0;"':' disabled style="flex:1;min-width:0;background:#f3f4f6;color:#6b7280;cursor:not-allowed;"') + '>' + (_isAdmin?'<button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27edit-part-apn\x27)" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button>':'') + '</div></div>';
                 if(!_isAdmin) html += '<p style="font-size:11px;color:#6b7280;margin:-8px 0 8px;">APN is managed by admins.</p>';
                 if(data.previousApn) html += '<p style="font-size:11px;color:#6b7280;margin:-8px 0 8px;">Previous: ' + escapeHtml(data.previousApn) + '</p>';
                 html += '<div class="form-group"><label>Bin Location</label><input type="text" id="edit-part-bin" value="' + escapeHtml(data.binLocation||data.location||'') + '"></div>';
@@ -4467,6 +4511,7 @@
     // PREDICTIVE SEARCH CACHE
     // ============================================================
     // (cache vars declared above in the autocomplete section)
+    var _imgCache={};
     async function getEquipmentCache() {
         if (!firebaseReady) return {};
         const now = Date.now();
@@ -4474,7 +4519,7 @@
         try { const snap = await db.ref('equipment').once('value'); equipmentCache = snap.val() || {}; equipmentCacheTime = now; return equipmentCache; }
         catch(e) { return equipmentCache || {}; }
     }
-    async function invalidateEquipmentCache() { equipmentCache = null; equipmentCacheTime = 0; }
+    async function invalidateEquipmentCache() { equipmentCache = null; equipmentCacheTime = 0; _imgCache = {}; }
     async function getPartsCache() {
         if (!firebaseReady) return {};
         const now = Date.now();
@@ -4490,9 +4535,9 @@
         try { const snap = await db.ref('routes').once('value'); routesCache = snap.val() || {}; routesCacheTime = now; return routesCache; }
         catch(e) { return routesCache || {}; }
     }
-    async function invalidateRoutesCache() { routesCache = null; routesCacheTime = 0; }
-    async function getRouteImage(key){ if(!firebaseReady||!key)return null; try{ var s=await db.ref('routeImages/'+key).once('value'); if(s.val())return s.val(); var l=await db.ref('routes/'+key+'/routeImageUrl').once('value'); return l.val()||null; }catch(e){ return null; } }
-    async function getEquipmentImage(key){ if(!firebaseReady||!key)return null; try{ var s=await db.ref('equipmentImages/'+key).once('value'); if(s.val())return s.val(); var l=await db.ref('equipment/'+key+'/imageUrl').once('value'); return l.val()||null; }catch(e){ return null; } }
+    async function invalidateRoutesCache() { routesCache = null; routesCacheTime = 0; _imgCache = {}; }
+    async function getRouteImage(key){ if(!firebaseReady||!key)return null; var _ck='rt:'+key; if(_ck in _imgCache)return _imgCache[_ck]; try{ var s=await db.ref('routeImages/'+key).once('value'); if(s.val()){_imgCache[_ck]=s.val();return _imgCache[_ck];} var l=await db.ref('routes/'+key+'/routeImageUrl').once('value'); _imgCache[_ck]=l.val()||null; return _imgCache[_ck]; }catch(e){ return null; } }
+    async function getEquipmentImage(key){ if(!firebaseReady||!key)return null; var _ck='eq:'+key; if(_ck in _imgCache)return _imgCache[_ck]; try{ var s=await db.ref('equipmentImages/'+key).once('value'); if(s.val()){_imgCache[_ck]=s.val();return _imgCache[_ck];} var l=await db.ref('equipment/'+key+'/imageUrl').once('value'); _imgCache[_ck]=l.val()||null; return _imgCache[_ck]; }catch(e){ return null; } }
     async function getImageMeta(type, key){ if(!firebaseReady||!key)return null; try{ var p=(type==='route')?'routeImageMeta/':'equipmentImageMeta/'; var s=await db.ref(p+key).once('value'); return s.val()||null; }catch(e){ return null; } }
     async function canManageImage(type, key){ if(isAdmin())return true; var img=(type==='route')?await getRouteImage(key):await getEquipmentImage(key); if(!img)return true; var m=await getImageMeta(type,key); return !!(m && m.addedBy===currentUser); }
     async function saveTechImage(type, key){
@@ -4882,10 +4927,10 @@ function liveSearchSuggest(query,scope){
         val=(val||'').toString().trim();
         if(!val)return;
         try{if(navigator.vibrate)navigator.vibrate(80);}catch(e){}
+        var _ftSaved=_scanFillTarget,_fcbSaved=_scanFillCallback;
         closeScanner();
-        if(_scanFillTarget){
-            var _ft=document.getElementById(_scanFillTarget); var _fcb=_scanFillCallback;
-            _scanFillTarget=null; _scanFillCallback=null;
+        if(_ftSaved){
+            var _ft=document.getElementById(_ftSaved); var _fcb=_fcbSaved;
             if(_ft){ _ft.value=val; }
             showToast('Scanned: '+val,'success');
             if(typeof _fcb==='function'){ try{_fcb(val);}catch(e){} }
@@ -4915,6 +4960,7 @@ function liveSearchSuggest(query,scope){
     }
     function closeScanner(){
         _scanActive=false;
+        _scanFillTarget=null;_scanFillCallback=null;
         if(_scanTimer){clearTimeout(_scanTimer);_scanTimer=null;}
         if(_scanReader){try{_scanReader.reset();}catch(e){}_scanReader=null;}
         if(_scanStream){try{_scanStream.getTracks().forEach(function(t){t.stop();});}catch(e){}_scanStream=null;}
@@ -5455,7 +5501,7 @@ function liveSearchSuggest(query,scope){
             + '<textarea id="anomaly-note-input" rows="3" placeholder="Describe what you observed..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></textarea></div>';
         var res = await showCustomModal(n + ' Thermal Anomal' + (n === 1 ? 'y' : 'ies') + ' Detected', body, [
             { label: 'Save Note', class: 'btn-primary', value: 'save' },
-            { label: 'Dismiss', class: 'btn-secondary', value: 'dismiss' }
+            { label: 'Save without note', class: 'btn-secondary', value: 'dismiss' }
         ]);
         if (res === 'save'){
             var noteEl = document.getElementById('anomaly-note-input');
@@ -5560,7 +5606,7 @@ function liveSearchSuggest(query,scope){
             '<div id="jw-fwo-fields" style="display:none;">'+
                 '<div class="form-group"><label>Job details (optional)</label><textarea id="jw-fwo-desc" rows="2" placeholder="What needs doing..."></textarea></div>'+
                 '<div class="form-group"><label>Parts needed (optional)</label>'+
-                    '<div style="position:relative;"><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="jw-parts-input" placeholder="Search APN or description, or type free text" oninput="jwPartsSuggest(this.value)" onkeydown="jwPartsKey(event)" autocomplete="off" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27jw-parts-input\x27,function(v){jwPartsSuggest(v);})" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div>'+
+                    '<div style="position:relative;"><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="jw-parts-input" placeholder="Search APN or description, or type free text" oninput="jwPartsSuggest(this.value)" onkeydown="jwPartsKey(event)" autocomplete="off" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27jw-parts-input\x27,function(v){jwPartsSuggest(v);})" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div>'+
                     '<div id="jw-parts-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:200px;overflow:auto;z-index:10;"></div></div>'+
                     '<div id="jw-parts-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>'+
                 '</div>'+
@@ -6347,6 +6393,15 @@ function liveSearchSuggest(query,scope){
             // Get current data to check if APN changed
             var snap = await db.ref('parts/' + key).once('value');
             var currentData = snap.val() || {};
+            if (!repairable && currentData.repairable === true) {
+                var _compCount = currentData.components ? Object.keys(currentData.components).length : 0;
+                if (_compCount > 0) {
+                    hideLoading();
+                    var _cres = await showCustomModal('Hide Repair Kit?', '<p>This part has <strong>' + _compCount + '</strong> component' + (_compCount === 1 ? '' : 's') + ' in its Repair Kit. Turning off <strong>Repairable</strong> hides the Repair Kit \u2014 those components stay saved but become invisible until you switch Repairable back on.</p><p>Continue?</p>', [ { label: 'Cancel', class: 'btn-secondary', value: 'cancel' }, { label: 'Turn off anyway', class: 'btn-danger', value: 'ok' } ]);
+                    if (_cres !== 'ok') { return; }
+                    showLoading();
+                }
+            }
             var updates = { binLocation: newBin, repairable: repairable, updatedAt: new Date().toISOString() }; if (activeEl) updates.active = activeEl.checked;
             // If APN changed, store old as previousApn (admins only)
             if (isAdmin() && newApn !== currentData.apn) {
@@ -6599,11 +6654,12 @@ function liveSearchSuggest(query,scope){
         var html = '<div style="padding:20px;">';
         html += '<h2 style="margin-top:0;">Link Part to ' + escapeHtml(conveyorNumber) + '</h2>';
         html += '<p style="font-size:13px;color:#6b7280;">Search by APN to find and link a spare part.</p>';
-        html += '<div class="form-group"><label>Enter APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="link-part-apn" placeholder="Type APN or scan..." onkeydown="if(event.key===\x27Enter\x27)searchPartToLink(\x27'+conveyorNumber+'\x27)" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27link-part-apn\x27,function(v){document.getElementById(\x27link-part-apn\x27).value=v;searchPartToLink(\x27'+conveyorNumber+'\x27);})" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
+        html += '<div class="form-group"><label>Enter APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="link-part-apn" placeholder="Type APN or scan..." onkeydown="if(event.key===\x27Enter\x27)searchPartToLink(\x27'+conveyorNumber+'\x27)" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27link-part-apn\x27,function(v){document.getElementById(\x27link-part-apn\x27).value=v;searchPartToLink(\x27'+conveyorNumber+'\x27);})" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
         html += '<button class="btn btn-primary" onclick="searchPartToLink(\x27'+conveyorNumber+'\x27)">Search</button>';
         html += '<div id="link-part-result" style="margin-top:16px;"></div>';
         html += '</div>';
         document.getElementById('detail-content').innerHTML = html;
+        _linkPartAttempts = 0;
     }
     var _linkPartAttempts = 0;
     async function searchPartToLink(conveyorNumber) {
@@ -6692,7 +6748,7 @@ function liveSearchSuggest(query,scope){
         html+='<div class="form-group" style="position:relative;"><label>Position (conveyor number)</label>';
         html+='<div style="display:flex;gap:8px;">';
         html+='<input type="text" id="link-pos-input" autocomplete="off" placeholder="Type or scan..." oninput="autocompleteLinkPosition(this.value)" onkeydown="if(event.key===\x27Enter\x27)searchPositionToLink(\x27'+partKey+'\x27)" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;">';
-        html+='<button class="btn btn-secondary" type="button" onclick="openScannerForInput(\x27link-pos-input\x27)" style="padding:8px 14px;">\ud83d\udcf7</button>';
+        html+='<button class="btn btn-secondary" type="button" onclick="openScannerForInput(\x27link-pos-input\x27,function(v){document.getElementById(\x27link-pos-input\x27).value=v;autocompleteLinkPosition(v);})" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="padding:8px 14px;min-width:44px;">\ud83d\udcf7</button>';
         html+='</div>';
         html+='<div id="link-pos-dropdown" style="display:none;position:absolute;left:0;right:0;z-index:50;background:#fff;border:1px solid #e5e7eb;border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.08);"></div>';
         html+='</div>';
@@ -6779,7 +6835,7 @@ function liveSearchSuggest(query,scope){
         var html = '<div style="padding:20px;">';
         html += '<h2 style="margin-top:0;">Link Component to ' + escapeHtml(_apn||'part') + '</h2>';
         html += '<p style="font-size:13px;color:#6b7280;">Search by APN to add a sub-part (bearing, shaft, etc.) to this repair kit.</p>';
-        html += '<div class="form-group"><label>Enter component APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="link-comp-apn" placeholder="Type APN or scan..." onkeydown="if(event.key===\x27Enter\x27)searchComponentToLink(\x27'+parentKey+'\x27)" style="flex:1;min-width:0;padding:8px;border:1px solid #d1d5db;border-radius:6px;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27link-comp-apn\x27,function(v){document.getElementById(\x27link-comp-apn\x27).value=v;searchComponentToLink(\x27'+parentKey+'\x27);})" title="Scan QR / barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
+        html += '<div class="form-group"><label>Enter component APN</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="link-comp-apn" placeholder="Type APN or scan..." onkeydown="if(event.key===\x27Enter\x27)searchComponentToLink(\x27'+parentKey+'\x27)" style="flex:1;min-width:0;padding:8px;border:1px solid #d1d5db;border-radius:6px;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27link-comp-apn\x27,function(v){document.getElementById(\x27link-comp-apn\x27).value=v;searchComponentToLink(\x27'+parentKey+'\x27);})" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
         html += '<button class="btn btn-primary" onclick="searchComponentToLink(\x27'+parentKey+'\x27)">Search</button>';
         html += ' <button class="btn btn-secondary" onclick="openDetail(\x27part\x27,\x27'+parentKey+'\x27)">Cancel</button>';
         html += '<div id="link-comp-result" style="margin-top:16px;"></div>';
@@ -6855,6 +6911,7 @@ function liveSearchSuggest(query,scope){
         } catch(e) { hideLoading(); showToast('Error: '+e.message,'error'); }
     }
     async function unlinkComponent(parentKey, childKey) {
+        if(!requireWrite())return;
         if (!checkFirebase()) return;
         var metaSnap = await db.ref('parts/'+parentKey+'/components/'+childKey).once('value');
         var meta = metaSnap.val() || {};
@@ -7496,8 +7553,8 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.18';
-    var WHATS_NEW_REV = '1.18.2'; // bump to re-show the What's New banner without changing the displayed version
+    var APP_VERSION = '1.19';
+    var WHATS_NEW_REV = '1.19.0'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== WHATS_NEW_REV) {
