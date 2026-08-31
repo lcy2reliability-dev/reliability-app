@@ -4154,6 +4154,12 @@
                     }
                     html+='</div>';
                 }
+                else{
+                    var _arcC=data.components||{};var _arcN=Object.keys(_arcC).length;
+                    if(_arcN>0){
+                        html+='<div class="card" style="background:#f8fafc;border:1px dashed #cbd5e1;"><p style="margin:0;font-size:13px;color:#64748b;"><strong style="color:#475569;">Repair Kit archived</strong> - '+_arcN+' component'+(_arcN===1?'':'s')+' saved but hidden while this part is not marked Repairable. Turn on <strong>Repairable</strong> in Edit to view or edit the kit.</p></div>';
+                    }
+                }
 } else if(type==='route'){
                 title='Route: '+data.routeNumber+' ('+data.type+')';
                 var _pEqcR=getEquipmentCache(),_pRtImg=getRouteImage(key);

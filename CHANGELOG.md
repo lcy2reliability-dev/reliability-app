@@ -55,6 +55,10 @@
 - **Source version comment corrected.** The HTML comment at the very top of the file still read v1.14; it now reads v1.19.
 - No version change (security hardening + bug fix); the What's New banner is not re-shown.
 
+### Repair Kit archive indicator (2026-08-31)
+- **Turning off "Repairable" now shows an "archived" note instead of the Repair Kit vanishing silently.** When a part has a saved Repair Kit but is not currently marked Repairable, its detail page now shows a small muted note: "Repair Kit archived - N components saved but hidden while this part is not marked Repairable. Turn on Repairable in Edit to view or edit the kit." The kit data was already preserved on toggle-off (the Repairable toggle only hides the card, it has never deleted components - it saves with .update() so the components branch is untouched) and turning Repairable back on restores the full kit exactly as it was; this note just makes the hidden kit visible so nobody assumes it was lost.
+- No version change (minor UI addition); the What's New banner is not re-shown.
+
 
 ## v1.18 — 2026-08-14
 
