@@ -9,7 +9,7 @@
 
 ## v1.20 — 2026-09-01
 
-**Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). Awaiting deploy. This is a feature + hardening release that clears the entire Council re-audit backlog in one deploy. Firebase unchanged, still open (rules not yet published).
+**Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). Deployed 2026-09-01 (with a same-day refinement moving the walking-order arrows behind Edit - see the walking-order note below). This is a feature + hardening release that clears the entire Council re-audit backlog in one deploy. Firebase unchanged, still open (rules not yet published).
 
 ### Temperature anomaly detection (RME correctness)
 - **Wider, steadier baseline.** Anomalies are now judged against the last **15** readings of each component (was 10), still using the **median** (robust to one-off spikes). A single odd reading is less likely to trip a false alarm.
@@ -23,10 +23,11 @@
 - The **"Due for a reading"** staleness reminder has been removed entirely. In practice it duplicated APM's own scheduling and added noise. **Open Alerts** now shows temperature anomalies only. Your **job list still ages overdue jobs** exactly as before - that is a separate feature and is unchanged.
 
 ### Set your own walking order (technician-editable)
-- **Route Points are now reorderable.** On a route's detail screen, the **Route Points** list shows up/down arrows next to each point. Tap them to set the order you actually walk the route. The order defaults to **numerical** (unchanged from before) until you customise it, and is stored per route in a new `walkOrder` field. **Any signed-in user with edit access can reorder - including technicians** - a deliberate exception to the usual "route structure is admin-only" rule, because the walk order is a personal-convenience aid, not APM data.
+- **Route Points are now reorderable.** Open a route and tap **Edit**: the **Route Points** list there shows up/down arrows next to each point. Tap them to set the order you actually walk the route. (The read-only route view stays clean - a short hint there points you to Edit.) The order defaults to **numerical** (unchanged from before) until you customise it, and is stored per route in a new `walkOrder` field. **Any signed-in user with edit access can reorder - including technicians** - a deliberate exception to the usual "route structure is admin-only" rule, because the walk order is a personal-convenience aid, not APM data.
 - **The Record Readings form follows your walking order.** The reading points (and the step-by-step keypad flow, which reads the same rendered order) are listed in your custom walking order, or numerically if you have not set one. This replaces the earlier plan to list them in APM order.
 - **Thermal History stays in APM order, always.** The Thermal History table (and the printed report / Excel export) is unchanged - it always lists points in the route's APM sequence, so results copy straight back into APM in the order the checklist expects.
-- **Reset to numerical.** A button on the Route Points list clears a custom walking order and returns to numerical order (Thermal History is unaffected).
+- **Reset to numerical.** A button on the Edit screen's Route Points list clears a custom walking order and returns to numerical order (Thermal History is unaffected).
+- **Refined 2026-09-01 (arrows behind Edit).** The reorder arrows and reset button were moved off the read-only route view and onto the route's **Edit** screen, for both admins and technicians. This keeps the view uncluttered and matches the app's convention that changes live behind Edit. The arrows still write the walk order directly (not through the route Save), so reordering stays safe.
 
 ### One combined save prompt
 - Saving readings that contain an anomaly used to show **two** dialogs in a row (the anomaly summary, then "save this note to the route page?"). These are now merged into **one** prompt, pre-filled with your reading note.

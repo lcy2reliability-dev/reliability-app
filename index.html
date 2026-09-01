@@ -554,7 +554,7 @@
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
                     <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.20)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM. Keep completing APM checklists, booking labour and parts, and everything else in APM exactly as you do now.<br>&bull; <strong>Sharper temperature alerts</strong>: an anomaly is now flagged when a reading differs from the median of that component's last 15 readings (was 10), so one odd reading is less likely to raise a false alarm. Trend charts now draw a <strong>median line and a &plusmn;10&deg;C band</strong> so out-of-range readings stand out.<br>&bull; <strong>"Due for a reading" reminders removed</strong>: Open Alerts now shows temperature anomalies only. Your job list still highlights overdue jobs exactly as before.<br>&bull; <strong>Set your own walking order</strong> - on a route, tap the up/down arrows on the Route Points to match the order you actually walk it (numerical by default). Recording readings follows that order; Thermal History always stays in APM order so it copies straight back into APM.<br>&bull; <strong>Easier to tap with gloves</strong>: the reorder arrows, menu and image-close buttons are bigger, the whole done-toggle row is tappable, and the app now works with a keyboard and screen readers - press <strong>Escape</strong> to close pop-ups. Tap any column heading to sort a table.<br>&bull; <strong>Faster repeat loads</strong>: parts data is cached for the session instead of being re-downloaded every time you open the app.</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM. Keep completing APM checklists, booking labour and parts, and everything else in APM exactly as you do now.<br>&bull; <strong>Sharper temperature alerts</strong>: an anomaly is now flagged when a reading differs from the median of that component's last 15 readings (was 10), so one odd reading is less likely to raise a false alarm. Trend charts now draw a <strong>median line and a &plusmn;10&deg;C band</strong> so out-of-range readings stand out.<br>&bull; <strong>"Due for a reading" reminders removed</strong>: Open Alerts now shows temperature anomalies only. Your job list still highlights overdue jobs exactly as before.<br>&bull; <strong>Set your own walking order</strong> - on a route, tap Edit, then use the up/down arrows on the Route Points to match the order you actually walk it (numerical by default). Recording readings follows that order; Thermal History always stays in APM order so it copies straight back into APM.<br>&bull; <strong>Easier to tap with gloves</strong>: the reorder arrows, menu and image-close buttons are bigger, the whole done-toggle row is tappable, and the app now works with a keyboard and screen readers - press <strong>Escape</strong> to close pop-ups. Tap any column heading to sort a table.<br>&bull; <strong>Faster repeat loads</strong>: parts data is cached for the session instead of being re-downloaded every time you open the app.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -3988,6 +3988,30 @@
             window._detailHistoryPushed = false;
         }
     }
+    async function renderRouteReorder(routeKey, data){
+        var pts=[data.startPoint];
+        if(data.waypoints)pts.push.apply(pts,data.waypoints);
+        if(data.endPoint&&data.endPoint!==data.startPoint)pts.push(data.endPoint);
+        var ordered=apmOrderKeys(pts, data.walkOrder);
+        var hasWalk=!!(data.walkOrder&&data.walkOrder.length);
+        var eqCache=await getEquipmentCache();
+        var h='<div class="form-group" style="margin-top:16px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">';
+        h+='<label style="font-weight:600;">Walking order</label>';
+        h+='<div style="font-size:11px;color:#6b7280;margin:2px 0 8px;">Use the arrows to match the order you actually walk this route (numerical by default). This changes only your on-screen walk order and the Record Readings order - Thermal History always stays in APM order.</div>';
+        for(var pi=0;pi<ordered.length;pi++){
+            var pt=ordered[pi];var ptKey=sanitizeKey(pt);var label=(pi===0?'Start':(pi===ordered.length-1?'End':'Waypoint'));
+            var upDis=(pi===0),dnDis=(pi===ordered.length-1);
+            h+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">';
+            h+='<span style="flex:1;min-width:0;">'+posDisp(eqCache[ptKey],pt)+'<span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span></span>';
+            h+='<span style="display:flex;gap:4px;flex:0 0 auto;">';
+            h+='<button type="button" title="Move up" aria-label="Move point up" onclick="moveRoutePoint(\x27'+routeKey+'\x27,'+pi+',-1)"'+(upDis?' disabled':'')+' style="min-width:44px;height:40px;padding:0;font-size:16px;line-height:1;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#374151;cursor:'+(upDis?'default':'pointer')+';opacity:'+(upDis?'0.35':'1')+';">\u25b2</button>';
+            h+='<button type="button" title="Move down" aria-label="Move point down" onclick="moveRoutePoint(\x27'+routeKey+'\x27,'+pi+',1)"'+(dnDis?' disabled':'')+' style="min-width:44px;height:40px;padding:0;font-size:16px;line-height:1;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#374151;cursor:'+(dnDis?'default':'pointer')+';opacity:'+(dnDis?'0.35':'1')+';">\u25bc</button>';
+            h+='</span></div>';
+        }
+        if(hasWalk)h+='<div style="margin-top:8px;"><button type="button" class="btn btn-secondary btn-sm" onclick="resetRoutePointOrder(\x27'+routeKey+'\x27)">Reset to numerical order</button></div>';
+        h+='</div>';
+        return h;
+    }
     async function moveRoutePoint(routeKey, idx, dir){
         if(!requireWrite())return;
         if(!checkFirebase())return;
@@ -4005,7 +4029,7 @@
             await db.ref('routes/'+routeKey+'/walkOrder').set(ordered);
             await invalidateRoutesCache();
             try{logAudit('reorderWalk','route',routeKey,{order:ordered});}catch(_e){}
-            openDetail('route',routeKey);
+            detailEdit('route',routeKey);
         }catch(e){showToast('Error: '+e.message,'error');}
     }
     async function resetRoutePointOrder(routeKey){
@@ -4018,7 +4042,7 @@
             await invalidateRoutesCache();
             try{logAudit('resetWalk','route',routeKey,{});}catch(_e){}
             showToast('Walking order reset to numerical','success');
-            openDetail('route',routeKey);
+            detailEdit('route',routeKey);
         }catch(e){showToast('Error: '+e.message,'error');}
     }
 
@@ -4210,7 +4234,7 @@
                 allPts=apmOrderKeys(allPts, data.walkOrder);
                 var _canReorder=canWrite();var _hasWalk=!!(data.walkOrder&&data.walkOrder.length);
                 html+='<div class="detail-field"><label>Route Points ('+allPts.length+')</label>';
-                if(_canReorder)html+='<div style="font-size:11px;color:#6b7280;margin:2px 0 4px;">Walking order - use the arrows to match the order you walk this route (numerical by default). Thermal History always stays in APM order.</div>';
+                if(_canReorder)html+='<div style="font-size:11px;color:#6b7280;margin:2px 0 4px;">Walking order'+(_hasWalk?' (custom)':' (numerical)')+' - tap Edit to change the order you walk this route. Thermal History always stays in APM order.</div>';
                 html+='<div style="margin-top:6px;">';
                 var _eqCache=await _pEqcR;
                 for(var pi=0;pi<allPts.length;pi++){
@@ -4221,14 +4245,8 @@
                     } else {
                         indicator='<span style="color:#ef4444;font-weight:700;margin-right:4px;" title="Position NOT in Position database">✗</span>';
                     }
-                    var _arrows='';
-                    if(_canReorder){
-                        var _upDis=(pi===0),_dnDis=(pi===allPts.length-1);
-                        _arrows='<span style="margin-left:auto;display:flex;gap:4px;flex:0 0 auto;">'+'<button type="button" title="Move up" aria-label="Move point up" onclick="moveRoutePoint(\x27'+key+'\x27,'+pi+',-1)"'+(_upDis?' disabled':'')+' style="min-width:44px;height:40px;padding:0;font-size:16px;line-height:1;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#374151;cursor:'+(_upDis?'default':'pointer')+';opacity:'+(_upDis?'0.35':'1')+';">\u25b2</button>'+'<button type="button" title="Move down" aria-label="Move point down" onclick="moveRoutePoint(\x27'+key+'\x27,'+pi+',1)"'+(_dnDis?' disabled':'')+' style="min-width:44px;height:40px;padding:0;font-size:16px;line-height:1;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#374151;cursor:'+(_dnDis?'default':'pointer')+';opacity:'+(_dnDis?'0.35':'1')+';">\u25bc</button>'+'</span>';
-                    }
-                    html+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">'+indicator+'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+ptKey+'\x27);return false;">'+posDisp(_eqCache[ptKey],pt)+'</a><span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span>'+_arrows+'</div>';
+                    html+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">'+indicator+'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+ptKey+'\x27);return false;">'+posDisp(_eqCache[ptKey],pt)+'</a><span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span></div>';
                 }
-                if(_canReorder&&_hasWalk)html+='<div style="margin-top:8px;"><button type="button" class="btn btn-secondary btn-sm" onclick="resetRoutePointOrder(\x27'+key+'\x27)">Reset to numerical order</button></div>';
                 html+='</div></div>';
                 var _rtDetImg=await _pRtImg;if(_rtDetImg){html+='<div class="detail-field"><label>Route Location</label><img src="'+_rtDetImg+'" alt="Route location screenshot" class="img-preview" style="display:block;"></div>';}
                 else{html+='<div class="detail-field" id="quick-ss-container"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27route\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Route screenshot missing \u2014 click to add</a></div>';}
@@ -4386,6 +4404,7 @@
                 html += '<span class="toggle-dot" style="position:absolute;top:3px;left:' + (isActive?'27px':'3px') + ';width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>';
                 html += '</label></div>'; } 
                 // Save/Cancel
+                html += await renderRouteReorder(key, data);
                 html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditRoute(\x27' + key + '\x27)">Save Changes</button>';
                 html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27route\x27,\x27' + key + '\x27)">Cancel</button>';
               } else {
@@ -4406,6 +4425,7 @@
                   html += '<div class="file-upload" onclick="document.getElementById(\x27edit-route-file\x27).click()"><input type="file" id="edit-route-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-route-preview\x27)"><p>Drag & drop, paste, or click</p></div>';
                   html += '<img id="edit-route-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
               }
+              html += await renderRouteReorder(key, data);
               html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditRoute(\x27' + key + '\x27)">Save Changes</button>';
               html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27route\x27,\x27' + key + '\x27)">Cancel</button>';
               }
