@@ -7,6 +7,60 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.20 — 2026-09-01
+
+**Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). Awaiting deploy. This is a feature + hardening release that clears the entire Council re-audit backlog in one deploy. Firebase unchanged, still open (rules not yet published).
+
+### Temperature anomaly detection (RME correctness)
+- **Wider, steadier baseline.** Anomalies are now judged against the last **15** readings of each component (was 10), still using the **median** (robust to one-off spikes). A single odd reading is less likely to trip a false alarm.
+- **Sparkline uses the median too.** The inline trend sparkline now colours against the median rather than the mean, matching the alert logic.
+- **Editing or deleting a reading refreshes the alerts.** Both now clear the alert and sparkline caches, so a corrected reading updates the anomaly view immediately instead of after the 60-second cache expiry.
+
+### Thermal trend chart (RME)
+- Trend charts now draw a **median reference line** and a **±10°C band** (dashed), so an out-of-range reading is obvious at a glance against the same threshold the app uses to flag anomalies.
+
+### "Due for a reading" removed
+- The **"Due for a reading"** staleness reminder has been removed entirely. In practice it duplicated APM's own scheduling and added noise. **Open Alerts** now shows temperature anomalies only. Your **job list still ages overdue jobs** exactly as before - that is a separate feature and is unchanged.
+
+### Set your own walking order (technician-editable)
+- **Route Points are now reorderable.** On a route's detail screen, the **Route Points** list shows up/down arrows next to each point. Tap them to set the order you actually walk the route. The order defaults to **numerical** (unchanged from before) until you customise it, and is stored per route in a new `walkOrder` field. **Any signed-in user with edit access can reorder - including technicians** - a deliberate exception to the usual "route structure is admin-only" rule, because the walk order is a personal-convenience aid, not APM data.
+- **The Record Readings form follows your walking order.** The reading points (and the step-by-step keypad flow, which reads the same rendered order) are listed in your custom walking order, or numerically if you have not set one. This replaces the earlier plan to list them in APM order.
+- **Thermal History stays in APM order, always.** The Thermal History table (and the printed report / Excel export) is unchanged - it always lists points in the route's APM sequence, so results copy straight back into APM in the order the checklist expects.
+- **Reset to numerical.** A button on the Route Points list clears a custom walking order and returns to numerical order (Thermal History is unaffected).
+
+### One combined save prompt
+- Saving readings that contain an anomaly used to show **two** dialogs in a row (the anomaly summary, then "save this note to the route page?"). These are now merged into **one** prompt, pre-filled with your reading note.
+
+### Temperature floor
+- The minimum accepted temperature is now **0°C** (was -50°C). Negative temperatures are not valid for this equipment and were only ever typos.
+
+### Easier to use with gloves / accessibility
+- **Bigger tap targets:** the job reorder arrows, the menu close button, the "mark done" toggle (the whole row is now tappable) and the image-viewer close button all meet the 44px minimum.
+- **Keyboard and screen-reader support:** sortable column headings, per-column filter boxes, the top tabs and the burger-menu items now expose the right roles and labels, can be reached with Tab, and activate with Enter/Space. Press **Escape** to close the image viewer, a detail page, or the menu.
+- **Clearer sort affordance:** every sortable heading shows a neutral ⇅ marker until you sort by it, then a ▲ / ▼.
+- **Contrast:** the "Repair Kit archived" note uses a darker grey for legibility.
+
+### Security (output-encoding hardening)
+- This release also carries the **output-encoding hardening** built on 2026-08-31 (detailed in the v1.19 section below) that had not yet been deployed: user- and database-sourced values in ~22 onclick / innerHTML sinks are now consistently escaped (escapeAttrArg inside onclick attributes, escapeHtml elsewhere), and the conveyor-ID validator uses a character allowlist. No behaviour change for valid data.
+- Import-wizard position checkboxes and the account-registration error message were tightened this release.
+
+### Performance
+- **Parts data no longer re-downloads on every login.** The one-time parts migration and duplicate-endpoint cleanup now run once (guarded in local storage) and read from the shared cache, so reopening the app in the same browser is faster.
+- The Parts browser skips a full rebuild when its data is already loaded and fresh; the image cache is capped (LRU, 50 entries) so it cannot grow without bound; the APN lookup index is cached; and the delete-cascade reads the cache instead of re-fetching all parts.
+
+### Code cleanup
+- Criticality colours (HIGH / MED / LOW) now come from two small helpers (critFg / critBgColor) instead of seven copy-pasted colour blocks.
+- The per-column filter reader and the part-type dropdown options are each defined once and reused.
+
+### Deliberately not changed
+- The auto-created pending CBM job is kept as-is (it is the APM-close reminder).
+- Anomaly notes are kept even when their reading is deleted (they carry independent, attributed observations).
+- Dead admin-form HTML was left in place: it holds DOM containers the live APM import still uses, so removing it is not safe without more work.
+- A few refinements (arrow-key navigation between tabs, focus-trapping inside a detail page, tab-switch code de-duplication, a faster string-compare collator) were judged low-value or too risky to include this time and left for later.
+
+### Version / banner
+- APP_VERSION - 1.20; WHATS_NEW_REV - 1.20.0. The What's New banner re-shows once to everyone and lists the v1.20 changes.
+
 ## v1.19 — 2026-08-28
 
 **Status:** Built and verified in the working copy (bracket-balanced, clean syntax build). **Deployed 2026-08-28.** This is a feature release: the headline is sortable table columns, bundled with a full round of audit fixes (Council Audit Round 7) and the completion of the session image cache. Firebase unchanged, still open (rules not yet published).
@@ -58,6 +112,15 @@
 ### Repair Kit archive indicator (2026-08-31)
 - **Turning off "Repairable" now shows an "archived" note instead of the Repair Kit vanishing silently.** When a part has a saved Repair Kit but is not currently marked Repairable, its detail page now shows a small muted note: "Repair Kit archived - N components saved but hidden while this part is not marked Repairable. Turn on Repairable in Edit to view or edit the kit." The kit data was already preserved on toggle-off (the Repairable toggle only hides the card, it has never deleted components - it saves with .update() so the components branch is untouched) and turning Repairable back on restores the full kit exactly as it was; this note just makes the hidden kit visible so nobody assumes it was lost.
 - No version change (minor UI addition); the What's New banner is not re-shown.
+
+
+### Output-encoding hardening (Council re-audit, 2026-08-31)
+A fresh six-lens audit of v1.19 found that about two dozen places built part of the page from stored data - a position ID, route number, part APN, part type, a quantity, a saved thermal reading, or a field from an import file - without first passing it through the app's standard escaping. Every real value renders exactly as before; this only matters when a value contains HTML or quote characters, which the app's own convention has escaped everywhere else for a long time. These were the remaining gaps, now closed.
+- **Button handlers now escape the value they carry.** About ten on-tap actions (Record reading, Record from a job, Link part, Link associated part, Remove associated part, the APN search box, Confirm link) build their handler from a position ID, route number or APN. Each now passes that value through the attribute-escaping helper (escapeAttrArg), the same one the search-result buttons already use.
+- **Text and input fields now escape the value they show.** The part Type in search results, the position ID in the Add-Part picker, the Repair Kit quantity, the value in the Edit-reading box, and the position ID / description fields shown while importing a route are now HTML-escaped (escapeHtml) before display.
+- **Position IDs are validated more strictly.** A new position ID must now be letters, numbers, dots, dashes or underscores; it may no longer contain quotes or angle brackets. Every real LCY2 format still passes (6-digit numbers, 6-digit-plus-letter, and dot-separated tags like CB.SRT.01.M1.01) - this only blocks characters that could break the page.
+- Why it matters: while the database is still open (rules not yet published), anyone who can write to Firebase could otherwise store a value that runs code when another user opens that record. Escaping and validation close that off. No visible change for normal use.
+- No version change (security hardening); the What's New banner is not re-shown.
 
 
 ## v1.18 — 2026-08-14
