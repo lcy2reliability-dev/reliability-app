@@ -28,6 +28,11 @@
 - **Thermal History stays in APM order, always.** The Thermal History table (and the printed report / Excel export) is unchanged - it always lists points in the route's APM sequence, so results copy straight back into APM in the order the checklist expects.
 - **Reset to numerical.** A button on the Edit screen's Route Points list clears a custom walking order and returns to numerical order (Thermal History is unaffected).
 - **Refined 2026-09-01 (arrows behind Edit).** The reorder arrows and reset button were moved off the read-only route view and onto the route's **Edit** screen, for both admins and technicians. This keeps the view uncluttered and matches the app's convention that changes live behind Edit. The arrows still write the walk order directly (not through the route Save), so reordering stays safe.
+- **Robustness + safety fixes (2026-09-01, targeted audit follow-up).**
+  - Tapping a reorder arrow no longer discards unsaved edits. It now updates only the walking-order list in place, so any route fields you have changed (or a screenshot you have selected) but not yet saved are kept.
+  - Editing a route's points (adding, removing or renaming a waypoint) now keeps a custom walking order tidy: removed points are dropped and new points are appended, so the order never carries stale entries.
+  - Reordering is written with an atomic transaction, so two people reordering the same route at the same moment can no longer overwrite each other.
+  - Hardened against malformed route data (a missing start/end point can no longer break the reorder list), duplicate points are de-duplicated, and the reorder controls are output-encoded for consistency with the rest of the app.
 
 ### One combined save prompt
 - Saving readings that contain an anomaly used to show **two** dialogs in a row (the anomaly summary, then "save this note to the route page?"). These are now merged into **one** prompt, pre-filled with your reading note.

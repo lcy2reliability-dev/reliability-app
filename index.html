@@ -1486,7 +1486,7 @@
         });
     }
     function closeModal() { document.getElementById('modal').classList.remove('active'); _closeModalA11y(); }
-    function sanitizeKey(str) { return str.replace(/[.#$\/\[\]'"]/g, '_').trim(); }
+    function sanitizeKey(str) { return String(str==null?'':str).replace(/[.#$\/\[\]'"]/g, '_').trim(); }
     function fileToBase64(file) { return new Promise((resolve, reject) => {
         const _MAX_BYTES = 5 * 1024 * 1024; // 5 MB cap — protects Firebase storage quota
         if (file.size > _MAX_BYTES) {
@@ -3992,10 +3992,11 @@
         var pts=[data.startPoint];
         if(data.waypoints)pts.push.apply(pts,data.waypoints);
         if(data.endPoint&&data.endPoint!==data.startPoint)pts.push(data.endPoint);
+        pts=pts.filter(function(p,i){return p!=null&&p!==''&&pts.indexOf(p)===i;});
         var ordered=apmOrderKeys(pts, data.walkOrder);
         var hasWalk=!!(data.walkOrder&&data.walkOrder.length);
         var eqCache=await getEquipmentCache();
-        var h='<div class="form-group" style="margin-top:16px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">';
+        var h='<div id="route-reorder-widget" class="form-group" style="margin-top:16px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">';
         h+='<label style="font-weight:600;">Walking order</label>';
         h+='<div style="font-size:11px;color:#6b7280;margin:2px 0 8px;">Use the arrows to match the order you actually walk this route (numerical by default). This changes only your on-screen walk order and the Record Readings order - Thermal History always stays in APM order.</div>';
         for(var pi=0;pi<ordered.length;pi++){
@@ -4004,11 +4005,11 @@
             h+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">';
             h+='<span style="flex:1;min-width:0;">'+posDisp(eqCache[ptKey],pt)+'<span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span></span>';
             h+='<span style="display:flex;gap:4px;flex:0 0 auto;">';
-            h+='<button type="button" title="Move up" aria-label="Move point up" onclick="moveRoutePoint(\x27'+routeKey+'\x27,'+pi+',-1)"'+(upDis?' disabled':'')+' style="min-width:44px;height:40px;padding:0;font-size:16px;line-height:1;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#374151;cursor:'+(upDis?'default':'pointer')+';opacity:'+(upDis?'0.35':'1')+';">\u25b2</button>';
-            h+='<button type="button" title="Move down" aria-label="Move point down" onclick="moveRoutePoint(\x27'+routeKey+'\x27,'+pi+',1)"'+(dnDis?' disabled':'')+' style="min-width:44px;height:40px;padding:0;font-size:16px;line-height:1;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#374151;cursor:'+(dnDis?'default':'pointer')+';opacity:'+(dnDis?'0.35':'1')+';">\u25bc</button>';
+            h+='<button type="button" title="Move up" aria-label="Move point up" onclick="moveRoutePoint(\x27'+escapeAttrArg(routeKey)+'\x27,'+pi+',-1)"'+(upDis?' disabled':'')+' style="min-width:44px;height:40px;padding:0;font-size:16px;line-height:1;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#374151;cursor:'+(upDis?'default':'pointer')+';opacity:'+(upDis?'0.35':'1')+';">\u25b2</button>';
+            h+='<button type="button" title="Move down" aria-label="Move point down" onclick="moveRoutePoint(\x27'+escapeAttrArg(routeKey)+'\x27,'+pi+',1)"'+(dnDis?' disabled':'')+' style="min-width:44px;height:40px;padding:0;font-size:16px;line-height:1;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#374151;cursor:'+(dnDis?'default':'pointer')+';opacity:'+(dnDis?'0.35':'1')+';">\u25bc</button>';
             h+='</span></div>';
         }
-        if(hasWalk)h+='<div style="margin-top:8px;"><button type="button" class="btn btn-secondary btn-sm" onclick="resetRoutePointOrder(\x27'+routeKey+'\x27)">Reset to numerical order</button></div>';
+        if(hasWalk)h+='<div style="margin-top:8px;"><button type="button" class="btn btn-secondary btn-sm" onclick="resetRoutePointOrder(\x27'+escapeAttrArg(routeKey)+'\x27)">Reset to numerical order</button></div>';
         h+='</div>';
         return h;
     }
@@ -4022,14 +4023,21 @@
             var pts=[route.startPoint];
             if(route.waypoints)pts.push.apply(pts,route.waypoints);
             if(route.endPoint&&route.endPoint!==route.startPoint)pts.push(route.endPoint);
-            var ordered=apmOrderKeys(pts, route.walkOrder);
-            var j=idx+dir;
-            if(idx<0||idx>=ordered.length||j<0||j>=ordered.length)return;
-            var tmp=ordered[idx];ordered[idx]=ordered[j];ordered[j]=tmp;
-            await db.ref('routes/'+routeKey+'/walkOrder').set(ordered);
+            pts=pts.filter(function(p,i){return p!=null&&p!==''&&pts.indexOf(p)===i;});
+            var _tx=await db.ref('routes/'+routeKey+'/walkOrder').transaction(function(cur){
+                var ord=apmOrderKeys(pts, cur||[]);
+                var j=idx+dir;
+                if(idx<0||idx>=ord.length||j<0||j>=ord.length)return;
+                var t=ord[idx];ord[idx]=ord[j];ord[j]=t;
+                return ord;
+            });
+            if(!_tx.committed)return;
+            var ordered=_tx.snapshot.val();
+            route.walkOrder=ordered;
             await invalidateRoutesCache();
             try{logAudit('reorderWalk','route',routeKey,{order:ordered});}catch(_e){}
-            detailEdit('route',routeKey);
+            var _rw=document.getElementById('route-reorder-widget');
+            if(_rw){_rw.outerHTML=await renderRouteReorder(routeKey,route);}else{detailEdit('route',routeKey);}
         }catch(e){showToast('Error: '+e.message,'error');}
     }
     async function resetRoutePointOrder(routeKey){
@@ -4042,7 +4050,8 @@
             await invalidateRoutesCache();
             try{logAudit('resetWalk','route',routeKey,{});}catch(_e){}
             showToast('Walking order reset to numerical','success');
-            detailEdit('route',routeKey);
+            var _rw=document.getElementById('route-reorder-widget');
+            if(_rw){var _rs=await db.ref('routes/'+routeKey).once('value');var _rd=_rs.val()||{};delete _rd.walkOrder;_rw.outerHTML=await renderRouteReorder(routeKey,_rd);}else{detailEdit('route',routeKey);}
         }catch(e){showToast('Error: '+e.message,'error');}
     }
 
@@ -6490,6 +6499,21 @@ function liveSearchSuggest(query,scope){
                 await db.ref('routes/' + key).update(updates);
                 if (_rEditImg) { await db.ref('routeImages/' + key).set(_rEditImg); await db.ref('routeImageMeta/' + key).set({ addedBy: currentUser, addedAt: new Date().toISOString() }); }
             }
+            // Keep a custom walkOrder in sync with the route's current points (prune removed/renamed points, append new ones)
+            try {
+                var _woSnap = await db.ref('routes/' + newKey + '/walkOrder').once('value');
+                var _wo = _woSnap.val();
+                if (_wo && _wo.length) {
+                    var _ptSet = {}; allPoints.forEach(function(p){ _ptSet[p] = 1; });
+                    var _newWo = _wo.filter(function(p){ return _ptSet[p]; });
+                    allPoints.forEach(function(p){ if (_newWo.indexOf(p) < 0) _newWo.push(p); });
+                    var _woChanged = _newWo.length !== _wo.length || _newWo.some(function(p, i){ return p !== _wo[i]; });
+                    if (_woChanged) {
+                        if (_newWo.length) await db.ref('routes/' + newKey + '/walkOrder').set(_newWo);
+                        else await db.ref('routes/' + newKey + '/walkOrder').remove();
+                    }
+                }
+            } catch(_woe) {}
             invalidateRoutesCache();
             logAudit('edit','route',num,{active:(activeEl?activeEl.checked:'unchanged')});showToast('Route updated!', 'success');
             openDetail('route', newKey || key);
