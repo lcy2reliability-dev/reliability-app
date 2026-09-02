@@ -4074,10 +4074,10 @@
         h+='<label style="font-weight:600;">Walking order</label>';
         h+='<div style="font-size:11px;color:#6b7280;margin:2px 0 8px;">Drag the \u2630 handle to match the order you actually walk this route (numerical by default). This changes only your on-screen walk order and the Record Readings order - Thermal History always stays in APM order.</div>';
         for(var pi=0;pi<ordered.length;pi++){
-            var pt=ordered[pi];var ptKey=sanitizeKey(pt);var label=(pi===0?'Start':(pi===ordered.length-1?'End':'Waypoint'));
+            var pt=ordered[pi];var ptKey=sanitizeKey(pt);
             h+='<div class="rr-row" data-tag="'+escapeHtml(pt)+'" style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">';
             h+='<span class="rr-handle drag-handle" title="Drag to reorder" aria-label="Drag to reorder point">\u2630</span>';
-            h+='<span style="flex:1;min-width:0;">'+posDisp(eqCache[ptKey],pt)+'<span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span></span>';
+            h+='<span style="flex:1;min-width:0;">'+posDisp(eqCache[ptKey],pt)+'</span>';
             h+='</div>';
         }
         if(hasWalk)h+='<div style="margin-top:8px;"><button type="button" class="btn btn-secondary btn-sm" onclick="resetRoutePointOrder(\x27'+escapeAttrArg(routeKey)+'\x27)">Reset to numerical order</button></div>';
@@ -4302,7 +4302,7 @@
                 var allPts=[data.startPoint];
                 if(data.waypoints)allPts.push(...data.waypoints);
                 if(data.endPoint&&data.endPoint!==data.startPoint)allPts.push(data.endPoint);
-                // Walking order: custom (routes/<key>/walkOrder) if set, else numerical ascending. Start/End labels follow position in this order. APM order is kept only in Thermal History.
+                // Walking order: custom (routes/<key>/walkOrder) if set, else numerical ascending. Points show as a plain arrangeable list (no Start/End role labels). APM order is kept only in Thermal History.
                 allPts=apmOrderKeys(allPts, data.walkOrder);
                 var _canReorder=canWrite();var _hasWalk=!!(data.walkOrder&&data.walkOrder.length);
                 html+='<div class="detail-field"><label>Route Points ('+allPts.length+')</label>';
@@ -4310,14 +4310,14 @@
                 html+='<div style="margin-top:6px;">';
                 var _eqCache=await _pEqcR;
                 for(var pi=0;pi<allPts.length;pi++){
-                    var pt=allPts[pi];var ptKey=sanitizeKey(pt);var label=(pi===0?'Start':(pi===allPts.length-1?'End':'Waypoint'));
+                    var pt=allPts[pi];var ptKey=sanitizeKey(pt);
                     var indicator='';
                     if(_eqCache[ptKey]){
                         indicator='<span style="color:#10b981;font-weight:700;margin-right:4px;" title="Position exists in DB">✓</span>';
                     } else {
                         indicator='<span style="color:#ef4444;font-weight:700;margin-right:4px;" title="Position NOT in Position database">✗</span>';
                     }
-                    html+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">'+indicator+'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+ptKey+'\x27);return false;">'+posDisp(_eqCache[ptKey],pt)+'</a><span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span></div>';
+                    html+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">'+indicator+'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+ptKey+'\x27);return false;">'+posDisp(_eqCache[ptKey],pt)+'</a></div>';
                 }
                 html+='</div></div>';
                 var _rtDetImg=await _pRtImg;if(_rtDetImg){html+='<div class="detail-field"><label>Route Location</label><img src="'+_rtDetImg+'" alt="Route location screenshot" class="img-preview" style="display:block;"></div>';}

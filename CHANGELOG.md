@@ -31,6 +31,10 @@ Applied after a full six-lens re-audit of the v1.23 build. No new features, no F
 - **Broad searches stay snappy.** A very broad search (like "roller" or "belt") can match hundreds of parts. Search results now show the 150 most relevant matches with a short note ("Showing the 150 most relevant of N matches. Refine your search to see and sort them all.") instead of drawing every row at once, which briefly froze the screen on older phones. A specific search (an APN, a position or a route number) returns well under 150, so it shows everything and sorts the full list exactly as before. The same applies to the CBM routes results.
 - **Full detail views now keep keyboard focus.** When a position, part or route detail (or the record-readings screen) is open, the keyboard Tab key now stays within it and focus returns to where you were when you close it, matching the pop-up dialogs. This only affects keyboard and screen-reader use; touch and mouse are unchanged (Escape already closed these screens).
 
+### Route points: no more Start / Waypoint / End labels (2026-09-02, no version bump)
+- **A route's points no longer show a "(Start)", "(Waypoint)" or "(End)" tag.** They are now a plain list of points you arrange freely by walking order. The tag was misleading because it re-labelled whichever point ended up first or last *after* you reordered - not the route's real start or end - so it caused more confusion than it saved.
+- This affects only the on-screen **Route Points** list and the **Walking-order** editor (both behind a route's detail/Edit). Everything else is unchanged: the route's stored Start Point and End Point fields, the **Start** and **End** columns in search results and on a position, the route Add/Edit forms, and the printed / Excel report. APM order in Thermal History is untouched.
+
 ## v1.22 — 2026-09-02
 
 **Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). No Firebase change - code only.
