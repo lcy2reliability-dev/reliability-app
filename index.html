@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- RME Shift Personal Tracker v1.21 - Updated 2026-09-02 -->
+<!-- RME Shift Personal Tracker v1.23 - Updated 2026-09-02 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -111,7 +111,7 @@
         .login-card input:focus { outline:none; border-color:#60a5fa; }
         a:focus-visible, button:focus-visible, [role="button"]:focus-visible, [tabindex]:focus-visible, .search-link:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
         .login-card .btn { width:100%; padding:14px; font-size:16px; }
-        .work-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:14px; padding-right:44px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; position:relative; }
+        .work-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:14px; padding-left:40px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; position:relative; }
         .work-card:hover { border-color:#60a5fa; box-shadow:0 2px 8px rgba(37,99,235,0.1); }
         .work-card .work-type { font-size:11px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:4px; display:inline-block; margin-bottom:6px; }
         .work-card .work-type.fwo { background:#fee2e2; color:#dc2626; }
@@ -123,13 +123,13 @@
         .work-card.overdue:hover { border-color:#f87171; }
         .work-card .overdue-badge { display:inline-block; padding:2px 8px; margin-left:8px; background:#ef4444; color:#fff; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:0.3px; vertical-align:middle; }
         .work-card-actions { display:flex; gap:6px; margin-top:8px; }
-        .work-card.dragging { opacity:0.5; }
-        .work-card.drag-over { border-color:#2563eb; border-style:dashed; }
-        .work-card[draggable="true"] { cursor:grab; }
-        .work-reorder { position:absolute; top:10px; right:8px; display:flex; flex-direction:column; gap:3px; z-index:1; }
-        .work-reorder button { width:40px; height:36px; padding:0; font-size:14px; line-height:1; border:1px solid #d1d5db; background:#f9fafb; border-radius:5px; cursor:pointer; color:#374151; }
-        .work-reorder button:hover { background:#eef2ff; border-color:#c7d2fe; }
-        .work-reorder button:active { background:#e5e7eb; }
+        .drag-handle { touch-action:none; cursor:grab; -webkit-user-select:none; user-select:none; color:#9ca3af; }
+        .drag-handle:active { cursor:grabbing; }
+        .job-drag-handle { position:absolute; left:4px; top:50%; transform:translateY(-50%); width:28px; height:46px; display:flex; align-items:center; justify-content:center; font-size:17px; border-radius:6px; z-index:2; }
+        .job-drag-handle:hover { background:#eef2ff; color:#6b7280; }
+        .work-card.drag-sorting { opacity:0.95; box-shadow:0 8px 24px rgba(37,99,235,0.28); border-color:#93c5fd; z-index:10; }
+        .rr-handle { flex:0 0 auto; width:36px; height:44px; display:flex; align-items:center; justify-content:center; font-size:17px; border:1px solid #d1d5db; border-radius:6px; background:#f9fafb; margin-right:10px; }
+        .rr-row.drag-sorting { background:#eef2ff; box-shadow:0 4px 12px rgba(37,99,235,0.2); border-radius:6px; }
         .work-card-body { display:flex; gap:12px; align-items:flex-start; }
         .work-card-info { flex:1 1 auto; min-width:0; }
         .work-scada { flex:0 0 auto; align-self:center; }
@@ -553,8 +553,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.22)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Tap any column heading to sort</strong>: search results and the Parts browser now sort by any column. Tap once to sort, again to reverse, a third time to reset.<br>&bull; <strong>Your Job list now shows the full position name</strong>, not just the short equipment number.<br>&bull; <strong>Route search results</strong> now show the correct Add / Remove from Job list button, so you can remove a route straight from the results.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.23)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Drag to reorder</strong>: your Job list and a route's Walking order now have a &#9776; drag handle. Press and drag it to reorder - it works the same way on your phone and your laptop.<br>&bull; The old up / down arrows have been replaced by the drag handle, and it no longer sits over the job thumbnail.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -1326,7 +1326,7 @@
                 cleanupOldWork();
                 cleanupDuplicateEndpoints();
                 db.ref('.info/connected').on('value', function(cs){ _fbConnected = cs.val()===true; _updateOfflineBanner(); if(_fbConnected) flushPendingReadings(); });
-                setTimeout(function() { initJobDragDrop(); updateWorkCount(); ensureChart().catch(function(){}); ensureXLSX().catch(function(){}); try{renderDashboard();}catch(e){} try{pruneAuditLog();}catch(e){} setTimeout(function(){ try{maybeAutoTour();}catch(e){} }, 900); }, 1000);
+                setTimeout(function() { initJobPointerSort(); initWalkPointerSort(); updateWorkCount(); ensureChart().catch(function(){}); ensureXLSX().catch(function(){}); try{renderDashboard();}catch(e){} try{pruneAuditLog();}catch(e){} setTimeout(function(){ try{maybeAutoTour();}catch(e){} }, 900); }, 1000);
             } catch(e) { console.error('Init error:', e); showToast('Something failed to load — please refresh the page.', 'error'); }
         }
     }
@@ -3713,6 +3713,7 @@
         db.ref('workAssigned').on('value', async function(snap){ try {
             const container=document.getElementById('work-list');const data=snap.val();
             _waData = data || {};
+            if(_dragSortActive)return;
             try{await getEquipmentCache();}catch(_ec){}
             if(!data){container.innerHTML='<div class="empty-state">No jobs assigned yet</div>';updateWorkCount();return;}
             // Filter to current user's work
@@ -3725,8 +3726,8 @@
             items.forEach(([key,item])=>{
                 if(!item||!item.workType)return;
                 var _isOverdue=item.status!=='done'&&item.createdAt&&new Date(item.createdAt)<_workCutoff;
-                html+='<div class="work-card'+(item.status==='done'?' done':'')+(_isOverdue?' overdue':'')+'" '+(item.status!=='done'?'draggable="true" ':'')+'onclick="expandWorkCard(this)" data-key="'+key+'" data-status="'+(item.status||'pending')+'">';
-                if(item.status!=='done')html+='<div class="work-reorder"><button type="button" title="Move up" onclick="event.stopPropagation();moveJob(\x27'+key+'\x27,-1)">\u25b2</button><button type="button" title="Move down" onclick="event.stopPropagation();moveJob(\x27'+key+'\x27,1)">\u25bc</button></div>';
+                html+='<div class="work-card'+(item.status==='done'?' done':'')+(_isOverdue?' overdue':'')+'" onclick="expandWorkCard(this)" data-key="'+key+'" data-status="'+(item.status||'pending')+'">';
+                if(item.status!=='done')html+='<div class="job-drag-handle drag-handle" title="Drag to reorder" aria-label="Drag to reorder job" onclick="event.stopPropagation();">\u2630</div>';
                 var _wsType=(item.workType==='CBM'&&item.routeNumber)?'route':'equipment';
                 var _wsKey=_wsType==='route'?sanitizeKey(item.routeNumber):sanitizeKey(item.equipment||'');
                 html+='<div class="work-card-body"><div class="work-card-info">';
@@ -4002,48 +4003,32 @@
         var ordered=apmOrderKeys(pts, data.walkOrder);
         var hasWalk=!!(data.walkOrder&&data.walkOrder.length);
         var eqCache=await getEquipmentCache();
-        var h='<div id="route-reorder-widget" class="form-group" style="margin-top:16px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">';
+        var h='<div id="route-reorder-widget" class="form-group" data-routekey="'+escapeHtml(routeKey)+'" style="margin-top:16px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;">';
         h+='<label style="font-weight:600;">Walking order</label>';
-        h+='<div style="font-size:11px;color:#6b7280;margin:2px 0 8px;">Use the arrows to match the order you actually walk this route (numerical by default). This changes only your on-screen walk order and the Record Readings order - Thermal History always stays in APM order.</div>';
+        h+='<div style="font-size:11px;color:#6b7280;margin:2px 0 8px;">Drag the \u2630 handle to match the order you actually walk this route (numerical by default). This changes only your on-screen walk order and the Record Readings order - Thermal History always stays in APM order.</div>';
         for(var pi=0;pi<ordered.length;pi++){
             var pt=ordered[pi];var ptKey=sanitizeKey(pt);var label=(pi===0?'Start':(pi===ordered.length-1?'End':'Waypoint'));
-            var upDis=(pi===0),dnDis=(pi===ordered.length-1);
-            h+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">';
+            h+='<div class="rr-row" data-tag="'+escapeHtml(pt)+'" style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">';
+            h+='<span class="rr-handle drag-handle" title="Drag to reorder" aria-label="Drag to reorder point">\u2630</span>';
             h+='<span style="flex:1;min-width:0;">'+posDisp(eqCache[ptKey],pt)+'<span style="font-size:11px;color:#6b7280;margin-left:8px;">('+label+')</span></span>';
-            h+='<span style="display:flex;gap:4px;flex:0 0 auto;">';
-            h+='<button type="button" title="Move up" aria-label="Move point up" onclick="moveRoutePoint(\x27'+escapeAttrArg(routeKey)+'\x27,'+pi+',-1)"'+(upDis?' disabled':'')+' style="min-width:44px;height:40px;padding:0;font-size:16px;line-height:1;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#374151;cursor:'+(upDis?'default':'pointer')+';opacity:'+(upDis?'0.35':'1')+';">\u25b2</button>';
-            h+='<button type="button" title="Move down" aria-label="Move point down" onclick="moveRoutePoint(\x27'+escapeAttrArg(routeKey)+'\x27,'+pi+',1)"'+(dnDis?' disabled':'')+' style="min-width:44px;height:40px;padding:0;font-size:16px;line-height:1;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;color:#374151;cursor:'+(dnDis?'default':'pointer')+';opacity:'+(dnDis?'0.35':'1')+';">\u25bc</button>';
-            h+='</span></div>';
+            h+='</div>';
         }
         if(hasWalk)h+='<div style="margin-top:8px;"><button type="button" class="btn btn-secondary btn-sm" onclick="resetRoutePointOrder(\x27'+escapeAttrArg(routeKey)+'\x27)">Reset to numerical order</button></div>';
         h+='</div>';
         return h;
     }
-    async function moveRoutePoint(routeKey, idx, dir){
+    async function setWalkOrder(routeKey, tags){
         if(!requireWrite())return;
         if(!checkFirebase())return;
         try{
+            await db.ref('routes/'+routeKey+'/walkOrder').set(tags);
             var snap=await db.ref('routes/'+routeKey).once('value');
-            var route=snap.val();
-            if(!route){showToast('Route not found','error');return;}
-            var pts=[route.startPoint];
-            if(route.waypoints)pts.push.apply(pts,route.waypoints);
-            if(route.endPoint&&route.endPoint!==route.startPoint)pts.push(route.endPoint);
-            pts=pts.filter(function(p,i){return p!=null&&p!==''&&pts.indexOf(p)===i;});
-            var _tx=await db.ref('routes/'+routeKey+'/walkOrder').transaction(function(cur){
-                var ord=apmOrderKeys(pts, cur||[]);
-                var j=idx+dir;
-                if(idx<0||idx>=ord.length||j<0||j>=ord.length)return;
-                var t=ord[idx];ord[idx]=ord[j];ord[j]=t;
-                return ord;
-            });
-            if(!_tx.committed)return;
-            var ordered=_tx.snapshot.val();
-            route.walkOrder=ordered;
+            var route=snap.val()||{};
+            route.walkOrder=tags;
             await invalidateRoutesCache();
-            try{logAudit('reorderWalk','route',routeKey,{order:ordered});}catch(_e){}
+            try{logAudit('reorderWalk','route',routeKey,{order:tags});}catch(_e){}
             var _rw=document.getElementById('route-reorder-widget');
-            if(_rw){_rw.outerHTML=await renderRouteReorder(routeKey,route);}else{detailEdit('route',routeKey);}
+            if(_rw){_rw.outerHTML=await renderRouteReorder(routeKey,route);}
         }catch(e){showToast('Error: '+e.message,'error');}
     }
     async function resetRoutePointOrder(routeKey){
@@ -5655,16 +5640,6 @@ function liveSearchSuggest(query,scope){
         countEl.textContent = active > 0 ? active : '';
     }
 
-    function renumberJobs() {
-        var cards = document.querySelectorAll('.work-card');
-        cards.forEach(function(card, idx) {
-            var numEl = card.querySelector('.job-number');
-            if (numEl) numEl.textContent = 'Job ' + (idx + 1);
-        });
-        // Save order to Firebase
-        saveJobOrder();
-    }
-
     var _saveOrderTimer = null;
     function saveJobOrder() { if(!requireWrite())return;
         if (!firebaseReady || !currentUser) return;
@@ -5690,20 +5665,6 @@ function liveSearchSuggest(query,scope){
         if(d >= startToday) return hhmm;
         if(d >= new Date(startToday.getTime() - 86400000)) return 'Yesterday ' + hhmm;
         return d.toLocaleDateString('en-GB') + ' ' + hhmm;
-    }
-    function moveJob(key, dir){
-        var container = document.getElementById('work-list');
-        if(!container) return;
-        var card = container.querySelector('.work-card[data-key="' + key + '"]');
-        if(!card) return;
-        if(dir < 0){
-            var prev = card.previousElementSibling;
-            if(prev && prev.classList.contains('work-card') && !prev.classList.contains('done')) container.insertBefore(card, prev);
-        } else {
-            var next = card.nextElementSibling;
-            if(next && next.classList.contains('work-card') && !next.classList.contains('done')) container.insertBefore(next, card);
-        }
-        saveJobOrder();
     }
 
     // ===== ADD-TO-JOB WIZARD (v1.18, Positions -> PM/FWO) =====
@@ -5890,48 +5851,89 @@ function liveSearchSuggest(query,scope){
         }
     }
 
-    // Drag and drop for job reordering
-    var draggedJob = null;
-    function initJobDragDrop() {
-        var container = document.getElementById('work-list');
-        if (!container) return;
-        container.addEventListener('dragstart', function(e) {
-            if (e.target.classList.contains('work-card')) {
-                draggedJob = e.target;
-                e.target.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-            }
+    // ===== REUSABLE POINTER-EVENTS DRAG SORT (v1.23, mobile + laptop) =====
+    var _dragSortActive = false;
+    function initPointerSort(opts){
+        var container = typeof opts.container==='string' ? document.querySelector(opts.container) : opts.container;
+        if(!container) return;
+        if(container._pointerSortWired) return;
+        container._pointerSortWired = true;
+        var itemSel=opts.itemSel, handleSel=opts.handleSel;
+        var canMove=opts.canMove||function(){return true;};
+        var onDrop=opts.onDrop||function(){};
+        var dragged=null, moved=false, lastY=0, scrollSpeed=0, rafId=null;
+        function sib(el, dir){
+            var n = dir>0 ? el.nextElementSibling : el.previousElementSibling;
+            while(n && !(n.matches && n.matches(itemSel))) n = dir>0 ? n.nextElementSibling : n.previousElementSibling;
+            return (n && canMove(n)) ? n : null;
+        }
+        function evaluate(y){
+            if(!dragged) return;
+            var parent=dragged.parentNode, guard=0;
+            while(guard++<60){ var nx=sib(dragged,1); if(!nx)break; var r=nx.getBoundingClientRect(); if(y>r.top+r.height/2){ parent.insertBefore(nx,dragged); moved=true; } else break; }
+            guard=0;
+            while(guard++<60){ var pv=sib(dragged,-1); if(!pv)break; var r2=pv.getBoundingClientRect(); if(y<r2.top+r2.height/2){ parent.insertBefore(dragged,pv); moved=true; } else break; }
+        }
+        function raf(){
+            if(!_dragSortActive){ rafId=null; return; }
+            if(scrollSpeed!==0) window.scrollBy(0,scrollSpeed);
+            evaluate(lastY);
+            rafId=requestAnimationFrame(raf);
+        }
+        container.addEventListener('pointerdown', function(e){
+            var handle=e.target.closest ? e.target.closest(handleSel) : null;
+            if(!handle || !container.contains(handle)) return;
+            var item=handle.closest(itemSel);
+            if(!item || !canMove(item)) return;
+            dragged=item; moved=false; lastY=e.clientY; scrollSpeed=0;
+            item.classList.add('drag-sorting');
+            _dragSortActive=true;
+            try{ handle.setPointerCapture(e.pointerId); }catch(_){}
+            if(rafId==null) rafId=requestAnimationFrame(raf);
         });
-        container.addEventListener('dragend', function(e) {
-            if (e.target.classList.contains('work-card')) {
-                e.target.classList.remove('dragging');
-                draggedJob = null;
-                document.querySelectorAll('.work-card').forEach(function(c) { c.classList.remove('drag-over'); });
-                renumberJobs();
-                updateWorkCount();
-            }
-        });
-        container.addEventListener('dragover', function(e) {
+        container.addEventListener('pointermove', function(e){
+            if(!dragged) return;
             e.preventDefault();
-            var target = e.target.closest('.work-card');
-            if (target && target !== draggedJob) {
-                document.querySelectorAll('.work-card').forEach(function(c) { c.classList.remove('drag-over'); });
-                target.classList.add('drag-over');
-            }
+            lastY=e.clientY;
+            var vh=window.innerHeight;
+            if(e.clientY<70) scrollSpeed=-Math.min(22,(70-e.clientY)/2+4);
+            else if(e.clientY>vh-70) scrollSpeed=Math.min(22,(e.clientY-(vh-70))/2+4);
+            else scrollSpeed=0;
+            evaluate(e.clientY);
         });
-        container.addEventListener('drop', function(e) {
-            e.preventDefault();
-            var target = e.target.closest('.work-card');
-            if (target && target !== draggedJob && draggedJob) {
-                var rect = target.getBoundingClientRect();
-                var midY = rect.top + rect.height / 2;
-                if (e.clientY < midY) {
-                    container.insertBefore(draggedJob, target);
-                } else {
-                    container.insertBefore(draggedJob, target.nextSibling);
-                }
+        function end(e){
+            if(!dragged) return;
+            var wasMoved=moved;
+            dragged.classList.remove('drag-sorting');
+            dragged=null; _dragSortActive=false; scrollSpeed=0;
+            if(rafId!=null){ cancelAnimationFrame(rafId); rafId=null; }
+            try{ if(e.pointerId!=null && e.target.releasePointerCapture) e.target.releasePointerCapture(e.pointerId); }catch(_){}
+            if(wasMoved){
+                var sup=function(ev){ ev.stopPropagation(); ev.preventDefault(); container.removeEventListener('click', sup, true); };
+                container.addEventListener('click', sup, true);
+                setTimeout(function(){ container.removeEventListener('click', sup, true); }, 400);
+                try{ onDrop(); }catch(err){ console.warn('pointer sort onDrop failed', err); }
             }
-        });
+        }
+        container.addEventListener('pointerup', end);
+        container.addEventListener('pointercancel', end);
+    }
+    function initJobPointerSort(){
+        initPointerSort({ container:'#work-list', itemSel:'.work-card', handleSel:'.job-drag-handle',
+            canMove:function(c){ return c.getAttribute('data-status')!=='done'; },
+            onDrop:function(){ saveJobOrder(); } });
+    }
+    function initWalkPointerSort(){
+        initPointerSort({ container:'#detail-content', itemSel:'.rr-row', handleSel:'.rr-handle',
+            canMove:function(){ return true; },
+            onDrop:function(){
+                var w=document.getElementById('route-reorder-widget');
+                if(!w) return;
+                var rk=w.getAttribute('data-routekey');
+                var tags=[];
+                w.querySelectorAll('.rr-row').forEach(function(r){ var t=r.getAttribute('data-tag'); if(t!=null) tags.push(t); });
+                setWalkOrder(rk, tags);
+            } });
     }
 
     // ============================================================
@@ -7701,8 +7703,8 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.22';
-    var WHATS_NEW_REV = '1.22.0'; // bump to re-show the What's New banner without changing the displayed version
+    var APP_VERSION = '1.23';
+    var WHATS_NEW_REV = '1.23.0'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== WHATS_NEW_REV) {

@@ -7,6 +7,20 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.23 — 2026-09-02
+
+**Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). No Firebase change - code only.
+
+### Drag to reorder - works the same on phone and laptop
+- **Your Job list and a route's Walking order now have a drag handle** (a grip icon on each item). Press and hold it, then drag up or down to reorder. It works the same way on a phone (touch) and on a laptop (mouse) - one single method everywhere.
+- **On the Job list this replaces the up/down arrows.** The old arrows only moved a job one step at a time, and the desktop drag-and-drop did not work on a phone at all - so on a phone the arrows were the only way to reorder. The grip now sits on the left of each card and no longer covers the job's SCADA thumbnail on the right.
+- **On a route's Walking order (behind Edit) this replaces the point up/down arrows** with the same grip on every point, including the Start and End points. As before, only the on-screen walk order and the Record Readings order change - Thermal History and the printed/Excel report always stay in APM order.
+- The list scrolls automatically when you drag an item near the top or bottom of the screen, so you can move a job across a long list in one go.
+- The order is still saved to your account, so an order you set on a laptop shows the same on your phone.
+
+### Under the hood
+- One reusable drag-sort engine (built on Pointer Events) now powers both lists, replacing two older separate mechanisms - HTML5 drag-and-drop for the Job list and arrow buttons for the walk order. The now-unused arrow and old drag code was removed.
+
 ## v1.22 — 2026-09-02
 
 **Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). No Firebase change - code only.
