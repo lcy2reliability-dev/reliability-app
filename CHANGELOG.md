@@ -7,6 +7,21 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.22 — 2026-09-02
+
+**Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). No Firebase change - code only.
+
+### Tap a column header to sort - now on every table with headers
+- **Search results, the Parts browser, the routes list on a position, and the Activity log now sort when you tap a column header** - the same behaviour the Linked Parts, Parts Associated and Repair Kit tables already had. First tap sorts descending, second tap ascending, third tap restores the original order. The header you sorted by shows an up/down arrow.
+- Bin Location columns sort by bin order (aisle then position), not plain text, so the parts read in the order you would walk them.
+- **The Parts section of search results now lists every match, not just the first 10.** The old "+N more" link is gone - you see the full list straight away and can sort it. The Parts browser also now sorts across the whole dataset, not just the page you are looking at.
+
+### Job list now shows the full position name
+- **A conveyor/position job on your Job list now shows its full name** (e.g. MRG.CB.SRT.LN.01.180015) instead of just the short conveyor number (180015). This applies to jobs you already have on the list as well as new ones - nothing to re-add.
+
+### "Add to Job list" fixed on route search results
+- **From a route in search results, "Add to Job list" now shows the correct state.** Previously it could show "Add" for a route already on your list (and vice-versa), and tapping it left a dead label. It now shows a red "Remove from Job list" when the route is already on your list and a green "Add to Job list" when it is not, and the list re-reads correctly after you tap.
+
 ## v1.21 — 2026-09-02
 
 **Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). The 25 Firebase routes were re-typed via REST at the same time. Firebase still open (rules not yet published).
