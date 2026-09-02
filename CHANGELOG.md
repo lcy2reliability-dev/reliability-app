@@ -7,6 +7,24 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.21 — 2026-09-02
+
+**Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). The 25 Firebase routes were re-typed via REST at the same time. Firebase still open (rules not yet published).
+
+### New route type: Air Leak
+- **Routes CBM.ULTS.100 to CBM.ULTS.124 are now typed "Air Leak"** instead of Ultrasound. These 25 routes are air-leak checks that APM happens to number under the ULTS (ultrasound) prefix. The genuine ultrasound routes (CBM.ULTS.01 to CBM.ULTS.79 and the 2xx series) are unchanged. The route number itself is untouched - it still reads and transcribes back to APM exactly as before.
+- **"Air Leak" is a pure label - it changes no recording behaviour.** Only Thermal routes generate motor/gearbox reading points; every other type, including Air Leak, is a plain observation route.
+- **"Air Leak" was added to the route Type dropdowns** (add route, edit route, and the generated add form) and to the Help reference. This is required alongside the data change: without it, editing one of these routes would have blanked the type on save.
+
+### Smarter search for Air Leak routes
+- **Search "air leak"** now lists all 25 air-leak routes as a clean type search (same behaviour as searching "ultrasound"), ranked properly rather than as a low fuzzy match.
+- **Search "air leak 100"** jumps straight to CBM.ULTS.100 with a high-precision score (same behaviour as "ultrasound 05"). This works in both the full search results and the as-you-type suggestion dropdown (the dropdown previously could not handle a two-word "air leak 100" query at all).
+- **Matching keys off the route Type, never the ULTS number prefix.** Because air-leak routes share the CBM.ULTS prefix with the genuine ultrasound routes, matching on the prefix would have wrongly pulled the real ultrasound routes into air-leak results. Keying on the type field keeps them cleanly separate.
+
+### Known limitation
+- **Re-importing routes from APM would re-stamp these as "Ultrasound"** (the importer auto-maps any ULTS route number to the Ultrasound type). Route re-import is not currently used; if it ever is, the air-leak types would need re-applying afterwards.
+
+
 ## v1.20 — 2026-09-01
 
 **Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). Deployed 2026-09-01 (with a same-day refinement moving the walking-order arrows behind Edit - see the walking-order note below). This is a feature + hardening release that clears the entire Council re-audit backlog in one deploy. Firebase unchanged, still open (rules not yet published).

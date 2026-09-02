@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- RME Shift Personal Tracker v1.20 - Updated 2026-09-01 -->
+<!-- RME Shift Personal Tracker v1.21 - Updated 2026-09-02 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -553,8 +553,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.20)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM. Keep completing APM checklists, booking labour and parts, and everything else in APM exactly as you do now.<br>&bull; <strong>Sharper temperature alerts</strong>: an anomaly is now flagged when a reading differs from the median of that component's last 15 readings (was 10), so one odd reading is less likely to raise a false alarm. Trend charts now draw a <strong>median line and a &plusmn;10&deg;C band</strong> so out-of-range readings stand out.<br>&bull; <strong>"Due for a reading" reminders removed</strong>: Open Alerts now shows temperature anomalies only. Your job list still highlights overdue jobs exactly as before.<br>&bull; <strong>Set your own walking order</strong> - on a route, tap Edit, then use the up/down arrows on the Route Points to match the order you actually walk it (numerical by default). Recording readings follows that order; Thermal History always stays in APM order so it copies straight back into APM.<br>&bull; <strong>Easier to tap with gloves</strong>: the reorder arrows, menu and image-close buttons are bigger, the whole done-toggle row is tappable, and the app now works with a keyboard and screen readers - press <strong>Escape</strong> to close pop-ups. Tap any column heading to sort a table.<br>&bull; <strong>Faster repeat loads</strong>: parts data is cached for the session instead of being re-downloaded every time you open the app.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.21)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM. Keep completing APM checklists, booking labour and parts, and everything else in APM exactly as you do now.<br>&bull; <strong>Air Leak routes</strong>: routes CBM.ULTS.100 to CBM.ULTS.124 are now labelled <strong>Air Leak</strong> instead of Ultrasound. Search <strong>air leak</strong> to list them all, or <strong>air leak 100</strong> to jump straight to CBM.ULTS.100. The route number stays exactly as it is in APM, so readings still transcribe back correctly.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -754,7 +754,7 @@
                     </div>
                     <div class="form-group">
                         <label>Type</label>
-                        <select id="route-type" onchange="toggleNeedsTemp()"><option value="">Select type...</option><option>Ultrasound</option><option>Thermal</option><option>Oil</option><option>Ranger</option><option>Strobe</option><option>Vibration</option><option>Other</option></select>
+                        <select id="route-type" onchange="toggleNeedsTemp()"><option value="">Select type...</option><option>Ultrasound</option><option>Air Leak</option><option>Thermal</option><option>Oil</option><option>Ranger</option><option>Strobe</option><option>Vibration</option><option>Other</option></select>
                     </div>
                     <div class="form-group" id="needs-temp-group" style="display:none;">
                         <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -1868,7 +1868,7 @@
         const container=document.getElementById(_cfg?_cfg.results:'search-results');
 
         // Special keywords: show all routes of a type
-        const isTypeSearch = /^(ultrasound|thermal|cbm)$/i.test(queryLower);
+        const isTypeSearch = /^(ultrasound|thermal|cbm|air ?leaks?)$/i.test(queryLower);
 
         try {
             const[allEquipment,allParts,allRoutes]=await Promise.all([
@@ -1893,12 +1893,20 @@
                     if(isTypeSearch){
                         if(queryLower==='cbm')score=50;
                         else if(rType===queryLower)score=50;
+                        else if(/^air ?leaks?$/.test(queryLower)&&rType.includes('air leak'))score=50;
                         else if(queryLower==='ultrasound'&&rType.includes('ultra'))score=50;
                         else if(queryLower==='thermal'&&rType.includes('therm'))score=50;
                         else if(queryLower==='strobe'&&rType.includes('strob'))score=50;
                         else if(queryLower==='ranger'&&rType.includes('rngr'))score=50;
                         else if(queryLower==='oil'&&rType.includes('oil'))score=50;
                         else if(queryLower==='vibration'&&rType.includes('vibr'))score=50;
+                    } else if(/air\s*leaks?/.test(queryLower)){
+                        // Air Leak: match by TYPE field only (routes are numbered CBM.ULTS.1xx, so never key off the ULTS prefix)
+                        if(rType.includes('air leak')){
+                            var _alNum=(queryLower.match(/\d+/)||[])[0];
+                            if(_alNum){ if(rnLower.includes(_alNum))score=95; }
+                            else score=50;
+                        }
                     } else {
                         // Direct route number match
                         if(_wild){if(_wildRe&&_wildRe.test(rnLower))score=90;} else if(rnLower===queryLower)score=100;
@@ -4369,7 +4377,7 @@
               if(_isAdmin){
                 html += '<div class="form-group"><label>Route Number</label><input type="text" id="edit-route-num" value="' + escapeHtml(data.routeNumber||'') + '"></div>';
                 html += '<div class="form-group"><label>Type</label><select id="edit-route-type">';
-                ['','Ultrasound','Thermal','Oil','Ranger','Strobe','Vibration','Other'].forEach(function(t) { html += '<option' + (t===data.type?' selected':'') + '>' + (t||'Select...') + '</option>'; });
+                ['','Ultrasound','Air Leak','Thermal','Oil','Ranger','Strobe','Vibration','Other'].forEach(function(t) { html += '<option' + (t===data.type?' selected':'') + '>' + (t||'Select...') + '</option>'; });
                 html += '</select></div>';
                 html += '<div class="form-group"><label>Equipment Description</label><input type="text" id="edit-route-desc" value="' + escapeHtml(data.notes||'') + '"></div>';
                 html += '<div class="form-group"><label>Start Point</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="edit-route-start" value="' + escapeHtml(data.startPoint||'') + '" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27edit-route-start\x27)" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>';
@@ -4806,6 +4814,12 @@ function liveSearchSuggest(query,scope){
                     if(v.active===false)return;
                     var rn=v.routeNumber?v.routeNumber.toString():'';
                     var s=Math.max(scoreId(rn),scoreText(v.notes),scoreText(v.type));
+                    // Air Leak: match by TYPE field only (routes are numbered CBM.ULTS.1xx, never key off the ULTS prefix)
+                    if(/air\s*leaks?/.test(q)&&(v.type||'').toLowerCase().indexOf('air leak')>=0){
+                        var _aln=(q.match(/\d+/)||[])[0];
+                        if(_aln){ if(rn.toLowerCase().indexOf(_aln)>=0)s=Math.max(s,95); }
+                        else s=Math.max(s,50);
+                    }
                     if(s>0)results.push({type:'route',key:k,label:v.routeNumber,sub:(v.type||'')+(v.notes?' — '+v.notes.substring(0,40):''),_score:s});
                 });
                 if(_cfg)results=results.filter(function(r){return (r.type==='equipment'&&_cfg.eq)||(r.type==='part'&&_cfg.pt)||(r.type==='route'&&_cfg.rt);});
@@ -6224,7 +6238,7 @@ function liveSearchSuggest(query,scope){
             title = 'Add New Route';
             html += '<div class="form-group"><label>Route Number</label><input type="text" id="new-route-num" placeholder="e.g. CBM.ULTS.99"></div>';
             html += '<div class="form-group"><label>Type</label><select id="new-route-type">';
-            html += '<option value="">Select type...</option><option>Ultrasound</option><option>Thermal</option><option>Oil</option><option>Ranger</option><option>Strobe</option><option>Vibration</option><option>Other</option></select></div>';
+            html += '<option value="">Select type...</option><option>Ultrasound</option><option>Air Leak</option><option>Thermal</option><option>Oil</option><option>Ranger</option><option>Strobe</option><option>Vibration</option><option>Other</option></select></div>';
             html += '<div class="form-group"><label>Equipment Description *</label><input type="text" id="new-route-desc" placeholder="e.g. AFE 2.0, SORTER, INFEED"></div>';
             html += '<div class="form-group"><label>Starting Point *</label><input type="text" id="new-route-start" placeholder="e.g. 703010"></div>';
             html += '<div id="new-route-waypoints"></div>';
@@ -7577,7 +7591,7 @@ function liveSearchSuggest(query,scope){
         html += '<div class="card"><h2>\uD83D\uDEE4\uFE0F CBM routes</h2>';
         html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
         html += '<li>Routes are inspection paths with waypoints</li>';
-        html += '<li>Types: Thermal, Ultrasound, Oil, Ranger, Strobe, Vibration</li>';
+        html += '<li>Types: Thermal, Ultrasound, Air Leak, Oil, Ranger, Strobe, Vibration</li>';
         html += '<li><strong>Thermal routes:</strong> you can record readings directly in the app. <strong style="color:#b45309;">The readings still need to be entered into APM in the route\'s checklist</strong> \u2014 this app does not send anything to APM.</li>';
         html += '<li>Inactive routes are hidden from position detail views</li>';
         html += '<li>' + (admin ? 'Tap <strong>Edit</strong> on a route to change its number, type, waypoints, the temperature-reading-required toggle or the screenshot, and to decommission or delete it' : 'On a route you can add a screenshot (or replace one you added yourself) and add notes; the number, type and waypoints are managed by admins') + '</li>';
@@ -7689,8 +7703,8 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.20';
-    var WHATS_NEW_REV = '1.20.0'; // bump to re-show the What's New banner without changing the displayed version
+    var APP_VERSION = '1.21';
+    var WHATS_NEW_REV = '1.21.0'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== WHATS_NEW_REV) {
