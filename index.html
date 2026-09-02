@@ -96,6 +96,7 @@
         .search-link:hover { text-decoration:underline; }
         .detail-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#f0f2f5; z-index:9997; overflow-y:auto; }
         .detail-overlay.active { display:block; }
+        .detail-overlay:focus { outline:none; }
         .detail-header { background:#232F3E; color:white; padding:16px 20px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:1; }
         .detail-header button { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:white; padding:8px 14px; border-radius:6px; font-size:13px; cursor:pointer; }
         .detail-header h2 { font-size:18px; font-weight:600; flex:1; }
@@ -111,25 +112,26 @@
         .login-card input:focus { outline:none; border-color:#60a5fa; }
         a:focus-visible, button:focus-visible, [role="button"]:focus-visible, [tabindex]:focus-visible, .search-link:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
         .login-card .btn { width:100%; padding:14px; font-size:16px; }
-        .work-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:14px; padding-left:40px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; position:relative; }
+        .work-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:14px; padding-left:48px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; position:relative; }
         .work-card:hover { border-color:#60a5fa; box-shadow:0 2px 8px rgba(37,99,235,0.1); }
         .work-card .work-type { font-size:11px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:4px; display:inline-block; margin-bottom:6px; }
         .work-card .work-type.fwo { background:#fee2e2; color:#dc2626; }
         .work-card .work-type.pm { background:#dbeafe; color:#2563eb; }
-        .work-card .work-type.cbm { background:#d1fae5; color:#00A8E1; }
+        .work-card .work-type.cbm { background:#d1fae5; color:#047857; }
         .work-card .work-equipment { font-size:15px; font-weight:600; color:#1a1a2e; }
         .work-card .work-details { font-size:12px; color:#6b7280; margin-top:4px; }
         .work-card.overdue { background:#fef2f2; border-color:#fca5a5; }
         .work-card.overdue:hover { border-color:#f87171; }
         .work-card .overdue-badge { display:inline-block; padding:2px 8px; margin-left:8px; background:#ef4444; color:#fff; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:0.3px; vertical-align:middle; }
         .work-card-actions { display:flex; gap:6px; margin-top:8px; }
-        .drag-handle { touch-action:none; cursor:grab; -webkit-user-select:none; user-select:none; color:#9ca3af; }
+        .drag-handle { touch-action:none; cursor:grab; -webkit-user-select:none; user-select:none; color:#6b7280; }
         .drag-handle:active { cursor:grabbing; }
-        .job-drag-handle { position:absolute; left:4px; top:50%; transform:translateY(-50%); width:28px; height:46px; display:flex; align-items:center; justify-content:center; font-size:17px; border-radius:6px; z-index:2; }
+        .job-drag-handle { position:absolute; left:4px; top:50%; transform:translateY(-50%); width:44px; height:46px; display:flex; align-items:center; justify-content:center; font-size:17px; border-radius:6px; z-index:2; }
         .job-drag-handle:hover { background:#eef2ff; color:#6b7280; }
         .work-card.drag-sorting { opacity:0.95; box-shadow:0 8px 24px rgba(37,99,235,0.28); border-color:#93c5fd; z-index:10; }
-        .rr-handle { flex:0 0 auto; width:36px; height:44px; display:flex; align-items:center; justify-content:center; font-size:17px; border:1px solid #d1d5db; border-radius:6px; background:#f9fafb; margin-right:10px; }
+        .rr-handle { flex:0 0 auto; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:17px; border:1px solid #d1d5db; border-radius:6px; background:#f9fafb; margin-right:10px; }
         .rr-row.drag-sorting { background:#eef2ff; box-shadow:0 4px 12px rgba(37,99,235,0.2); border-radius:6px; }
+        .work-done-row:focus-within { outline:2px solid #2563eb; outline-offset:2px; border-radius:8px; }
         .work-card-body { display:flex; gap:12px; align-items:flex-start; }
         .work-card-info { flex:1 1 auto; min-width:0; }
         .work-scada { flex:0 0 auto; align-self:center; }
@@ -596,7 +598,7 @@
     </div>
     <div id="offline-banner" role="status" aria-live="polite" style="display:none;background:#fee2e2;color:#991b1b;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;border-bottom:1px solid #fca5a5;">&#9888; You are offline — changes may not save until your connection returns.</div>
     <div id="sync-status" class="sync-status" role="status" aria-live="polite" style="display:none;"></div>
-    <div id="pending-approval-banner" role="status" style="display:none;background:#fef3c7;color:#92400e;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;border-bottom:1px solid #fcd34d;">&#9203; Confirm your email to unlock editing. We sent a link to your Amazon inbox &mdash; click it, then return here. <a role="button" tabindex="0" onclick="resendConfirmation()" style="color:#92400e;text-decoration:underline;cursor:pointer;">Resend link</a></div>
+    <div id="pending-approval-banner" role="status" aria-live="polite" style="display:none;background:#fef3c7;color:#92400e;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;border-bottom:1px solid #fcd34d;">&#9203; Confirm your email to unlock editing. We sent a link to your Amazon inbox &mdash; click it, then return here. <a role="button" tabindex="0" onclick="resendConfirmation()" style="color:#92400e;text-decoration:underline;cursor:pointer;">Resend link</a></div>
     <div class="content">
         <!-- SEARCH -->
         <div id="sec-search" class="section active" role="tabpanel" aria-labelledby="tab-search">
@@ -619,7 +621,7 @@
             <div id="search-results"></div>
             <div class="card" id="home-joblist">
                 <h2 style="display:flex;align-items:center;gap:6px;">Job list <span id="work-count" style="background:#2563eb;color:white;border-radius:10px;padding:1px 7px;font-size:11px;"></span></h2>
-                <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Your jobs for the day.</p>
+                <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Your jobs for the day. Press and drag the &#9776; grip on a card to reorder.</p>
                 <div id="work-list" style="margin-top:8px;"><div class="empty-state">No jobs assigned yet</div></div>
             </div>
         </div>
@@ -876,7 +878,7 @@
     </div>
 
     <!-- DETAIL OVERLAY -->
-    <div class="detail-overlay" id="detail-overlay" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+    <div class="detail-overlay" id="detail-overlay" role="dialog" aria-modal="true" aria-labelledby="detail-title" tabindex="-1">
         <div class="detail-header">
             <button onclick="closeDetail()">&larr; Back</button>
             <h2 id="detail-title">Details</h2>
@@ -952,7 +954,7 @@
 
     let db = null, firebaseReady = false, currentUser = null, lastSearchResultCount = 0;
     var _saveReadingsCooldown = false; // rate-limit: 5s cooldown between thermal saves
-    var auth = null, currentUid = null, currentRole = 'technician', currentReviewed = true, currentName = '', currentEmailVerified = false, _registeringUid = null;
+    var auth = null, currentUid = null, currentRole = 'technician', currentReviewed = false, currentName = '', currentEmailVerified = false, _registeringUid = null;
     var SESSION_IDLE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days idle -> require PIN again
     var _lastActiveWrite = 0;
     function stampActive(){ var n = Date.now(); if(n - _lastActiveWrite > 60000){ _lastActiveWrite = n; try{ localStorage.setItem('reliability_last_active', String(n)); }catch(_e){} } }
@@ -1294,7 +1296,7 @@
                     onLoginComplete();
                 } catch (e) { hideLoading(); console.error('Auth profile load failed:', e); showToast('Could not load your profile', 'error'); }
             } else {
-                currentUid = null; currentRole = 'technician';
+                currentUid = null; currentRole = 'technician'; currentReviewed = false; currentEmailVerified = false;
                 applyRoleVisibility();
                 initLogin();
             }
@@ -1457,6 +1459,62 @@
         if (_modalPrevFocus && _modalPrevFocus.focus) { try { _modalPrevFocus.focus(); } catch(e){} }
         _modalPrevFocus = null;
     }
+    // ---- UX-H3: focus trap for the full-screen detail/record/report overlay. Mirrors the #modal
+    // trap. Escape-to-close is already handled by the global keydown handler; this adds focus-in on
+    // open, Tab / Shift+Tab cycling, and focus restore on close. It stands down while a #modal or
+    // #img-viewer is stacked on top so their own handling wins. Wired via ONE MutationObserver on
+    // the overlay's class so every open/close site (present and future) is covered.
+    var _detailPrevFocus = null;
+    var _detailKeyHandler = null;
+    function _detailFocusables() {
+        var ov = document.getElementById('detail-overlay');
+        if (!ov) return [];
+        return Array.prototype.slice.call(ov.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter(function(el){ return el.offsetParent !== null; });
+    }
+    function _detailModalStacked() {
+        var m = document.getElementById('modal'); if (m && m.classList.contains('active')) return true;
+        var iv = document.getElementById('img-viewer'); if (iv && iv.classList.contains('active')) return true;
+        return false;
+    }
+    function _openDetailFocus() {
+        if (_detailKeyHandler) return;
+        _detailPrevFocus = document.activeElement;
+        _detailKeyHandler = function(e) {
+            if (e.key !== 'Tab') return;
+            var ov = document.getElementById('detail-overlay');
+            if (!ov || !ov.classList.contains('active')) return;
+            if (_detailModalStacked()) return;
+            var ff = _detailFocusables();
+            if (!ff.length) return;
+            var first = ff[0], last = ff[ff.length - 1];
+            if (ff.indexOf(document.activeElement) === -1) { e.preventDefault(); first.focus(); }
+            else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        };
+        document.addEventListener('keydown', _detailKeyHandler, true);
+        setTimeout(function(){ if (_detailModalStacked()) return; var ov = document.getElementById('detail-overlay'); if (ov && ov.classList.contains('active')) { try { ov.focus(); } catch(e){} } }, 40);
+    }
+    function _closeDetailFocus() {
+        if (_detailKeyHandler) { document.removeEventListener('keydown', _detailKeyHandler, true); _detailKeyHandler = null; }
+        if (_detailPrevFocus && _detailPrevFocus.focus) { try { _detailPrevFocus.focus(); } catch(e){} }
+        _detailPrevFocus = null;
+    }
+    (function _wireDetailFocusObserver(){
+        function wire(){
+            var ov = document.getElementById('detail-overlay');
+            if (!ov || ov._focusObserverWired) return;
+            ov._focusObserverWired = true;
+            var wasActive = ov.classList.contains('active');
+            new MutationObserver(function(){
+                var now = ov.classList.contains('active');
+                if (now && !wasActive) _openDetailFocus();
+                else if (!now && wasActive) _closeDetailFocus();
+                wasActive = now;
+            }).observe(ov, { attributes: true, attributeFilter: ['class'] });
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+        else wire();
+    })();
     function showModal(title, message) {
         return new Promise(resolve => {
             document.getElementById('modal-title').textContent = title;
@@ -1627,7 +1685,7 @@
     function sortTable(tableId, colIdx) {
         var table=document.getElementById(tableId);if(!table)return;
         var tbody=table.querySelector('tbody');if(!tbody)return;
-        var rows=Array.from(tbody.children).filter(function(r){return r.nodeName==='TR';});
+        var rows=Array.from(tbody.children).filter(function(r){return r.nodeName==='TR'&&!(r.getAttribute&&r.getAttribute('data-nomatch'));});
         if(_sortOrig[tableId]&&(!_sortOrig[tableId].length||_sortOrig[tableId][0].parentNode!==tbody)){_sortOrig[tableId]=null;sortState[tableId]=null;}
         if(!_sortOrig[tableId])_sortOrig[tableId]=rows.slice();
         var cur=sortState[tableId];
@@ -1688,6 +1746,7 @@
     let _waData = null; // live snapshot from loadWorkAssigned's persistent listener, reused by one-shot duplicate-checks
     const CACHE_TTL = 60000; // 1 minute
     const ANOMALY_WINDOW = 15; // readings history window for median anomaly detection
+    const SEARCH_RESULT_CAP = 150; // PERF-M2: cap rendered search-result rows. Below cap, header-sort covers the full set; above it, top-N by relevance + a refine note.
 
     let autocompleteTimeout = null;
     async function autocompletePosition(query, dropdownId, inputId) {
@@ -1814,7 +1873,7 @@
             });
             await db.ref('parts').remove();
             await db.ref('parts').set(Object.fromEntries(Object.entries(apnMap)));
-            invalidatePartsCache();localStorage.setItem('partsMigrated_v1','1');console.log('Migration complete');
+            invalidatePartsCache();localStorage.setItem('partsMigrated_v1','1');console.info('Migration complete');
         } catch(e){console.error('Migration error:',e);}
     }
 
@@ -1962,9 +2021,11 @@
                 if(routeResults.length>0){
                     hasResults=true;
                     html+='<div class="search-result-section"><h3>CBM Routes ('+routeResults.length+' results)</h3>';
+                    var _routesCapped=routeResults.length>SEARCH_RESULT_CAP;var _routeShown=_routesCapped?routeResults.slice(0,SEARCH_RESULT_CAP):routeResults;
+                    if(_routesCapped)html+='<div style="padding:8px 12px;margin-bottom:8px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;font-size:12px;color:#9a3412;">Showing the '+SEARCH_RESULT_CAP+' most relevant of '+routeResults.length+' matches. Refine your search to see and sort them all.</div>';
                     var _waAll=await getWorkAssignedData();var _myRoutes={};Object.keys(_waAll||{}).forEach(function(_id){var _j=(_waAll||{})[_id];if(_j&&(_j.assignedTo||'').toLowerCase()===currentUser.toLowerCase()&&_j.routeNumber)_myRoutes[_j.routeNumber]=1;});
                     html+='<table id="sr-routes-table" class="rtable"><thead><tr>'+sortTh('sr-routes-table',0,'Route')+sortTh('sr-routes-table',1,'Type')+sortTh('sr-routes-table',2,'Equipment Description')+sortTh('sr-routes-table',3,'Start')+sortTh('sr-routes-table',4,'End')+'<th>Actions</th></tr></thead><tbody>';
-                    routeResults.forEach(item=>{
+                    _routeShown.forEach(item=>{
                         var r=item.data;
                         html+='<tr><td data-label="Route"><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(r.routeNumber)+'</a>'+(routeReadingRequired(r)?' <span class="rspark" data-rk="'+item.key+'"></span>':'')+'</td><td data-label="Type">'+escapeHtml(r.type)+'</td><td data-label="Equipment">'+escapeHtml(r.notes||'\u2014')+'</td><td data-label="Start">'+escapeHtml(r.startPoint)+'</td><td data-label="End">'+escapeHtml(r.endPoint||'\u2014')+'</td>';
                         if(_myRoutes[r.routeNumber]){html+='<td data-label="Action"><a class="search-link" href="#" onclick="removeFromWorkFromSearch(\x27route\x27,\x27'+item.key+'\x27,\x27'+escapeAttrArg(r.routeNumber)+'\x27,true);return false;" style="font-size:12px;color:#ef4444;font-weight:600;">\u2212 Remove from Job list</a></td>';}
@@ -2053,8 +2114,10 @@
                 if(partResults.length>0){
                     hasResults=true;
                     html+='<div class="search-result-section"><h3>Parts ('+partResults.length+' results)</h3>';
+                    var _partsCapped=partResults.length>SEARCH_RESULT_CAP;var _partShown=_partsCapped?partResults.slice(0,SEARCH_RESULT_CAP):partResults;
+                    if(_partsCapped)html+='<div style="padding:8px 12px;margin-bottom:8px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;font-size:12px;color:#9a3412;">Showing the '+SEARCH_RESULT_CAP+' most relevant of '+partResults.length+' matches. Refine your search to see and sort them all.</div>';
                     html+='<table id="sr-parts-table" class="rtable"><thead><tr>'+sortTh('sr-parts-table',0,'APN')+sortTh('sr-parts-table',1,'Description')+sortTh('sr-parts-table',2,'Class')+sortTh('sr-parts-table',3,'Bin',true)+sortTh('sr-parts-table',4,'Criticality')+'</tr></thead><tbody>';
-                    partResults.forEach(item=>{
+                    _partShown.forEach(item=>{
                         var p=item.data;
                         var cc=critFg(p.criticality);
                         html+='<tr><td data-label="APN"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td><td data-label="Description">'+escapeHtml(p.partDescription||p.notes||'\u2014')+'</td><td data-label="Class"><span style="font-size:11px;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:8px;">'+escapeHtml(p.partClass||p.partType||'\u2014')+'</span></td><td data-label="Bin" style="font-weight:600;">'+escapeHtml(p.binLocation||p.location||'\u2014')+'</td><td data-label="Criticality"><span style="color:'+cc+';font-size:11px;">'+escapeHtml(p.criticality||'')+'</span></td></tr>';
@@ -2606,7 +2669,7 @@
             var _eqc = await getEquipmentCache();
             var isThermal = routeReadingRequired(data);
             var histVal = null;
-            if (isThermal){ var hs = await db.ref('readings/' + routeKey).limitToLast(12).once('value'); histVal = hs.val(); }
+            if (isThermal){ var hs = await db.ref('readings/' + routeKey).limitToLast(ANOMALY_WINDOW).once('value'); histVal = hs.val(); }
             var notesSnap = await db.ref('notes/routes/' + routeKey).once('value');
             var notesVal = notesSnap.val();
             var now = new Date();
@@ -2621,6 +2684,7 @@
             if (data.waypoints) allPts = allPts.concat(data.waypoints);
             if (data.endPoint && data.endPoint !== data.startPoint) allPts.push(data.endPoint);
             allPts = allPts.filter(function(p){ return p; });
+            allPts = apmOrderKeys(allPts, data.apmOrder); // L-01: list points in APM walk order, matching the readings table below
             if (allPts.length){
                 h += '<div class="pr-section"><div class="pr-h">Route Points (' + allPts.length + ')</div><ol class="pr-pts">';
                 allPts.forEach(function(p){ h += '<li>' + posDisp(_eqc[sanitizeKey(p)], p) + '</li>'; });
@@ -3283,7 +3347,10 @@
         if(!tbody)return;
         let dragRow=null;
 
+        // CQ-L2: this admin CSV-import wizard re-runs on each render; wire each row once
+        // so HTML5 drag listeners do not accumulate (pre-existing, mobile-limited mechanism).
         tbody.querySelectorAll('tr').forEach(row=>{
+            if(row._dragWired)return; row._dragWired=true;
             row.addEventListener('dragstart',e=>{
                 dragRow=row;row.style.opacity='0.4';
                 e.dataTransfer.effectAllowed='move';
@@ -3726,7 +3793,7 @@
             items.forEach(([key,item])=>{
                 if(!item||!item.workType)return;
                 var _isOverdue=item.status!=='done'&&item.createdAt&&new Date(item.createdAt)<_workCutoff;
-                html+='<div class="work-card'+(item.status==='done'?' done':'')+(_isOverdue?' overdue':'')+'" onclick="expandWorkCard(this)" data-key="'+key+'" data-status="'+(item.status||'pending')+'">';
+                html+='<div class="work-card'+(item.status==='done'?' done':'')+(_isOverdue?' overdue':'')+'" onclick="expandWorkCard(this)" data-key="'+key+'" data-status="'+escapeHtml(item.status||'pending')+'">';
                 if(item.status!=='done')html+='<div class="job-drag-handle drag-handle" title="Drag to reorder" aria-label="Drag to reorder job" onclick="event.stopPropagation();">\u2630</div>';
                 var _wsType=(item.workType==='CBM'&&item.routeNumber)?'route':'equipment';
                 var _wsKey=_wsType==='route'?sanitizeKey(item.routeNumber):sanitizeKey(item.equipment||'');
@@ -4019,31 +4086,36 @@
     }
     async function setWalkOrder(routeKey, tags){
         if(!requireWrite())return;
+        if(!currentUser)return;                 // SEQ M1/M3: no write pre-auth / post-logout
         if(!checkFirebase())return;
+        var safeKey=sanitizeKey(routeKey);       // SEQ-004: defence in depth
         try{
-            await db.ref('routes/'+routeKey+'/walkOrder').set(tags);
-            var snap=await db.ref('routes/'+routeKey).once('value');
-            var route=snap.val()||{};
-            route.walkOrder=tags;
+            // M-02/CQ-L1: absolute-state write via transaction (consistent with the v1.20 robustness batch).
+            await db.ref('routes/'+safeKey+'/walkOrder').transaction(function(){ return tags; });
+            var snap=await db.ref('routes/'+safeKey).once('value');
+            var route=snap.val()||{};            // L-03: re-render from the persisted value, not a local copy
             await invalidateRoutesCache();
-            try{logAudit('reorderWalk','route',routeKey,{order:tags});}catch(_e){}
+            try{logAudit('reorderWalk','route',safeKey,{order:tags});}catch(_e){}
+            showToast('Walking order saved','success');
             var _rw=document.getElementById('route-reorder-widget');
-            if(_rw){_rw.outerHTML=await renderRouteReorder(routeKey,route);}
-        }catch(e){showToast('Error: '+e.message,'error');}
+            if(_rw){_rw.outerHTML=await renderRouteReorder(safeKey,route);}
+        }catch(e){showToast('Could not save walking order: '+e.message,'error');}
     }
     async function resetRoutePointOrder(routeKey){
         if(!requireWrite())return;
+        if(!currentUser)return;                 // SEQ M1/M3
         if(!checkFirebase())return;
+        var safeKey=sanitizeKey(routeKey);       // SEQ-004
         var ok=await showCustomModal('Reset walking order','<p style="font-size:14px;color:#374151;line-height:1.5;">Reset the walking order for this route back to numerical? Thermal History is unaffected.</p>',[{label:'Cancel',class:'btn-secondary',value:'cancel'},{label:'Reset',class:'btn-primary',value:'ok'}]);
         if(ok!=='ok')return;
         try{
-            await db.ref('routes/'+routeKey+'/walkOrder').remove();
+            await db.ref('routes/'+safeKey+'/walkOrder').remove();
             await invalidateRoutesCache();
-            try{logAudit('resetWalk','route',routeKey,{});}catch(_e){}
+            try{logAudit('resetWalk','route',safeKey,{});}catch(_e){}
             showToast('Walking order reset to numerical','success');
             var _rw=document.getElementById('route-reorder-widget');
-            if(_rw){var _rs=await db.ref('routes/'+routeKey).once('value');var _rd=_rs.val()||{};delete _rd.walkOrder;_rw.outerHTML=await renderRouteReorder(routeKey,_rd);}else{detailEdit('route',routeKey);}
-        }catch(e){showToast('Error: '+e.message,'error');}
+            if(_rw){var _rs=await db.ref('routes/'+safeKey).once('value');var _rd=_rs.val()||{};delete _rd.walkOrder;_rw.outerHTML=await renderRouteReorder(safeKey,_rd);}else{detailEdit('route',safeKey);}
+        }catch(e){showToast('Could not reset walking order: '+e.message,'error');}
     }
 
     async function openDetail(type,key){
@@ -4598,7 +4670,8 @@
     // ============================================================
     // (cache vars declared above in the autocomplete section)
     var _imgCache={};
-    function _imgCachePut(k,v){ var ks=Object.keys(_imgCache); if(!(k in _imgCache) && ks.length>=50){ delete _imgCache[ks[0]]; } _imgCache[k]=v; return v; }
+    var IMG_CACHE_MAX=50; // max cached base64 route/equipment images (FIFO evict)
+    function _imgCachePut(k,v){ var ks=Object.keys(_imgCache); if(!(k in _imgCache) && ks.length>=IMG_CACHE_MAX){ delete _imgCache[ks[0]]; } _imgCache[k]=v; return v; }
     async function getEquipmentCache() {
         if (!firebaseReady) return {};
         const now = Date.now();
@@ -5416,7 +5489,7 @@ function liveSearchSuggest(query,scope){
             });
             await db.ref().update(updates);
             localStorage.setItem('reliability_cleanup_v102', 'done');
-            console.log('v1.02 cleanup: wiped Type + Notes from all equipment');
+            console.info('v1.02 cleanup: wiped Type + Notes from all equipment');
         } catch(e) { console.error('Cleanup error:', e); }
     }
 
@@ -5641,17 +5714,24 @@ function liveSearchSuggest(query,scope){
     }
 
     var _saveOrderTimer = null;
+    var SAVE_ORDER_DEBOUNCE_MS = 500;
     function saveJobOrder() { if(!requireWrite())return;
         if (!firebaseReady || !currentUser) return;
         // Persist the order in Firebase (sortIndex per job) so the plan set on a laptop
-        // shows in the same order on the phone. Debounced so rapid arrow clicks = one write.
+        // shows in the same order on the phone. Debounced so rapid reorders = one write.
+        // BUG-1: snapshot the card order SYNCHRONOUSLY now, before a realtime re-render can
+        // revert the DOM inside the debounce window; the timer writes the snapshot, not live DOM.
+        var _snap = [];
+        document.querySelectorAll('#work-list .work-card').forEach(function(c) {
+            if (c.dataset.key && c.dataset.status !== 'done') _snap.push(c.dataset.key);
+        });
         clearTimeout(_saveOrderTimer);
         _saveOrderTimer = setTimeout(function() {
-            var cards = document.querySelectorAll('#work-list .work-card');
-            var updates = {}; var idx = 0;
-            cards.forEach(function(c) { if (c.dataset.key && c.dataset.status !== 'done') { updates['workAssigned/' + c.dataset.key + '/sortIndex'] = idx++; } });
+            if (!firebaseReady || !currentUser) return; // SEQ-006: re-check after debounce (logout race)
+            var updates = {};
+            _snap.forEach(function(k, i) { updates['workAssigned/' + k + '/sortIndex'] = i; });
             if (Object.keys(updates).length && typeof db !== 'undefined' && db) db.ref().update(updates).catch(function(e) { console.warn('save job order failed', e); });
-        }, 500);
+        }, SAVE_ORDER_DEBOUNCE_MS);
     }
 
     function formatWorkTime(iso){
@@ -5852,7 +5932,10 @@ function liveSearchSuggest(query,scope){
     }
 
     // ===== REUSABLE POINTER-EVENTS DRAG SORT (v1.23, mobile + laptop) =====
+    // Shared across every initPointerSort instance: blocks the workAssigned realtime
+    // re-render (loadWorkAssigned) while a drag is in progress so a tick cannot revert the DOM.
     var _dragSortActive = false;
+    var DRAG_LOOP_GUARD = 60, DRAG_SCROLL_ZONE = 70, DRAG_MAX_SCROLL = 22, DRAG_CLICK_SUPPRESS_MS = 400;
     function initPointerSort(opts){
         var container = typeof opts.container==='string' ? document.querySelector(opts.container) : opts.container;
         if(!container) return;
@@ -5861,7 +5944,7 @@ function liveSearchSuggest(query,scope){
         var itemSel=opts.itemSel, handleSel=opts.handleSel;
         var canMove=opts.canMove||function(){return true;};
         var onDrop=opts.onDrop||function(){};
-        var dragged=null, moved=false, lastY=0, scrollSpeed=0, rafId=null;
+        var dragged=null, moved=false, lastY=0, scrollSpeed=0, rafId=null, activeHandle=null;
         function sib(el, dir){
             var n = dir>0 ? el.nextElementSibling : el.previousElementSibling;
             while(n && !(n.matches && n.matches(itemSel))) n = dir>0 ? n.nextElementSibling : n.previousElementSibling;
@@ -5870,9 +5953,9 @@ function liveSearchSuggest(query,scope){
         function evaluate(y){
             if(!dragged) return;
             var parent=dragged.parentNode, guard=0;
-            while(guard++<60){ var nx=sib(dragged,1); if(!nx)break; var r=nx.getBoundingClientRect(); if(y>r.top+r.height/2){ parent.insertBefore(nx,dragged); moved=true; } else break; }
+            while(guard++<DRAG_LOOP_GUARD){ var nx=sib(dragged,1); if(!nx)break; var r=nx.getBoundingClientRect(); if(y>r.top+r.height/2){ parent.insertBefore(nx,dragged); moved=true; } else break; }
             guard=0;
-            while(guard++<60){ var pv=sib(dragged,-1); if(!pv)break; var r2=pv.getBoundingClientRect(); if(y<r2.top+r2.height/2){ parent.insertBefore(dragged,pv); moved=true; } else break; }
+            while(guard++<DRAG_LOOP_GUARD){ var pv=sib(dragged,-1); if(!pv)break; var r2=pv.getBoundingClientRect(); if(y<r2.top+r2.height/2){ parent.insertBefore(dragged,pv); moved=true; } else break; }
         }
         function raf(){
             if(!_dragSortActive){ rafId=null; return; }
@@ -5885,7 +5968,7 @@ function liveSearchSuggest(query,scope){
             if(!handle || !container.contains(handle)) return;
             var item=handle.closest(itemSel);
             if(!item || !canMove(item)) return;
-            dragged=item; moved=false; lastY=e.clientY; scrollSpeed=0;
+            dragged=item; moved=false; lastY=e.clientY; scrollSpeed=0; activeHandle=handle;
             item.classList.add('drag-sorting');
             _dragSortActive=true;
             try{ handle.setPointerCapture(e.pointerId); }catch(_){}
@@ -5896,10 +5979,10 @@ function liveSearchSuggest(query,scope){
             e.preventDefault();
             lastY=e.clientY;
             var vh=window.innerHeight;
-            if(e.clientY<70) scrollSpeed=-Math.min(22,(70-e.clientY)/2+4);
-            else if(e.clientY>vh-70) scrollSpeed=Math.min(22,(e.clientY-(vh-70))/2+4);
+            if(e.clientY<DRAG_SCROLL_ZONE) scrollSpeed=-Math.min(DRAG_MAX_SCROLL,(DRAG_SCROLL_ZONE-e.clientY)/2+4);
+            else if(e.clientY>vh-DRAG_SCROLL_ZONE) scrollSpeed=Math.min(DRAG_MAX_SCROLL,(e.clientY-(vh-DRAG_SCROLL_ZONE))/2+4);
             else scrollSpeed=0;
-            evaluate(e.clientY);
+            // PERF-01: swaps run once per frame in the rAF loop (evaluate(lastY)); doing it here too double-thrashed layout.
         });
         function end(e){
             if(!dragged) return;
@@ -5907,11 +5990,12 @@ function liveSearchSuggest(query,scope){
             dragged.classList.remove('drag-sorting');
             dragged=null; _dragSortActive=false; scrollSpeed=0;
             if(rafId!=null){ cancelAnimationFrame(rafId); rafId=null; }
-            try{ if(e.pointerId!=null && e.target.releasePointerCapture) e.target.releasePointerCapture(e.pointerId); }catch(_){}
+            try{ if(e.pointerId!=null && activeHandle && activeHandle.releasePointerCapture) activeHandle.releasePointerCapture(e.pointerId); }catch(_){}
+            activeHandle=null;
             if(wasMoved){
                 var sup=function(ev){ ev.stopPropagation(); ev.preventDefault(); container.removeEventListener('click', sup, true); };
                 container.addEventListener('click', sup, true);
-                setTimeout(function(){ container.removeEventListener('click', sup, true); }, 400);
+                setTimeout(function(){ container.removeEventListener('click', sup, true); }, DRAG_CLICK_SUPPRESS_MS);
                 try{ onDrop(); }catch(err){ console.warn('pointer sort onDrop failed', err); }
             }
         }
@@ -5936,9 +6020,6 @@ function liveSearchSuggest(query,scope){
             } });
     }
 
-    // ============================================================
-    // WORK ASSIGNED: ADD NOTE TO JOB + PROMPT TO SAVE TO ENTITY
-    // ============================================================
     // ============================================================
     // THERMAL NOTES → AUTO-ADD TO WORK ASSIGNED
     // ============================================================
@@ -6192,7 +6273,7 @@ function liveSearchSuggest(query,scope){
         }
     }
     function burgerSwitchUser() { toggleBurgerMenu(); showNewLogin(); }
-    function burgerLogout() { toggleBurgerMenu(); try{if(db){db.ref('equipment').off();db.ref('parts').off();db.ref('routes').off();db.ref('workAssigned').off();}}catch(e){} currentUser=null; currentUid=null; currentRole = AUTH_ENABLED ? 'technician' : 'admin'; applyRoleVisibility(); if(!AUTH_ENABLED){ localStorage.removeItem('reliability_app_user'); initLogin(); return; } if(auth){ auth.signOut().catch(function(){}); } else { initLogin(); } }
+    function burgerLogout() { toggleBurgerMenu(); try{if(db){db.ref('equipment').off();db.ref('parts').off();db.ref('routes').off();db.ref('workAssigned').off();}}catch(e){} currentUser=null; currentUid=null; currentReviewed=false; currentEmailVerified=false; _waData=null; currentRole = AUTH_ENABLED ? 'technician' : 'admin'; applyRoleVisibility(); if(!AUTH_ENABLED){ localStorage.removeItem('reliability_app_user'); initLogin(); return; } if(auth){ auth.signOut().catch(function(){}); } else { initLogin(); } }
     
     // ============================================================
     // ADD FORM OVERLAY (from burger menu)

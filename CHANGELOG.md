@@ -21,6 +21,16 @@
 ### Under the hood
 - One reusable drag-sort engine (built on Pointer Events) now powers both lists, replacing two older separate mechanisms - HTML5 drag-and-drop for the Job list and arrow buttons for the walk order. The now-unused arrow and old drag code was removed.
 
+### Hardening & fixes (2026-09-02, no version bump)
+Applied after a full six-lens re-audit of the v1.23 build. No new features, no Firebase change - the drag-to-reorder design is unchanged (drag handles stay, no arrows added back). All items are under-the-hood fixes plus small polish.
+- **Drag-reorder is more reliable.** A saved reorder can no longer be silently reverted if a live update arrives in the split-second after you drop it - the new order is captured the moment you let go, instead of being read back from a list that may have just refreshed. The drag also does one layout pass per frame instead of two (smoother on older phones), and a harmless console error on some touch cancels is gone.
+- **Printed CBM report matches the screen.** The report's Median column now uses the same 15-reading window as the on-screen anomaly check (was 12), so the printed median matches the value that raised an alert. The report's Route Points list is now shown in APM walk order, the same order as the readings table in the same report.
+- **Walking-order save is safer.** Saving a route's walking order now uses an atomic write, shows a "Walking order saved" confirmation, and reports a clear error if the save fails instead of silently looking saved.
+- **Security hardening (behind the scenes).** Write-permission checks are tightened so editing is fully blocked before sign-in and after sign-out; the previous user's Job list is cleared on sign-out (shared devices); and a job's status value is escaped before it is written into the page.
+- **Accessibility & readability.** Larger drag grips (easier to grab on touch), higher-contrast CBM label and grip colours, a visible focus outline on the "mark as done" row, and a short "drag the grip to reorder" hint under the Job list.
+- **Broad searches stay snappy.** A very broad search (like "roller" or "belt") can match hundreds of parts. Search results now show the 150 most relevant matches with a short note ("Showing the 150 most relevant of N matches. Refine your search to see and sort them all.") instead of drawing every row at once, which briefly froze the screen on older phones. A specific search (an APN, a position or a route number) returns well under 150, so it shows everything and sorts the full list exactly as before. The same applies to the CBM routes results.
+- **Full detail views now keep keyboard focus.** When a position, part or route detail (or the record-readings screen) is open, the keyboard Tab key now stays within it and focus returns to where you were when you close it, matching the pop-up dialogs. This only affects keyboard and screen-reader use; touch and mouse are unchanged (Escape already closed these screens).
+
 ## v1.22 — 2026-09-02
 
 **Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). No Firebase change - code only.
