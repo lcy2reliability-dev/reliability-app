@@ -125,8 +125,9 @@
         .work-card .overdue-badge { display:inline-block; padding:2px 8px; margin-left:8px; background:#ef4444; color:#fff; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:0.3px; vertical-align:middle; }
         .work-card-actions { display:flex; gap:6px; margin-top:8px; }
         .work-card .sched-wrap { position:relative; display:inline-block; vertical-align:middle; margin-left:8px; }
-        .work-card .sched-chip { display:inline-block; padding:3px 9px; background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; border-radius:4px; font-size:11px; font-weight:700; letter-spacing:0.2px; cursor:pointer; min-height:24px; line-height:18px; }
-        .work-card .sched-chip:hover { background:#e0e7ff; border-color:#a5b4fc; }
+        .work-card .sched-chip { display:inline-block; padding:2px 8px; background:#eef2ff; color:#4338ca; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; position:relative; }
+        .work-card .sched-chip:hover { background:#e0e7ff; }
+        .work-card .sched-chip::after { content:''; position:absolute; left:0; right:-8px; top:-14px; bottom:-4px; }
         .work-card .sched-input { position:absolute; left:0; bottom:0; width:1px; height:1px; opacity:0; pointer-events:none; }
         .drag-handle { touch-action:none; cursor:grab; -webkit-user-select:none; user-select:none; color:#6b7280; }
         .drag-handle:active { cursor:grabbing; }
