@@ -7,6 +7,20 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.24 — 2026-09-03
+
+**Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). No Firebase change - the new schedule date is an optional field on a job, and existing jobs are untouched.
+
+### Schedule a job for a later day
+- **Every job on your list now has a small date chip** (it reads "Today" by default) next to the job type, on the front of the card. Tap it and your phone's calendar opens, then pick any day.
+- **This is for prepping ahead.** If you set up a job on a Friday evening for Monday morning, set its chip to Monday. The job sits on your list over the weekend and does **not** show OVERDUE. It becomes due on Monday and only turns OVERDUE from Tuesday 4am if it is still not done - exactly like a job you would add fresh on Monday morning.
+- **Adding jobs has not changed.** One tap still drops a job straight onto today's list, same as always. The chip is only there if you want to move a job to a later day.
+- The chip shows "Today", "Tomorrow" or the day (like "Mon 8 Sep") so you can see at a glance which jobs are set ahead. Picking today again clears the schedule and puts the job back to normal. You cannot pick a day in the past.
+- The Home screen's "Jobs overdue" count uses the same rule, so a job you have scheduled ahead does not add to the overdue number.
+
+### Under the hood
+- A job now carries an optional `scheduledFor` day. If it is not set (every existing job, and every job you add normally), the app behaves exactly as before - overdue is still worked out from when the job was added. Only a job you deliberately schedule uses the new day. No database migration was needed and nothing about existing jobs changed.
+
 ## v1.23 — 2026-09-02
 
 **Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). No Firebase change - code only.

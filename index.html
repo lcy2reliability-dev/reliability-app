@@ -124,6 +124,10 @@
         .work-card.overdue:hover { border-color:#f87171; }
         .work-card .overdue-badge { display:inline-block; padding:2px 8px; margin-left:8px; background:#ef4444; color:#fff; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:0.3px; vertical-align:middle; }
         .work-card-actions { display:flex; gap:6px; margin-top:8px; }
+        .work-card .sched-wrap { position:relative; display:inline-block; vertical-align:middle; margin-left:8px; }
+        .work-card .sched-chip { display:inline-block; padding:3px 9px; background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; border-radius:4px; font-size:11px; font-weight:700; letter-spacing:0.2px; cursor:pointer; min-height:24px; line-height:18px; }
+        .work-card .sched-chip:hover { background:#e0e7ff; border-color:#a5b4fc; }
+        .work-card .sched-input { position:absolute; left:0; bottom:0; width:1px; height:1px; opacity:0; pointer-events:none; }
         .drag-handle { touch-action:none; cursor:grab; -webkit-user-select:none; user-select:none; color:#6b7280; }
         .drag-handle:active { cursor:grabbing; }
         .job-drag-handle { position:absolute; left:4px; top:50%; transform:translateY(-50%); width:44px; height:46px; display:flex; align-items:center; justify-content:center; font-size:17px; border-radius:6px; z-index:2; }
@@ -555,8 +559,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.23)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Drag to reorder</strong>: your Job list and a route's Walking order now have a &#9776; drag handle. Press and drag it to reorder - it works the same way on your phone and your laptop.<br>&bull; The old up / down arrows have been replaced by the drag handle, and it no longer sits over the job thumbnail.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.24)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Schedule a job for later</strong>: every job on your list now has a small <strong>&#128197; Today</strong> chip. Tap it to pick a date - handy when you prep a job on Friday evening for Monday morning. The job stays on your list without showing OVERDUE until the day you picked.<br>&bull; Adding jobs is unchanged - one tap still drops them on today's list.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -2560,7 +2564,7 @@
             var openJobs = mine.filter(function(v){ return v.status !== 'done'; });
             var _wn = new Date(); var _w4 = new Date(_wn.getFullYear(), _wn.getMonth(), _wn.getDate(), 4, 0, 0);
             var _cut = _wn.getHours() < 4 ? new Date(_w4.getTime() - 86400000) : _w4;
-            var overdue = openJobs.filter(function(v){ return v.createdAt && new Date(v.createdAt) < _cut; });
+            var overdue = openJobs.filter(function(v){ return _jobSchedTs(v) && _jobSchedTs(v) < _cut.getTime(); });
             var aEl = document.getElementById('dash-assigned'); if (aEl) aEl.textContent = openJobs.length;
             var oEl = document.getElementById('dash-overdue'); if (oEl){ oEl.textContent = overdue.length; if (overdue.length) oEl.closest('.dash2-kpi').classList.add('on'); }
             var c = { Thermal:0, Ultrasound:0, OtherCBM:0, PM:0, FWO:0 };
@@ -3774,6 +3778,16 @@
             p.then(function(src){ _scadaImgCache[ck]=src||null; place(src); }).catch(function(){});
         });
     }
+    function _ymd(d){var y=d.getFullYear(),m=d.getMonth()+1,day=d.getDate();return y+'-'+(m<10?'0'+m:m)+'-'+(day<10?'0'+day:day);}
+    function _todayYmd(){return _ymd(new Date());}
+    function _isYmd(s){return typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s);}
+    function _schedDayTs(ymd){var p=String(ymd).split('-');return new Date(+p[0],(+p[1])-1,+p[2],4,0,0).getTime();}
+    function _jobSchedYmd(item){if(item&&_isYmd(item.scheduledFor))return item.scheduledFor;if(item&&item.createdAt){var d=new Date(item.createdAt);if(!isNaN(d))return _ymd(d);}return _todayYmd();}
+    function _jobSchedTs(item){if(item&&_isYmd(item.scheduledFor))return _schedDayTs(item.scheduledFor);return (item&&item.createdAt)?new Date(item.createdAt).getTime():0;}
+    function _schedLabel(item){var ymd=_jobSchedYmd(item);var t=new Date();if(ymd===_ymd(t))return 'Today';if(ymd===_ymd(new Date(t.getTime()+86400000)))return 'Tomorrow';var p=ymd.split('-');var dd=new Date(+p[0],(+p[1])-1,+p[2]);try{return dd.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});}catch(e){return ymd;}}
+    function _schedLabelYmd(ymd){return _schedLabel({scheduledFor:ymd});}
+    function openSchedPicker(btn){if(!btn||!btn.parentElement)return;var inp=btn.parentElement.querySelector('.sched-input');if(!inp)return;try{if(typeof inp.showPicker==='function'){inp.showPicker();return;}}catch(e){}try{inp.focus();inp.click();}catch(e2){}}
+    async function setJobSchedule(inp){if(!requireWrite())return;if(!inp)return;var key=inp.getAttribute('data-key');if(!key||!checkFirebase())return;var val=inp.value||'';var today=_todayYmd();try{if(!val||val===today){await db.ref('workAssigned/'+key+'/scheduledFor').remove();logAudit('scheduleJob','job',key,{scheduledFor:null});showToast('Scheduled for today');}else{await db.ref('workAssigned/'+key+'/scheduledFor').set(val);logAudit('scheduleJob','job',key,{scheduledFor:val});showToast('Scheduled for '+_schedLabelYmd(val));}loadWorkAssigned();}catch(e){showToast('Error: '+e.message,'error');}}
     function loadWorkAssigned() {
         if(!firebaseReady)return;
         db.ref('workAssigned').off('value');
@@ -3792,7 +3806,7 @@
             let html='';
             items.forEach(([key,item])=>{
                 if(!item||!item.workType)return;
-                var _isOverdue=item.status!=='done'&&item.createdAt&&new Date(item.createdAt)<_workCutoff;
+                var _isOverdue=item.status!=='done'&&_jobSchedTs(item)&&_jobSchedTs(item)<_workCutoff.getTime();
                 html+='<div class="work-card'+(item.status==='done'?' done':'')+(_isOverdue?' overdue':'')+'" onclick="expandWorkCard(this)" data-key="'+key+'" data-status="'+escapeHtml(item.status||'pending')+'">';
                 if(item.status!=='done')html+='<div class="job-drag-handle drag-handle" title="Drag to reorder" aria-label="Drag to reorder job" onclick="event.stopPropagation();">\u2630</div>';
                 var _wsType=(item.workType==='CBM'&&item.routeNumber)?'route':'equipment';
@@ -3800,6 +3814,7 @@
                 html+='<div class="work-card-body"><div class="work-card-info">';
                 html+='<span class="work-type '+escapeHtml((item.workType||'').toLowerCase())+'">'+escapeHtml(item.workType)+'</span>';
                 if(_isOverdue)html+='<span class="overdue-badge">OVERDUE</span>';
+                if(item.status!=='done'){var _slbl=_schedLabel(item);var _tdy=_todayYmd();var _sval=_jobSchedYmd(item);if(_sval<_tdy)_sval=_tdy;html+='<span class="sched-wrap" onclick="event.stopPropagation();"><button type="button" class="sched-chip" title="Tap to schedule this job" onclick="event.stopPropagation();openSchedPicker(this)">\uD83D\uDCC5 '+escapeHtml(_slbl)+'</button><input type="date" class="sched-input" data-key="'+key+'" value="'+_sval+'" min="'+_tdy+'" onclick="event.stopPropagation();" onchange="setJobSchedule(this)"></span>';}
                 html+='<div class="work-equipment">';
                 if(item.workType==='CBM'&&item.routeNumber){
                     html+='<a class="search-link" href="#" onclick="event.stopPropagation();openDetail(\x27route\x27,\x27'+sanitizeKey(item.routeNumber)+'\x27);return false;">Route '+escapeHtml(item.routeNumber)+' ('+escapeHtml(item.cbmType)+')</a>';
@@ -7784,8 +7799,8 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.23';
-    var WHATS_NEW_REV = '1.23.0'; // bump to re-show the What's New banner without changing the displayed version
+    var APP_VERSION = '1.24';
+    var WHATS_NEW_REV = '1.24.0'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== WHATS_NEW_REV) {
