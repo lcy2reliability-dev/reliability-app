@@ -127,7 +127,7 @@
         .work-card .sched-wrap { position:relative; display:inline-block; vertical-align:middle; margin-left:8px; }
         .work-card .sched-chip { display:inline-block; padding:2px 8px; background:#eef2ff; color:#4338ca; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; position:relative; }
         .work-card .sched-chip:hover { background:#e0e7ff; }
-        .work-card .sched-chip::after { content:''; position:absolute; left:0; right:-8px; top:-14px; bottom:-4px; }
+        .work-card .sched-chip::after { content:''; position:absolute; left:-4px; right:-4px; top:-13px; bottom:-13px; }
         .work-card .sched-input { position:absolute; left:0; bottom:0; width:1px; height:1px; opacity:0; pointer-events:none; }
         .drag-handle { touch-action:none; cursor:grab; -webkit-user-select:none; user-select:none; color:#6b7280; }
         .drag-handle:active { cursor:grabbing; }
@@ -3815,7 +3815,6 @@
                 html+='<div class="work-card-body"><div class="work-card-info">';
                 html+='<span class="work-type '+escapeHtml((item.workType||'').toLowerCase())+'">'+escapeHtml(item.workType)+'</span>';
                 if(_isOverdue)html+='<span class="overdue-badge">OVERDUE</span>';
-                if(item.status!=='done'){var _slbl=_schedLabel(item);var _tdy=_todayYmd();var _sval=_jobSchedYmd(item);if(_sval<_tdy)_sval=_tdy;html+='<span class="sched-wrap" onclick="event.stopPropagation();"><button type="button" class="sched-chip" title="Tap to schedule this job" onclick="event.stopPropagation();openSchedPicker(this)">\uD83D\uDCC5 '+escapeHtml(_slbl)+'</button><input type="date" class="sched-input" data-key="'+key+'" value="'+_sval+'" min="'+_tdy+'" onclick="event.stopPropagation();" onchange="setJobSchedule(this)"></span>';}
                 html+='<div class="work-equipment">';
                 if(item.workType==='CBM'&&item.routeNumber){
                     html+='<a class="search-link" href="#" onclick="event.stopPropagation();openDetail(\x27route\x27,\x27'+sanitizeKey(item.routeNumber)+'\x27);return false;">Route '+escapeHtml(item.routeNumber)+' ('+escapeHtml(item.cbmType)+')</a>';
@@ -3831,14 +3830,17 @@
                 html+='</div>';
                 if(_wsKey)html+='<div class="work-scada" data-imgtype="'+_wsType+'" data-imgkey="'+escapeHtml(_wsKey)+'"></div>';
                 html+='</div>';
-                html+='<label class="work-done-row" onclick="event.stopPropagation();" style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding:8px 0 4px;border-top:1px solid #f1f5f9;cursor:pointer;min-height:44px;">';
-                html+='<span style="font-size:12px;color:#6b7280;">'+(item.status==='done'?'Completed \u2714':'Mark as done')+'</span>';
+                html+='<div class="work-done-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:8px;padding:8px 0 4px;border-top:1px solid #f1f5f9;min-height:44px;">';
+                if(item.status!=='done'){var _slbl=_schedLabel(item);var _tdy=_todayYmd();var _sval=_jobSchedYmd(item);if(_sval<_tdy)_sval=_tdy;html+='<span class="sched-wrap" onclick="event.stopPropagation();"><button type="button" class="sched-chip" title="Tap to schedule this job" onclick="event.stopPropagation();openSchedPicker(this)">\uD83D\uDCC5 Job due '+escapeHtml(_slbl)+'</button><input type="date" class="sched-input" data-key="'+key+'" value="'+_sval+'" min="'+_tdy+'" onclick="event.stopPropagation();" onchange="setJobSchedule(this)"></span>';}else{html+='<span></span>';}
+                html+='<label onclick="event.stopPropagation();" style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:44px;">';
+                html+='<span style="font-size:12px;color:#6b7280;">'+(item.status==='done'?'Completed \u2714':'Mark as complete')+'</span>';
                 html+='<span style="position:relative;display:inline-block;width:44px;height:24px;flex:0 0 auto;">';
                 html+='<input type="checkbox" '+(item.status==='done'?'checked':'')+' onchange="event.stopPropagation();toggleJobDone(\x27'+key+'\x27,this.checked)" style="opacity:0;width:0;height:0;">';
                 html+='<span style="position:absolute;top:0;left:0;right:0;bottom:0;background:'+(item.status==='done'?'#10b981':'#d1d5db')+';border-radius:24px;transition:0.3s;"></span>';
                 html+='<span style="position:absolute;top:2px;left:'+(item.status==='done'?'22px':'2px')+';width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 2px rgba(0,0,0,0.2);"></span>';
                 html+='</span>';
                 html+='</label>';
+                html+='</div>';
                 if(item.jobNotes){
                     html+='<div class="work-card-comments" style="margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">';
                     Object.values(item.jobNotes).forEach(function(n){
