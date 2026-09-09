@@ -128,7 +128,7 @@
         .work-card .sched-chip { display:inline-block; padding:2px 8px; background:#eef2ff; color:#4338ca; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; position:relative; }
         .work-card .sched-chip:hover { background:#e0e7ff; }
         .work-card .sched-chip::after { content:''; position:absolute; left:-4px; right:-4px; top:-13px; bottom:-13px; }
-        .work-card .sched-input { position:absolute; left:0; bottom:0; width:1px; height:1px; opacity:0; pointer-events:none; }
+        .work-card .sched-input { position:absolute; left:-6px; top:-14px; width:calc(100% + 12px); height:44px; opacity:0; cursor:pointer; z-index:2; margin:0; padding:0; border:0; background:transparent; -webkit-appearance:none; appearance:none; }
         .drag-handle { touch-action:none; cursor:grab; -webkit-user-select:none; user-select:none; color:#6b7280; }
         .drag-handle:active { cursor:grabbing; }
         .job-drag-handle { position:absolute; left:4px; top:50%; transform:translateY(-50%); width:44px; height:46px; display:flex; align-items:center; justify-content:center; font-size:17px; border-radius:6px; z-index:2; }
@@ -560,8 +560,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.24)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Schedule a job for later</strong>: every job on your list now has a small <strong>&#128197; Today</strong> chip. Tap it to pick a date - handy when you prep a job on Friday evening for Monday morning. The job stays on your list without showing OVERDUE until the day you picked.<br>&bull; Adding jobs is unchanged - one tap still drops them on today's list.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.25)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Manual Induct Stations</strong>: open a whole station (e.g. CB.SRT.01.ID11) to see all 5 belts and their parts in one place, and add a PM for the entire station to your list in one tap. Follow-up FWOs stay per belt as before.<br>&bull; <strong>Easier to find</strong>: search &quot;Manual Induct Station 6&quot;, &quot;Induct Station 6&quot; or just &quot;MI 6&quot; / &quot;IS 6&quot; and the station comes right up (1-5 = north row ID11-ID15, 6-10 = south row ID21-ID25).<br>&bull; <strong>Fixed</strong>: a note you add while putting a PM on your job list now shows straight away.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -2058,9 +2058,10 @@
                         else if(cn.startsWith(queryLower)||cn.replace(/[^a-z0-9]/g,'').startsWith(queryLower))score=80;
                         else if(queryWords.every(w=>combined.includes(w)||combinedStripped.includes(w)))score=50;
                         if(!score&&queryLower.length>=3){var sEq=cn.replace(/[^a-z0-9]/g,'');var qiE=0;for(var ciE=0;ciE<sEq.length&&qiE<queryLower.length;ciE++){if(sEq[ciE]===queryLower[qiE])qiE++;}if(qiE===queryLower.length)score=15;}
+                        if(miPatterns&&eq.isStation&&score)score=97;
                         if(score)eqResults.push({key,data:eq,score});
                     });
-                    eqResults.sort((a,b)=>b.score-a.score);
+                    eqResults.sort((a,b)=>b.score-a.score||naturalCompare(a.data.conveyorNumber||'',b.data.conveyorNumber||''));
                     if(eqResults.length>0){
                         hasResults=true;
                         html+='<div class="search-result-section"><h3>Positions ('+eqResults.length+' results)</h3>';
@@ -2779,6 +2780,9 @@
                 if(old.model)updateObj.model=old.model;
                 if(old.serialNumber)updateObj.serialNumber=old.serialNumber;
                 if(old.criticality)updateObj.criticality=old.criticality;
+                if(old.positionName)updateObj.positionName=old.positionName;
+                if(old.isStation)updateObj.isStation=old.isStation;
+                if(old.stationBelts)updateObj.stationBelts=old.stationBelts;
             }
             await db.ref('equipment/'+key).set(updateObj);
             if(imageUrl)await db.ref('equipmentImages/'+key).set(imageUrl);
@@ -4136,6 +4140,38 @@
         }catch(e){showToast('Could not reset walking order: '+e.message,'error');}
     }
 
+    async function renderStationBelts(data){
+        var belts=Array.isArray(data.stationBelts)?data.stationBelts:[];
+        if(!belts.length)return '';
+        var allParts=await getPartsCache();
+        var eqCache=await getEquipmentCache();
+        var html='<div class="card"><h2>Belts in this station ('+belts.length+')</h2>';
+        html+='<p style="font-size:12px;color:#6b7280;margin-bottom:12px;">A PM added on this station covers all '+belts.length+' belts. Parts are listed per belt \u2014 add or edit a belt\x27s parts on its own page and they show up here.</p>';
+        belts.forEach(function(belt){
+            var bkey=sanitizeKey(belt);
+            var brec=eqCache[bkey]||{};
+            var bparts=Object.entries(allParts).filter(function(e){var p=e[1];return p.conveyors&&p.conveyors.indexOf(belt)>=0;});
+            html+='<div style="margin-bottom:16px;">';
+            html+='<h3 style="font-size:14px;margin:0 0 6px;border-bottom:2px solid #e2e8f0;padding-bottom:4px;"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+bkey+'\x27);return false;">'+escapeHtml(belt)+'</a>'+(brec.description?' <span style="font-weight:400;color:#6b7280;font-size:12px;">'+escapeHtml(brec.description)+'</span>':'')+'</h3>';
+            if(bparts.length){
+                html+='<table style="width:100%;font-size:12px;border-collapse:collapse;"><thead><tr style="background:#f8fafc;"><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">APN</th><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Bin</th><th style="text-align:center;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Qty</th><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Description</th></tr></thead><tbody>';
+                bparts.forEach(function(e){
+                    var k=e[0],p=e[1];
+                    var cn=p.conveyorNotes&&p.conveyorNotes[sanitizeKey(belt)];
+                    html+='<tr><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+k+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td>';
+                    html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;font-weight:600;">'+escapeHtml(p.binLocation||p.location||'')+'</td>';
+                    html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;text-align:center;">'+escapeHtml((cn&&cn.quantity)?cn.quantity:'\u2014')+'</td>';
+                    html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;color:#4b5563;">'+escapeHtml(p.partDescription||p.notes||'')+'</td></tr>';
+                });
+                html+='</tbody></table>';
+            }else{
+                html+='<p style="font-size:12px;color:#9ca3af;margin:0;font-style:italic;">No parts linked yet \u2014 open '+escapeHtml(belt)+' to add its parts.</p>';
+            }
+            html+='</div>';
+        });
+        html+='</div>';
+        return html;
+    }
     async function openDetail(type,key){
         if(!checkFirebase())return;showLoading();
         try {
@@ -4171,6 +4207,9 @@
                 var _eqDetImg=await _pImg;if(_eqDetImg){html+='<div class="detail-field"><label>SCADA Screenshot</label><img src="'+_eqDetImg+'" alt="SCADA screenshot" class="img-preview" style="display:block;"></div>';}
                 else{html+='<div class="detail-field" id="quick-ss-container" data-type="equipment" data-key="'+key+'"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27equipment\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Screenshot missing \u2014 click to add</a></div>';}
                 html+='</div>';
+                if(data.isStation){
+                html+=await renderStationBelts(data);
+                } else {
                 // Linked Parts
                 var allParts=await _pParts;
                 var _apnIdx=getApnIndex(allParts);
@@ -4230,6 +4269,7 @@
                 if(eqRoutes.length>0){html+='<table id="pd-routes-table"><thead><tr>'+sortTh('pd-routes-table',0,'Route')+sortTh('pd-routes-table',1,'Type')+sortTh('pd-routes-table',2,'Start')+sortTh('pd-routes-table',3,'End')+'</tr></thead><tbody>';eqRoutes.forEach(([k,r])=>{html+='<tr><td><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+k+'\x27);return false;">'+escapeHtml(r.routeNumber)+'</a></td><td>'+escapeHtml(r.type)+'</td><td><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(r.startPoint)+'\x27);return false;">'+escapeHtml(r.startPoint)+'</a></td><td>'+(r.endPoint?'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(r.endPoint)+'\x27);return false;">'+escapeHtml(r.endPoint)+'</a>':'\u2014')+'</td></tr>';});html+='</tbody></table>';}
                 else html+='<p class="empty-state">Not part of any route</p>';
                 html+='</div>';
+                }
             } else if(type==='part'){
                 title='Part: '+data.apn;
                 var _pEqcP=getEquipmentCache(),_pPcP=getPartsCache();
@@ -4873,10 +4913,12 @@ function liveSearchSuggest(query,scope){
             try{
                 var results=[];
                 var[eq,pts,rts]=await Promise.all([getEquipmentCache(),getPartsCache(),getRoutesCache()]);
+                var _mi=getManualInductQuery(q);
                 // Collect ALL matches with relevance score — no early cutoff
                 Object.entries(eq).forEach(function([k,v]){
                     if(v.active===false)return;
                     var s=Math.max(scoreId(v.conveyorNumber),scoreId(v.positionName),scoreText(v.description),scoreText(v.notes));
+                    if(_mi){var _cnl=(v.conveyorNumber||'').toLowerCase();if(_mi.some(function(p){return _cnl.indexOf(p)>=0;}))s=Math.max(s,v.isStation?95:70);}
                     if(s>0)results.push({type:'equipment',key:k,label:(v.positionName||v.conveyorNumber),sub:v.description||v.notes||'',_score:s});
                 });
                 Object.entries(pts).forEach(function([k,v]){
@@ -4899,7 +4941,7 @@ function liveSearchSuggest(query,scope){
                 if(_cfg)results=results.filter(function(r){return (r.type==='equipment'&&_cfg.eq)||(r.type==='part'&&_cfg.pt)||(r.type==='route'&&_cfg.rt);});
                 if(!results.length){dd.style.display='none';return;}
                 // Sort by score descending, then show top 8
-                results.sort(function(a,b){return b._score-a._score;});
+                results.sort(function(a,b){return b._score-a._score||naturalCompare(a.label||'',b.label||'');});
                 results=results.slice(0,8);
                 _suggestList=results.map(function(r){return {type:r.type,key:r.key};});_suggestIndex=-1;
                 var typeStyle={equipment:'background:#eff6ff;color:#1d4ed8;',part:'background:#f0fdf4;color:#15803d;',route:'background:#fff7ed;color:#c2410c;'};
@@ -5522,21 +5564,30 @@ function liveSearchSuggest(query,scope){
     Object.keys(MI_MAPPING).forEach(function(k) { MI_REVERSE[MI_MAPPING[k]] = k; });
 
     function getManualInductQuery(queryLower) {
-        // Returns an array of CB.SRT ID patterns to match, or null if not a MI search
-        var match = queryLower.match(/(?:manual\s*induct|mi|id)\s*(\d+)/i);
-        if (!match) {
-            if (queryLower === 'manual induct' || queryLower === 'mi') {
-                // Return all induct patterns
+        // Returns an array of CB.SRT ID patterns to match, or null if not a Manual Induct search.
+        // Accepts any combination of the words manual / induct(ion) / station + a number, e.g.
+        // "manual induct station 6", "manual induct 6", "induct station 6", "induct 6",
+        // plus the shorthands "mi 6" and "id 21".
+        var num = null;
+        var m = queryLower.match(/(?:manual\s*)?induct(?:ion)?\s*(?:station)?\s*(\d+)/i);
+        if (m) { num = parseInt(m[1]); }
+        if (num === null) {
+            var m2 = queryLower.match(/^\s*(?:mi|id|is)\s*(\d+)\s*$/i);
+            if (m2) { num = parseInt(m2[1]); }
+        }
+        if (num === null) {
+            // Bare phrase with no number -> return ALL induct stations
+            var qt = queryLower.trim();
+            if (qt === 'manual induct' || qt === 'mi' || qt === 'induct' || qt === 'induction'
+                || qt === 'manual induction' || qt === 'manual induct station' || qt === 'induct station') {
                 return ['cb.srt.01.id'];
             }
             return null;
         }
-        var num = parseInt(match[1]);
-        // Check if it's a common name (1-10) or internal ID (11-15, 21-25)
+        // Map station number -> internal ID pattern. 1-10 = friendly station names; 11-15/21-25 = internal IDs.
         if (num >= 1 && num <= 10) {
-            var idNum = MI_MAPPING[num];
-            return ['cb.srt.01.id' + idNum];
-        } else if (num >= 11 && num <= 15 || num >= 21 && num <= 25) {
+            return ['cb.srt.01.id' + MI_MAPPING[num]];
+        } else if ((num >= 11 && num <= 15) || (num >= 21 && num <= 25)) {
             return ['cb.srt.01.id' + num];
         }
         return null;
@@ -5880,8 +5931,8 @@ function liveSearchSuggest(query,scope){
             if(type==='FWO'&&_jwParts.length){
                 workData.parts=_jwParts.map(function(p){return {apn:p.apn,partType:p.partType||'',location:p.location||'',description:p.description||''};});
             }
+            if(type==='PM'&&noteText){workData.jobNotes={};workData.jobNotes[db.ref('workAssigned').push().key]={text:noteText,author:currentUser,createdAt:new Date().toISOString()};}
             var ref=await db.ref('workAssigned').push(workData);
-            if(type==='PM'&&noteText){try{await db.ref('workAssigned/'+ref.key+'/jobNotes').push({text:noteText,author:currentUser,createdAt:new Date().toISOString()});}catch(e){}}
             logAudit('addJob','job',name,{type:type,via:'wizard'});
             updateWorkCount();
             closeModal();
@@ -7802,8 +7853,8 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.24';
-    var WHATS_NEW_REV = '1.24.0'; // bump to re-show the What's New banner without changing the displayed version
+    var APP_VERSION = '1.25';
+    var WHATS_NEW_REV = '1.25.0'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== WHATS_NEW_REV) {

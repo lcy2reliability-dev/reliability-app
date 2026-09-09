@@ -7,6 +7,28 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.25 — 2026-09-09
+
+**Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). 10 master station records added to Firebase; no change to existing belt positions, parts or jobs.
+
+### Manual Induct Stations — the whole station in one place
+- **You can now open a Manual Induct Station as a single position** (e.g. `CB.SRT.01.ID11`). Its page lists all 5 belts (`.01` to `.05`) and, under each belt, the parts linked to that belt.
+- **Add a PM for the entire station to your job list in one tap** — handy when the PM covers the whole station rather than a single belt. Follow-up FWOs are unchanged: you still raise those per belt.
+- **Parts stay where they are.** The station page reads each belt's own linked parts live — nothing is duplicated. As you link parts to belts `.02`–`.05` over time, they appear on the station page automatically.
+- There are 10 stations: **1–5 on the north row** (ID11–ID15) and **6–10 on the south row** (ID21–ID25).
+
+### Easier to find a station
+- **Search now understands more ways of asking.** "Manual Induct Station 6", "Manual Induct 6", "Induct Station 6" and the shorthands "MI 6" / "ID 6" / "IS 6" all bring up the station, with the station ranked at the top and its belts underneath.
+- This works with both the friendly number (1–10) and the equipment number (11–15, 21–25).
+
+### Fixes
+- **A note added while putting a PM on your job list now shows straight away.** Before, the note only appeared after you added a second note — the job and its first note were written separately and the note lost a race with the screen refresh. They are now saved together in one write.
+- **The job schedule date chip now opens the calendar on the floor phones.** Previously it relied on a browser feature that iPhones and older Android/Zebra devices do not support, so tapping it did nothing on those phones. The chip is now a proper tappable field that opens the native date picker directly.
+
+### Under the hood
+- Master stations are lightweight grouping records (`isStation` plus a list of their belts). The detail view unions each belt's linked parts on the fly, so there is no part-data duplication and no migration.
+- Search boosts the matching station to the top for "Manual Induct …" queries, in both the search results and the live autocomplete.
+
 ## v1.24 — 2026-09-03
 
 **Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). No Firebase change - the new schedule date is an optional field on a job, and existing jobs are untouched.
