@@ -136,6 +136,7 @@
         .work-card.drag-sorting { opacity:0.95; box-shadow:0 8px 24px rgba(37,99,235,0.28); border-color:#93c5fd; z-index:10; }
         .rr-handle { flex:0 0 auto; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:17px; border:1px solid #d1d5db; border-radius:6px; background:#f9fafb; margin-right:10px; }
         .rr-row.drag-sorting { background:#eef2ff; box-shadow:0 4px 12px rgba(37,99,235,0.2); border-radius:6px; }
+        .pm-item.drag-sorting { background:#eef2ff; box-shadow:0 4px 12px rgba(37,99,235,0.2); }
         .work-done-row:focus-within { outline:2px solid #2563eb; outline-offset:2px; border-radius:8px; }
         .work-card-body { display:flex; gap:12px; align-items:flex-start; }
         .work-card-info { flex:1 1 auto; min-width:0; }
@@ -675,7 +676,7 @@
                         <div class="char-count" id="eq-char-count">0/500</div>
                     </div>
                     <div class="form-group">
-                        <label>SCADA Screenshot</label>
+                        <label>SCADA Location Screenshot</label>
                         <div class="file-upload" onclick="document.getElementById('eq-file').click()" ondragover="event.preventDefault();this.style.borderColor='#00A8E1';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='#d1d5db';this.style.background='';" ondrop="event.preventDefault();this.style.borderColor='#d1d5db';this.style.background='';document.getElementById('eq-file').files=event.dataTransfer.files;previewImage(document.getElementById('eq-file'),'eq-preview');">
                             <input type="file" id="eq-file" accept="image/*" onchange="previewImage(this,'eq-preview')">
                             <p>&#11015; Drag & drop, paste (Ctrl+V), or click to browse</p>
@@ -3798,7 +3799,7 @@
     // findings and SCADA thumbnail; the parent auto-completes when every item is ticked.
     function renderPmBatchCard(key,item,isOverdue,amOwner){
         var items=item.items||{};
-        var entries=Object.entries(items);
+        var entries=Object.entries(items);entries.sort(function(a,b){var sa=(a[1]&&typeof a[1].sortIndex==='number')?a[1].sortIndex:0;var sb=(b[1]&&typeof b[1].sortIndex==='number')?b[1].sortIndex:0;return sa-sb;});
         var total=entries.length;
         var doneN=entries.filter(function(e){return e[1]&&e[1].done;}).length;
         var isDone=item.status==='done';
@@ -3812,6 +3813,7 @@
         h+='<div style="font-size:12px;color:#6b7280;margin-top:2px;">'+doneN+' / '+total+' done</div>';
         h+=_shareBadge(item,amOwner);
         h+='<div style="height:6px;background:#f1f5f9;border-radius:3px;margin-top:6px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+(pct===100?'#10b981':'#2563eb')+';transition:width .3s;"></div></div>';
+        h+='<div class="pm-batch-items" data-key="'+key+'">';
         entries.forEach(function(e){
             var ik=e[0], it=e[1]||{};
             var eqName=it.equipment||'';
@@ -3819,11 +3821,9 @@
             var rec=(equipmentCache&&equipmentCache[eqK])||null;
             var disp=rec?posDisp(rec):escapeHtml(eqName);
             var idone=!!it.done;
-            h+='<div class="pm-item" style="margin-top:10px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;background:'+(idone?'#f0fdf4':'#fff')+';">';
+            h+='<div class="pm-item" data-itemkey="'+ik+'" style="margin-top:10px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;background:'+(idone?'#f0fdf4':'#fff')+';">';
             h+='<div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">';
-            h+='<label onclick="event.stopPropagation();" style="flex:0 0 auto;display:inline-flex;align-items:center;min-height:44px;cursor:pointer;">';
-            h+='<input type="checkbox" '+(idone?'checked':'')+' onchange="event.stopPropagation();togglePmItemDone(\x27'+key+'\x27,\x27'+ik+'\x27,this.checked)" style="width:22px;height:22px;flex:0 0 auto;">';
-            h+='</label>';
+            h+='<div class="pm-item-drag-handle drag-handle" title="Drag to reorder" aria-label="Drag to reorder position" onclick="event.stopPropagation();" style="flex:0 0 auto;width:32px;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:17px;color:#9ca3af;">\u2630</div>';
             h+='<div style="flex:1;min-width:140px;">';
             h+='<a class="search-link" href="#" onclick="event.stopPropagation();openDetail(\x27equipment\x27,\x27'+eqK+'\x27);return false;"'+(idone?' style="text-decoration:line-through;color:#9ca3af;"':'')+'>'+disp+'</a>';
             if(it.doneBy)h+='<div style="font-size:10px;color:#9ca3af;margin-top:2px;">Done by '+escapeHtml(it.doneBy)+(it.doneAt?' \u00b7 '+formatWorkTime(it.doneAt):'')+'</div>';
@@ -3831,8 +3831,18 @@
             h+='<div style="display:flex;gap:6px;margin-top:6px;"><input type="text" placeholder="Add finding..." style="flex:1;min-width:0;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;" onclick="event.stopPropagation();" onkeyup="if(event.key===\x27Enter\x27)savePmItemNote(\x27'+key+'\x27,\x27'+ik+'\x27,this)"><button class="btn btn-primary btn-sm" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();savePmItemNote(\x27'+key+'\x27,\x27'+ik+'\x27,this.previousElementSibling)">Add</button></div>';
             h+='</div>';
             h+='<div class="work-scada" data-imgtype="equipment" data-imgkey="'+escapeHtml(eqK)+'" data-canadd="1" style="flex:0 0 auto;"></div>';
-            h+='</div></div>';
+            h+='</div>';
+            h+='<div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:10px;padding-top:8px;border-top:1px solid #f1f5f9;">';
+            h+='<span style="font-size:12px;font-weight:600;color:'+(idone?'#10b981':'#6b7280')+';">'+(idone?'Completed':'Mark complete')+'</span>';
+            h+='<label onclick="event.stopPropagation();" style="position:relative;display:inline-block;width:50px;height:26px;cursor:pointer;flex:0 0 auto;">';
+            h+='<input type="checkbox" '+(idone?'checked':'')+' onchange="event.stopPropagation();var _o=this.checked,_p=this.parentElement;_p.querySelector(\x27.toggle-bg\x27).style.background=_o?\x27#10b981\x27:\x27#d1d5db\x27;_p.querySelector(\x27.toggle-dot\x27).style.left=_o?\x2727px\x27:\x273px\x27;togglePmItemDone(\x27'+key+'\x27,\x27'+ik+'\x27,_o)" style="opacity:0;width:0;height:0;">';
+            h+='<span class="toggle-bg" style="position:absolute;top:0;left:0;right:0;bottom:0;background:'+(idone?'#10b981':'#d1d5db')+';border-radius:26px;transition:0.3s;"></span>';
+            h+='<span class="toggle-dot" style="position:absolute;top:3px;left:'+(idone?'27px':'3px')+';width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>';
+            h+='</label>';
+            h+='</div>';
+            h+='</div>';
         });
+        h+='</div>';
         h+='<div class="work-details" style="font-size:11px;color:#6b7280;margin-top:8px;">Added '+formatWorkTime(item.createdAt)+'</div>';
         h+='</div></div>';
         h+='<div class="work-done-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:8px;padding:8px 0 4px;border-top:1px solid #f1f5f9;min-height:44px;">';
@@ -3855,34 +3865,42 @@
         var k=slot.getAttribute('data-imgkey');
         var b=document.createElement('button');
         b.type='button';b.className='pm-ss-add';
-        b.innerHTML='\uD83D\uDCF7 Add screenshot';
+        b.innerHTML='\uD83D\uDCF7 Add SCADA Location Screenshot';
         b.style.cssText='width:200px;height:112px;max-width:100%;border:1px dashed #93c5fd;border-radius:8px;background:#f0f9ff;color:#2563eb;font-size:12px;font-weight:600;cursor:pointer;';
         b.onclick=function(e){e.stopPropagation();pmItemAddScreenshot(k);};
         slot.appendChild(b);
     }
-    function pmItemAddScreenshot(eqKey){
+    function pmSSModalPick(){var el=document.getElementById('pm-ss-modal-file');if(el)el.click();}
+    function pmSSModalShowPreview(f){var r=new FileReader();r.onload=function(ev){var img=document.getElementById('pm-ss-modal-preview');if(img){img.src=ev.target.result;img.style.display='block';}var hint=document.getElementById('pm-ss-modal-hint');if(hint)hint.textContent='Image ready \u2014 tap Save to attach it';};r.readAsDataURL(f);}
+    function pmSSModalPreview(input){var f=input&&input.files&&input.files[0];if(f)pmSSModalShowPreview(f);}
+    function pmSSModalDrop(e){e.preventDefault();try{e.currentTarget.style.borderColor='#93c5fd';}catch(_){}var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(!f)return;var el=document.getElementById('pm-ss-modal-file');try{var dt=new DataTransfer();dt.items.add(f);el.files=dt.files;}catch(ex){}el._pastedFile=f;pmSSModalShowPreview(f);}
+    async function pmItemAddScreenshot(eqKey){
         if(!requireWrite())return;
         if(!eqKey||!checkFirebase())return;
-        var inp=document.createElement('input');
-        inp.type='file';inp.accept='image/*';
-        inp.onchange=async function(){
-            var f=inp.files&&inp.files[0];if(!f)return;
-            var _ok=await canManageImage('equipment',eqKey);
-            if(!_ok){showToast('Only an admin can replace this screenshot. Contact an admin (Tittus/strtt or Alex/vladesca) if you think this is wrong.','error');return;}
-            showLoading();
-            try{
-                var b64=await fileToBase64(f);
-                await db.ref('equipmentImages/'+eqKey).set(b64);
-                await db.ref('equipmentImageMeta/'+eqKey).set({addedBy:currentUser,addedAt:new Date().toISOString()});
-                invalidateEquipmentCache();
-                delete _scadaImgCache['equipment:'+eqKey];
-                logAudit('addScreenshot','equipment',eqKey,null);
-                showToast('Screenshot saved!','success');
-                loadWorkAssigned();
-            }catch(e){showToast('Error: '+(e.message||e),'error');}
-            hideLoading();
-        };
-        inp.click();
+        var body='<div class="file-upload" onclick="pmSSModalPick()" ondragover="event.preventDefault();this.style.borderColor=\x27#2563eb\x27;" ondragleave="this.style.borderColor=\x27#93c5fd\x27;" ondrop="pmSSModalDrop(event)" style="border:2px dashed #93c5fd;border-radius:8px;background:#f0f9ff;padding:18px;text-align:center;cursor:pointer;">';
+        body+='<input type="file" id="pm-ss-modal-file" accept="image/*" style="display:none" onchange="pmSSModalPreview(this)">';
+        body+='<p id="pm-ss-modal-hint" style="font-size:13px;color:#2563eb;margin:0;font-weight:600;">Paste (Ctrl+V), drag &amp; drop, or tap to choose a photo</p>';
+        body+='<img id="pm-ss-modal-preview" class="img-preview" style="display:none;margin-top:10px;max-width:100%;border-radius:6px;">';
+        body+='</div>';
+        var res=await showCustomModal('Add SCADA Location Screenshot',body,[{label:'Cancel',class:'btn-secondary',value:'cancel'},{label:'Save',class:'btn-primary',value:'save'}]);
+        if(res!=='save')return;
+        var inp=document.getElementById('pm-ss-modal-file');
+        var f=inp?((inp.files&&inp.files[0])||inp._pastedFile||null):null;
+        if(!f){showToast('No image chosen \u2014 paste, drop or pick a photo first','error');return;}
+        var _ok=await canManageImage('equipment',eqKey);
+        if(!_ok){showToast('Only an admin can replace this screenshot. Contact an admin (Tittus/strtt or Alex/vladesca) if you think this is wrong.','error');return;}
+        showLoading();
+        try{
+            var b64=await fileToBase64(f);
+            await db.ref('equipmentImages/'+eqKey).set(b64);
+            await db.ref('equipmentImageMeta/'+eqKey).set({addedBy:currentUser,addedAt:new Date().toISOString()});
+            invalidateEquipmentCache();
+            delete _scadaImgCache['equipment:'+eqKey];
+            logAudit('addScreenshot','equipment',eqKey,null);
+            showToast('SCADA Location Screenshot saved!','success');
+            loadWorkAssigned();
+        }catch(e){showToast('Error: '+(e.message||e),'error');}
+        hideLoading();
     }
     async function togglePmItemDone(jobKey,itemKey,isDone){
         if(!requireWrite())return;
@@ -3987,7 +4005,7 @@
             hh+='<span style="flex:1;min-width:0;font-size:13px;font-weight:600;word-break:break-all;">'+escapeHtml(pp.equipment)+'</span>';
             hh+='<button type="button" class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:14px;line-height:1;" onclick="pmbRemove('+i+')" aria-label="Remove position">\u00d7</button>';
             hh+='</div>';
-            hh+='<input type="text" class="pmb-note" data-idx="'+i+'" placeholder="Finding / note for '+escapeHtml(pp.equipment)+' (optional)" style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;margin:-2px 0 10px;">';
+            hh+='<input type="text" class="pmb-note" data-idx="'+i+'" value="'+escapeHtml(pp.note||'')+'" oninput="pmbSetNote('+i+',this.value)" placeholder="PM Details for '+escapeHtml(pp.equipment)+' (optional)" style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;margin:-2px 0 10px;">';
         });
         c.innerHTML=hh;
         if(btn){btn.disabled=false;btn.textContent='Create batch ('+_pmb.length+')';}
@@ -3997,15 +4015,14 @@
         if(!checkFirebase())return;
         if(!currentUser){showToast('Not logged in','error');return;}
         if(!_pmb.length){showToast('Add at least one position','error');return;}
-        var notes={};
-        document.querySelectorAll('#pmb-list .pmb-note').forEach(function(inp){var idx=parseInt(inp.getAttribute('data-idx'),10);var v=(inp.value||'').trim();if(!isNaN(idx)&&v)notes[idx]=v;});
+        document.querySelectorAll('#pmb-list .pmb-note').forEach(function(inp){var idx=parseInt(inp.getAttribute('data-idx'),10);if(!isNaN(idx)&&_pmb[idx])_pmb[idx].note=(inp.value||'');});
         try{
             var now=new Date().toISOString();
             var items={};
             _pmb.forEach(function(pp,i){
                 var itemKey=db.ref('workAssigned').push().key;
-                var it={equipment:pp.equipment,done:false};
-                if(notes[i]){var nk=db.ref('workAssigned').push().key;it.findings={};it.findings[nk]={text:notes[i],author:currentUser,createdAt:now};}
+                var it={equipment:pp.equipment,done:false,sortIndex:i};
+                var nt=(pp.note||'').trim();if(nt){var nk=db.ref('workAssigned').push().key;it.findings={};it.findings[nk]={text:nt,author:currentUser,createdAt:now};}
                 items[itemKey]=it;
             });
             var label=_pmb.length===1?_pmb[0].equipment:(_pmb[0].equipment+' + '+(_pmb.length-1)+' more');
@@ -4080,7 +4097,7 @@
         var me=currentUser.toLowerCase();
         var shared=job.sharedWith||{};
         var rows=[];
-        Object.keys(users).forEach(function(uid){var u=users[uid]||{};var login=(u.login||'').toLowerCase();if(!login||login===me)return;rows.push({login:login,name:u.name||u.login,state:shared[login]});});
+        Object.keys(users).forEach(function(uid){var u=users[uid]||{};var login=(u.loginId||u.login||'').toLowerCase();if(!login||login===me)return;rows.push({login:login,name:u.name||u.loginId||login,state:shared[login]});});
         rows.sort(function(a,b){return String(a.name).localeCompare(String(b.name));});
         var body='<div style="font-size:13px;color:#374151;margin-bottom:6px;">Share <strong>'+escapeHtml(_jobLabel(job))+'</strong> live with a colleague. They see and update the same job; ticking syncs both ways. They must Accept the invite first.</div>';
         if(!rows.length){body+='<div style="font-size:13px;color:#9ca3af;padding:8px 0;">No other users found.</div>';}
@@ -4128,6 +4145,15 @@
         login=(login||'').toLowerCase();if(!login)return;
         try{await db.ref('workAssigned/'+key+'/sharedWith/'+login).remove();logAudit('unshareJob','job',key,{to:login});showToast('Unshared from '+login);openShareJob(key);}
         catch(e){showToast('Error: '+(e.message||e),'error');}
+    }
+    function pmbSetNote(i,v){ if(_pmb[i]) _pmb[i].note=v; }
+    function savePmItemOrder(box){
+        if(!requireWrite())return;
+        if(!firebaseReady||!currentUser||!box)return;
+        var bk=box.getAttribute('data-key');if(!bk)return;
+        var updates={};
+        box.querySelectorAll('.pm-item').forEach(function(el,i){var ik=el.getAttribute('data-itemkey');if(ik)updates['workAssigned/'+bk+'/items/'+ik+'/sortIndex']=i;});
+        if(Object.keys(updates).length&&typeof db!=='undefined'&&db)db.ref().update(updates).catch(function(e){console.warn('save pm item order failed',e);});
     }
     function loadWorkAssigned() {
         if(!firebaseReady)return;
@@ -4211,6 +4237,7 @@
             container.innerHTML=html;
             renderSparklines(container);
             renderWorkThumbnails(container);
+            container.querySelectorAll('.pm-batch-items').forEach(function(box){initPointerSort({container:box,itemSel:'.pm-item',handleSel:'.pm-item-drag-handle',onDrop:function(){savePmItemOrder(box);}});});
             updateWorkCount();
             Object.keys(_expandedJobs).forEach(function(k){
                 var card=container.querySelector('.work-card[data-key="'+k+'"]');
@@ -4274,7 +4301,7 @@
                 '<div class="form-group"><label>Part Description</label><input type="text" id="work-part-desc" placeholder="Optional"></div>'+'<div class="form-group"><label>Job details</label><textarea id="work-fwo-details" rows="2" placeholder="What needs doing (optional)"></textarea></div>';
         } else if(type==='PM'){
             container.innerHTML='<div class="form-group"><label>Position Number</label><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="work-equipment" placeholder="e.g. 703010 or CB.SRT.01.ID11.01" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27work-equipment\x27)" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\ud83d\udcf7</button></div></div>'+
-                '<div class="form-group"><label>Add SCADA location screenshot?</label><div class="file-upload" onclick="document.getElementById(\'work-img-file\').click()" style="padding:10px;"><input type="file" id="work-img-file" accept="image/*" onchange="previewImage(this,\'work-img-preview\')"><p style="font-size:12px;">Click to upload (optional)</p></div><img id="work-img-preview" class="img-preview" style="display:none;max-height:150px;"></div>';
+                '<div class="form-group"><label>Add SCADA Location Screenshot?</label><div class="file-upload" onclick="document.getElementById(\'work-img-file\').click()" style="padding:10px;"><input type="file" id="work-img-file" accept="image/*" onchange="previewImage(this,\'work-img-preview\')"><p style="font-size:12px;">Click to upload (optional)</p></div><img id="work-img-preview" class="img-preview" style="display:none;max-height:150px;"></div>';
         } else if(type==='CBM'){
             container.innerHTML='<div class="form-group"><label>CBM Type</label><select id="work-cbm-type" onchange="populateRouteDatalist()"><option>Ultrasound</option><option>Thermal</option><option>Other</option></select></div>'+
                 '<div class="form-group"><label>Route Number</label><input type="text" id="work-route" list="work-route-list" placeholder="Start typing to search routes..." autocomplete="off"><datalist id="work-route-list"></datalist></div>';
@@ -4551,8 +4578,8 @@
                 if(data.serialNumber)html+='<div class="detail-field"><label>Serial Number</label><div class="value">'+escapeHtml(data.serialNumber)+'</div></div>';
                 if(data.criticality)html+='<div class="detail-field"><label>Criticality</label><div class="value">'+escapeHtml(data.criticality)+'</div></div>';
                 html+='<div class="detail-field"><label>Notes</label><div class="value">'+escapeHtml(data.notes||'None')+'</div></div>';
-                var _eqDetImg=await _pImg;if(_eqDetImg){html+='<div class="detail-field"><label>SCADA Screenshot</label><img src="'+_eqDetImg+'" alt="SCADA screenshot" class="img-preview" style="display:block;"></div>';}
-                else{html+='<div class="detail-field" id="quick-ss-container" data-type="equipment" data-key="'+key+'"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27equipment\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Screenshot missing \u2014 click to add</a></div>';}
+                var _eqDetImg=await _pImg;if(_eqDetImg){html+='<div class="detail-field"><label>SCADA Location Screenshot</label><img src="'+_eqDetImg+'" alt="SCADA screenshot" class="img-preview" style="display:block;"></div>';}
+                else{html+='<div class="detail-field" id="quick-ss-container" data-type="equipment" data-key="'+key+'"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27equipment\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 SCADA Location Screenshot missing \u2014 click to add</a></div>';}
                 html+='</div>';
                 if(data.isStation){
                 html+=await renderStationBelts(data);
@@ -4725,8 +4752,8 @@
                     html+='<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">'+indicator+'<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+ptKey+'\x27);return false;">'+posDisp(_eqCache[ptKey],pt)+'</a></div>';
                 }
                 html+='</div></div>';
-                var _rtDetImg=await _pRtImg;if(_rtDetImg){html+='<div class="detail-field"><label>Route Location</label><img src="'+_rtDetImg+'" alt="Route location screenshot" class="img-preview" style="display:block;"></div>';}
-                else{html+='<div class="detail-field" id="quick-ss-container"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27route\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Route screenshot missing \u2014 click to add</a></div>';}
+                var _rtDetImg=await _pRtImg;if(_rtDetImg){html+='<div class="detail-field"><label>Route Location Screenshot</label><img src="'+_rtDetImg+'" alt="Route location screenshot" class="img-preview" style="display:block;"></div>';}
+                else{html+='<div class="detail-field" id="quick-ss-container"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27route\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 Route Location Screenshot missing \u2014 click to add</a></div>';}
                 html+='</div>';
 
                 // Route report (v1.10): print / save as PDF via the browser print dialog
@@ -4790,11 +4817,11 @@
                 // Screenshot
                 var _eqEditImg = await getEquipmentImage(key);
                 if (_eqEditImg) {
-                    html += '<div class="form-group"><label>SCADA Screenshot</label><img src="' + _eqEditImg + '" alt="SCADA screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
+                    html += '<div class="form-group"><label>SCADA Location Screenshot</label><img src="' + _eqEditImg + '" alt="SCADA screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
                     html += '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\x27edit-pos-file\x27).click()">Replace Screenshot</button>';
                     html += '<input type="file" id="edit-pos-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-pos-preview\x27)"><img id="edit-pos-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
                 } else {
-                    html += '<div class="form-group"><label>SCADA Screenshot</label>';
+                    html += '<div class="form-group"><label>SCADA Location Screenshot</label>';
                     html += '<div class="file-upload" onclick="document.getElementById(\x27edit-pos-file\x27).click()"><input type="file" id="edit-pos-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-pos-preview\x27)"><p>Drag & drop, paste, or click</p></div>';
                     html += '<img id="edit-pos-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
                 }
@@ -4812,12 +4839,12 @@
                 
                 html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#6b7280;">Loading linked parts...</p></div>';
               } else {
-              html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">You can add or update the SCADA screenshot here. To change any other details, use the position page (admins manage position details). To add notes, use the notes box on the position page.</p>';
+              html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">You can add or update the SCADA Location Screenshot here. To change any other details, use the position page (admins manage position details). To add notes, use the notes box on the position page.</p>';
               html += '<div class="form-group"><label>Position</label><input type="text" value="' + escapeHtml(data.conveyorNumber||'') + '" disabled style="background:#f3f4f6;color:#6b7280;cursor:not-allowed;"></div>';
               var _eqEditImg = await getEquipmentImage(key);
               var _canPosImg = await canManageImage('equipment', key);
               if (_eqEditImg) {
-                  html += '<div class="form-group"><label>SCADA Screenshot</label><img src="' + _eqEditImg + '" alt="SCADA screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
+                  html += '<div class="form-group"><label>SCADA Location Screenshot</label><img src="' + _eqEditImg + '" alt="SCADA screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
                   if (_canPosImg) {
                       html += '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\x27edit-pos-file\x27).click()">Replace Screenshot</button>';
                       html += '<input type="file" id="edit-pos-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-pos-preview\x27)"><img id="edit-pos-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
@@ -4825,7 +4852,7 @@
                       html += '<p style="font-size:12px;color:#6b7280;">Only an admin (or whoever added it) can replace this screenshot.</p></div>';
                   }
               } else {
-                  html += '<div class="form-group"><label>SCADA Screenshot</label>';
+                  html += '<div class="form-group"><label>SCADA Location Screenshot</label>';
                   html += '<div class="file-upload" onclick="document.getElementById(\x27edit-pos-file\x27).click()"><input type="file" id="edit-pos-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-pos-preview\x27)"><p>Drag & drop, paste, or click</p></div>';
                   html += '<img id="edit-pos-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
               }
@@ -4848,12 +4875,12 @@
                                 // Route Screenshot
                 var _rtEditImg = await getRouteImage(key);
                 if (_rtEditImg) {
-                    html += '<div class="form-group" style="margin-top:12px;"><label>Route Screenshot</label><img src="' + _rtEditImg + '" alt="Route screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
+                    html += '<div class="form-group" style="margin-top:12px;"><label>Route Location Screenshot</label><img src="' + _rtEditImg + '" alt="Route screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
                     html += '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\x27edit-route-file\x27).click()">Replace Screenshot</button>';
                     html += '<input type="file" id="edit-route-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-route-preview\x27)">';
                     html += '<img id="edit-route-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
                 } else {
-                    html += '<div class="form-group" style="margin-top:12px;"><label>Route Screenshot</label>';
+                    html += '<div class="form-group" style="margin-top:12px;"><label>Route Location Screenshot</label>';
                     html += '<div class="file-upload" onclick="document.getElementById(\x27edit-route-file\x27).click()" ondragover="event.preventDefault();this.style.borderColor=\x27#60a5fa\x27" ondragleave="this.style.borderColor=\x27#d1d5db\x27" ondrop="event.preventDefault();this.style.borderColor=\x27#d1d5db\x27;handleAddFormDrop(event,\x27edit-route-file\x27,\x27edit-route-preview\x27)">';
                     html += '<input type="file" id="edit-route-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-route-preview\x27)">';
                     html += '<p>Drag & drop, paste, or click</p></div>';
@@ -4885,12 +4912,12 @@
                 html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditRoute(\x27' + key + '\x27)">Save Changes</button>';
                 html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27route\x27,\x27' + key + '\x27)">Cancel</button>';
               } else {
-              html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">You can add or update the route screenshot here. To change any route details, use the route page (admins manage route details). To add notes, use the notes box on the route page.</p>';
+              html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">You can add or update the Route Location Screenshot here. To change any route details, use the route page (admins manage route details). To add notes, use the notes box on the route page.</p>';
               html += '<div class="form-group"><label>Route</label><input type="text" value="' + escapeHtml(data.routeNumber||'') + '" disabled style="background:#f3f4f6;color:#6b7280;cursor:not-allowed;"></div>';
               var _rtEditImg = await getRouteImage(key);
               var _canRtImg = await canManageImage('route', key);
               if (_rtEditImg) {
-                  html += '<div class="form-group"><label>Route Screenshot</label><img src="' + _rtEditImg + '" alt="Route screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
+                  html += '<div class="form-group"><label>Route Location Screenshot</label><img src="' + _rtEditImg + '" alt="Route screenshot" class="img-preview" style="display:block;margin-bottom:8px;">';
                   if (_canRtImg) {
                       html += '<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\x27edit-route-file\x27).click()">Replace Screenshot</button>';
                       html += '<input type="file" id="edit-route-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-route-preview\x27)"><img id="edit-route-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
@@ -4898,7 +4925,7 @@
                       html += '<p style="font-size:12px;color:#6b7280;">Only an admin (or whoever added it) can replace this screenshot.</p></div>';
                   }
               } else {
-                  html += '<div class="form-group"><label>Route Screenshot</label>';
+                  html += '<div class="form-group"><label>Route Location Screenshot</label>';
                   html += '<div class="file-upload" onclick="document.getElementById(\x27edit-route-file\x27).click()"><input type="file" id="edit-route-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-route-preview\x27)"><p>Drag & drop, paste, or click</p></div>';
                   html += '<img id="edit-route-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
               }
@@ -5843,7 +5870,7 @@ function liveSearchSuggest(query,scope){
             
             // Fallback: check if any overlay with a file-upload div is active
             if (!handled) {
-                var activeOverlay = document.querySelector('.detail-overlay.active, #add-form-overlay.active');
+                var activeOverlay = document.querySelector('.detail-overlay.active, #add-form-overlay.active, #modal.active');
                 if (activeOverlay) {
                     var firstFileInput = activeOverlay.querySelector('input[type="file"][accept*="image"]');
                     if (firstFileInput) {
@@ -6709,7 +6736,7 @@ function liveSearchSuggest(query,scope){
             html += '<option>ECC</option><option>SC3</option><option>Ambaflex Spiral</option><option>Gappers</option><option>Fives</option><option>SWD</option><option>Other</option></select></div>';
             html += '<div class="form-group"><label>Equipment Description</label><input type="text" id="new-pos-desc" placeholder="e.g. AFE 2.0, MAIN MERGE, LANE"></div>';
             html += '<div class="form-group"><label>Notes</label><textarea id="new-pos-notes" rows="3" maxlength="500" placeholder="Optional notes..."></textarea></div>';
-            html += '<div class="form-group"><label>SCADA Screenshot</label>';
+            html += '<div class="form-group"><label>SCADA Location Screenshot</label>';
             html += '<div class="file-upload" onclick="document.getElementById(\x27new-pos-file\x27).click()" ondragover="event.preventDefault();this.style.borderColor=\x27#60a5fa\x27" ondragleave="this.style.borderColor=\x27#d1d5db\x27" ondrop="event.preventDefault();this.style.borderColor=\x27#d1d5db\x27;handleAddFormDrop(event,\x27new-pos-file\x27,\x27new-pos-preview\x27)">';
             html += '<input type="file" id="new-pos-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27new-pos-preview\x27)"><p>Drag & drop, paste, or click</p></div>';
             html += '<img id="new-pos-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
