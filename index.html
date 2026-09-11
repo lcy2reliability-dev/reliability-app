@@ -3843,6 +3843,7 @@
             h+='</div>';
         });
         h+='</div>';
+        h+='<button type="button" class="pm-add-pos" onclick="event.stopPropagation();openPmBatchWizard(\x27'+key+'\x27)" style="width:100%;margin-top:12px;padding:10px;border:1px dashed #93c5fd;border-radius:8px;background:#f0f9ff;color:#2563eb;font-size:13px;font-weight:600;cursor:pointer;">+ Add position</button>';
         h+='<div class="work-details" style="font-size:11px;color:#6b7280;margin-top:8px;">Added '+formatWorkTime(item.createdAt)+'</div>';
         h+='</div></div>';
         h+='<div class="work-done-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:8px;padding:8px 0 4px;border-top:1px solid #f1f5f9;min-height:44px;">';
@@ -3933,22 +3934,28 @@
         }catch(e){showToast('Error: '+(e.message||e),'error');}
     }
     // ---- PM batch wizard (standalone, launched from the Job list header) ----
-    var _pmb=[];
-    async function openPmBatchWizard(){
+    var _pmb=[];var _pmbTarget=null;var _pmbExisting={};
+    async function openPmBatchWizard(targetKey){
         if(!requireWrite())return;
         if(!checkFirebase())return;
-        _pmb=[];
+        _pmb=[];_pmbTarget=targetKey||null;_pmbExisting={};
+        if(_pmbTarget){
+            try{var _es=await db.ref('workAssigned/'+_pmbTarget+'/items').once('value');var _ev=_es.val()||{};Object.keys(_ev).forEach(function(k){var eq=_ev[k]&&_ev[k].equipment;if(eq)_pmbExisting[sanitizeKey(eq)]=true;});}catch(_e){}
+        }
+        var intro=_pmbTarget
+            ?'<div style="font-size:12px;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.4;">Add one or more positions to this existing PM batch. Positions already in the batch are skipped.</div>'
+            :'<div style="font-size:12px;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.4;">One job that holds a checklist of positions to PM. Tick each off as you go - the batch completes when all are done. Adds to <strong>your Job list</strong> only; nothing goes to APM.</div>';
         var body=''+
-            '<div style="font-size:12px;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.4;">One job that holds a checklist of positions to PM. Tick each off as you go - the batch completes when all are done. Adds to <strong>your Job list</strong> only; nothing goes to APM.</div>'+
+            intro+
             '<div class="form-group"><label>Add a position</label>'+
                 '<div style="position:relative;"><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="pmb-input" placeholder="Search position number or name..." oninput="pmbSuggest(this.value)" onkeydown="pmbKey(event)" autocomplete="off" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27pmb-input\x27,function(v){pmbSuggest(v);})" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\uD83D\uDCF7</button></div>'+
                 '<div id="pmb-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:220px;overflow:auto;z-index:10;"></div></div>'+
             '</div>'+
             '<div id="pmb-list" style="margin-top:10px;"></div>';
-        document.getElementById('modal-title').textContent='New PM batch';
+        document.getElementById('modal-title').textContent=_pmbTarget?'Add positions to batch':'New PM batch';
         document.getElementById('modal-message').textContent='';
         document.getElementById('modal-body').innerHTML=body;
-        document.getElementById('modal-actions').innerHTML='<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="pmb-save-btn" onclick="pmbSave()" disabled>Create batch</button>';
+        document.getElementById('modal-actions').innerHTML='<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="pmb-save-btn" onclick="pmbSave()" disabled>'+(_pmbTarget?'Add to batch':'Create batch')+'</button>';
         document.getElementById('modal').classList.add('active');_openModalA11y();
         pmbRenderList();
     }
@@ -3984,7 +3991,8 @@
             if(mk){key=mk;rec=cache[mk];name=rec.conveyorNumber||name;}
         }
         if(!rec){showToast('That position isn\x27t in the app. Pick one from the list.','error');return;}
-        if(_pmb.some(function(x){return sanitizeKey(x.equipment)===key;})){showToast('Already in this batch','error');}
+        if(_pmbTarget&&_pmbExisting[key]){showToast('Already in this batch','error');}
+        else if(_pmb.some(function(x){return sanitizeKey(x.equipment)===key;})){showToast('Already in this batch','error');}
         else{_pmb.push({equipment:rec.conveyorNumber||name});}
         var inp=document.getElementById('pmb-input');if(inp)inp.value='';
         var dd=document.getElementById('pmb-dd');if(dd){dd.style.display='none';dd.innerHTML='';}
@@ -3998,8 +4006,9 @@
     function pmbRenderList(){
         var c=document.getElementById('pmb-list');if(!c)return;
         var btn=document.getElementById('pmb-save-btn');
-        if(!_pmb.length){c.innerHTML='<div style="font-size:12px;color:#9ca3af;padding:8px 0;">No positions added yet - search above and tap one to add it.</div>';if(btn){btn.disabled=true;btn.textContent='Create batch';}return;}
-        var hh='<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">'+_pmb.length+' position'+(_pmb.length===1?'':'s')+' in this batch</div>';
+        var _lbl=_pmbTarget?'Add to batch':'Create batch';
+        if(!_pmb.length){c.innerHTML='<div style="font-size:12px;color:#9ca3af;padding:8px 0;">No positions added yet - search above and tap one to add it.</div>';if(btn){btn.disabled=true;btn.textContent=_lbl;}return;}
+        var hh='<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">'+_pmb.length+' position'+(_pmb.length===1?'':'s')+' '+(_pmbTarget?'to add':'in this batch')+'</div>';
         _pmb.forEach(function(pp,i){
             hh+='<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px;">';
             hh+='<span style="flex:1;min-width:0;font-size:13px;font-weight:600;word-break:break-all;">'+escapeHtml(pp.equipment)+'</span>';
@@ -4008,7 +4017,7 @@
             hh+='<input type="text" class="pmb-note" data-idx="'+i+'" value="'+escapeHtml(pp.note||'')+'" oninput="pmbSetNote('+i+',this.value)" placeholder="PM Details for '+escapeHtml(pp.equipment)+' (optional)" style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;margin:-2px 0 10px;">';
         });
         c.innerHTML=hh;
-        if(btn){btn.disabled=false;btn.textContent='Create batch ('+_pmb.length+')';}
+        if(btn){btn.disabled=false;btn.textContent=_lbl+' ('+_pmb.length+')';}
     }
     async function pmbSave(){
         if(!requireWrite())return;
@@ -4018,6 +4027,35 @@
         document.querySelectorAll('#pmb-list .pmb-note').forEach(function(inp){var idx=parseInt(inp.getAttribute('data-idx'),10);if(!isNaN(idx)&&_pmb[idx])_pmb[idx].note=(inp.value||'');});
         try{
             var now=new Date().toISOString();
+            if(_pmbTarget){
+                var _tk=_pmbTarget;
+                var _snap=await db.ref('workAssigned/'+_tk+'/items').once('value');
+                var _ex=_snap.val()||{};
+                var _maxSort=-1;Object.keys(_ex).forEach(function(k){var s=_ex[k]&&_ex[k].sortIndex;if(typeof s==='number'&&s>_maxSort)_maxSort=s;});
+                var _upd={};
+                _pmb.forEach(function(pp,i){
+                    var itemKey=db.ref('workAssigned').push().key;
+                    var it={equipment:pp.equipment,done:false,sortIndex:_maxSort+1+i};
+                    var nt=(pp.note||'').trim();if(nt){var nk=db.ref('workAssigned').push().key;it.findings={};it.findings[nk]={text:nt,author:currentUser,createdAt:now};}
+                    _upd[itemKey]=it;
+                });
+                await db.ref('workAssigned/'+_tk+'/items').update(_upd);
+                await db.ref('workAssigned/'+_tk+'/status').set('pending');
+                await db.ref('workAssigned/'+_tk+'/completedAt').remove();
+                var _merged=[];Object.keys(_ex).forEach(function(k){if(_ex[k])_merged.push(_ex[k]);});Object.keys(_upd).forEach(function(k){_merged.push(_upd[k]);});
+                _merged.sort(function(a,b){var sa=(a&&typeof a.sortIndex==='number')?a.sortIndex:0;var sb=(b&&typeof b.sortIndex==='number')?b.sortIndex:0;return sa-sb;});
+                var _first=(_merged[0]&&_merged[0].equipment)||'';
+                var _newLabel=_merged.length===1?_first:(_first+' + '+(_merged.length-1)+' more');
+                await db.ref('workAssigned/'+_tk+'/batchLabel').set(_newLabel);
+                logAudit('addPmBatchItems','job',_tk,{count:_pmb.length});
+                var _n=Object.keys(_upd).length;
+                _pmb=[];_pmbTarget=null;_pmbExisting={};
+                updateWorkCount();
+                closeModal();
+                showToast(_n===1?'Position added to batch!':_n+' positions added to batch!','success');
+                loadWorkAssigned();
+                return;
+            }
             var items={};
             _pmb.forEach(function(pp,i){
                 var itemKey=db.ref('workAssigned').push().key;
@@ -4834,10 +4872,9 @@
                 html += '<span class="toggle-dot" style="position:absolute;top:3px;left:' + (_eqActive?'27px':'3px') + ';width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>';
                 html += '</label>';
                 html += '</div>'; } 
+                html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#6b7280;">Loading linked parts...</p></div>';
                 html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditPosition(\x27' + key + '\x27)">Save Changes</button>';
                 html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27equipment\x27,\x27' + key + '\x27)">Cancel</button>';
-                
-                html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#6b7280;">Loading linked parts...</p></div>';
               } else {
               html += '<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">You can add or update the SCADA Location Screenshot here. To change any other details, use the position page (admins manage position details). To add notes, use the notes box on the position page.</p>';
               html += '<div class="form-group"><label>Position</label><input type="text" value="' + escapeHtml(data.conveyorNumber||'') + '" disabled style="background:#f3f4f6;color:#6b7280;cursor:not-allowed;"></div>';
@@ -4856,9 +4893,9 @@
                   html += '<div class="file-upload" onclick="document.getElementById(\x27edit-pos-file\x27).click()"><input type="file" id="edit-pos-file" accept="image/*" style="display:none" onchange="previewAddFormImage(this,\x27edit-pos-preview\x27)"><p>Drag & drop, paste, or click</p></div>';
                   html += '<img id="edit-pos-preview" class="img-preview" style="display:none;margin-top:8px;"></div>';
               }
+              html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#6b7280;">Loading linked parts...</p></div>';
               html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditPosition(\x27' + key + '\x27)">Save Changes</button>';
               html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27equipment\x27,\x27' + key + '\x27)">Cancel</button>';
-              html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#6b7280;">Loading linked parts...</p></div>';
               }
             } else if (type === 'route') {
               if(_isAdmin){
@@ -4973,9 +5010,9 @@
                 html += '<span class="toggle-bg" style="position:absolute;top:0;left:0;right:0;bottom:0;background:' + (_ptActive?'#10b981':'#d1d5db') + ';border-radius:26px;transition:0.3s;"></span>';
                 html += '<span class="toggle-dot" style="position:absolute;top:3px;left:' + (_ptActive?'27px':'3px') + ';width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>';
                 html += '</label></div>'; } 
+                html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#6b7280;">Loading linked positions...</p></div>';
                 html += '<button class="btn btn-primary" style="margin-top:16px;" onclick="saveEditPart(\x27' + key + '\x27)">Save Changes</button>';
                 html += '<button class="btn btn-secondary" style="margin-top:16px;margin-left:8px;" onclick="openDetail(\x27part\x27,\x27' + key + '\x27)">Cancel</button>';
-                html += '<div id="edit-linked-section" style="margin-top:24px;padding:16px;border:1px solid #e2e8f0;border-radius:8px;background:#fafafa;"><p style="font-size:12px;color:#6b7280;">Loading linked positions...</p></div>';
             }
             
             // Danger Zone (all types)
