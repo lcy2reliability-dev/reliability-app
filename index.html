@@ -3832,13 +3832,16 @@
             h+='</div>';
             h+='<div class="work-scada" data-imgtype="equipment" data-imgkey="'+escapeHtml(eqK)+'" data-canadd="1" style="flex:0 0 auto;"></div>';
             h+='</div>';
-            h+='<div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:10px;padding-top:8px;border-top:1px solid #f1f5f9;">';
+            h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:8px;border-top:1px solid #f1f5f9;">';
+            h+='<button type="button" onclick="event.stopPropagation();removePmBatchItem(\x27'+key+'\x27,\x27'+ik+'\x27)" style="background:none;border:none;color:#dc2626;font-size:11px;font-weight:600;cursor:pointer;padding:4px 2px;">\u00d7 Remove</button>';
+            h+='<div style="display:flex;align-items:center;gap:10px;">';
             h+='<span style="font-size:12px;font-weight:600;color:'+(idone?'#10b981':'#6b7280')+';">'+(idone?'Completed':'Mark complete')+'</span>';
             h+='<label onclick="event.stopPropagation();" style="position:relative;display:inline-block;width:50px;height:26px;cursor:pointer;flex:0 0 auto;">';
             h+='<input type="checkbox" '+(idone?'checked':'')+' onchange="event.stopPropagation();var _o=this.checked,_p=this.parentElement;_p.querySelector(\x27.toggle-bg\x27).style.background=_o?\x27#10b981\x27:\x27#d1d5db\x27;_p.querySelector(\x27.toggle-dot\x27).style.left=_o?\x2727px\x27:\x273px\x27;togglePmItemDone(\x27'+key+'\x27,\x27'+ik+'\x27,_o)" style="opacity:0;width:0;height:0;">';
             h+='<span class="toggle-bg" style="position:absolute;top:0;left:0;right:0;bottom:0;background:'+(idone?'#10b981':'#d1d5db')+';border-radius:26px;transition:0.3s;"></span>';
             h+='<span class="toggle-dot" style="position:absolute;top:3px;left:'+(idone?'27px':'3px')+';width:20px;height:20px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>';
             h+='</label>';
+            h+='</div>';
             h+='</div>';
             h+='</div>';
         });
@@ -3902,6 +3905,35 @@
             loadWorkAssigned();
         }catch(e){showToast('Error: '+(e.message||e),'error');}
         hideLoading();
+    }
+    async function removePmBatchItem(jobKey,itemKey){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        try{
+            var snap=await db.ref('workAssigned/'+jobKey+'/items').once('value');
+            var items=snap.val()||{};
+            var keys=Object.keys(items);
+            if(keys.length<=1){showToast('A batch needs at least one position. Use \x27Remove batch from Job list\x27 instead.','error');return;}
+            var it=items[itemKey]||{};
+            var nm=it.equipment||'this position';
+            var ok=await showCustomModal('Remove position',escapeHtml(nm)+' will be removed from this batch. Continue?',[{label:'Cancel',class:'btn-secondary',value:'cancel'},{label:'Remove',class:'btn-danger',value:'ok'}]);
+            if(ok!=='ok')return;
+            await db.ref('workAssigned/'+jobKey+'/items/'+itemKey).remove();
+            var snap2=await db.ref('workAssigned/'+jobKey+'/items').once('value');
+            var rem=snap2.val()||{};
+            var vals=Object.values(rem);
+            var allDone=vals.length>0&&vals.every(function(x){return x&&x.done;});
+            if(allDone){await db.ref('workAssigned/'+jobKey+'/status').set('done');await db.ref('workAssigned/'+jobKey+'/completedAt').set(new Date().toISOString());}
+            else{await db.ref('workAssigned/'+jobKey+'/status').set('pending');await db.ref('workAssigned/'+jobKey+'/completedAt').remove();}
+            var merged=[];Object.keys(rem).forEach(function(k){if(rem[k])merged.push(rem[k]);});
+            merged.sort(function(a,b){var sa=(a&&typeof a.sortIndex==='number')?a.sortIndex:0;var sb=(b&&typeof b.sortIndex==='number')?b.sortIndex:0;return sa-sb;});
+            var first=(merged[0]&&merged[0].equipment)||'';
+            var newLabel=merged.length===1?first:(first+' + '+(merged.length-1)+' more');
+            await db.ref('workAssigned/'+jobKey+'/batchLabel').set(newLabel);
+            logAudit('removePmBatchItem','job',jobKey,{item:itemKey});
+            showToast('Position removed','success');
+            loadWorkAssigned();
+        }catch(e){showToast('Error: '+(e.message||e),'error');}
     }
     async function togglePmItemDone(jobKey,itemKey,isDone){
         if(!requireWrite())return;
@@ -4072,7 +4104,7 @@
             closeModal();
             showToast('PM batch added to your Job list!','success');
             loadWorkAssigned();
-        }catch(e){showToast('Error creating batch: '+(e.message||e),'error');}
+        }catch(e){showToast('Error saving batch: '+(e.message||e),'error');}
     }
     // ===== SHARE A JOB (v1.26) — live-synced, invite + accept =====
     var _shareKey='';
@@ -4204,10 +4236,11 @@
             if(!data){container.innerHTML='<div class="empty-state">No jobs assigned yet</div>';updateWorkCount();return;}
             // Filter to current user's work (owned OR accepted shares); collect pending invites.
             function _ordIdx(v){ return (v&&typeof v.sortIndex==='number')?v.sortIndex:1e9; }
+            function _dayKey(v){ var ts=_jobSchedTs(v); if(!ts||isNaN(ts))return 1e15; var dt=new Date(ts); var b=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),4,0,0).getTime(); if(dt.getHours()<4)b-=86400000; return b; }
             var _me=currentUser.toLowerCase();
             function _mineJob(v){ if(!v)return false; if((v.assignedTo||'').toLowerCase()===_me)return true; return !!(v.sharedWith&&v.sharedWith[_me]===true); }
             var _invitesHtml=renderJobInvites(data,_me);
-            const items=Object.entries(data).filter(([k,v])=>_mineJob(v)).sort((a,b)=>{var aD=a[1].status==='done'?1:0,bD=b[1].status==='done'?1:0;if(aD!==bD)return aD-bD;var ai=_ordIdx(a[1]),bi=_ordIdx(b[1]);if(ai!==bi)return ai-bi;return new Date(b[1].createdAt)-new Date(a[1].createdAt);});
+            const items=Object.entries(data).filter(([k,v])=>_mineJob(v)).sort((a,b)=>{var aD=a[1].status==='done'?1:0,bD=b[1].status==='done'?1:0;if(aD!==bD)return aD-bD;var ak=_dayKey(a[1]),bk=_dayKey(b[1]);if(ak!==bk)return ak-bk;var ai=_ordIdx(a[1]),bi=_ordIdx(b[1]);if(ai!==bi)return ai-bi;return new Date(b[1].createdAt)-new Date(a[1].createdAt);});
             if(items.length===0){container.innerHTML=_invitesHtml+'<div class="empty-state">No jobs assigned to you today</div>';updateWorkCount();return;}
             var _wn=new Date();var _w4=new Date(_wn.getFullYear(),_wn.getMonth(),_wn.getDate(),4,0,0);
             var _workCutoff=_wn.getHours()<4?new Date(_w4.getTime()-86400000):_w4;
