@@ -7,6 +7,26 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.26 — 2026-09-11
+
+**Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). No Firebase migration — PM batches and shared jobs are ordinary children of an existing job record, and every existing job is untouched.
+
+### Multi-equipment PM batch
+- **Build one job that covers several positions.** Tap the new **+ PM batch** button at the top of your Job list, search and add each position, optionally jot a finding against each, then create the batch. It lands as a single card.
+- **Tick each position off as you go.** The card shows a progress count (e.g. "3 / 8 done") and a bar; when every position is ticked the whole batch marks itself complete.
+- **Findings and screenshots per position.** Each position in the batch has its own findings box and shows its SCADA screenshot. If a position has no screenshot yet, a **Add screenshot** button appears right there so you can add one on the spot.
+- No parts list on a PM batch (by design — PMs don't need one). Follow-up FWOs are still raised per position as before.
+
+### Share a job with a colleague
+- **Open a job on your list, tap Share, and pick a colleague.** They receive an invite at the top of their own Job list to **Accept** or **Decline**.
+- **Once accepted, you both see and update the same job, live.** Ticking an item, adding a finding or completing the job syncs to everyone it is shared with. This works for single jobs and PM batches.
+- **You stay in control.** Only the job's owner sees the Share button and can add or remove people. Anyone a job is shared with can leave it themselves ("Leave shared job") without affecting the owner.
+- Note: the "notification" is the invite banner that appears in the colleague's Job list in the app — there is no email or push (the app has none). They see it next time they open the app.
+
+### Under the hood
+- A PM batch is a job with `pmGroup:true` and an `items` map (each item = a position with its own `done`, `doneBy`, `doneAt` and `findings`). The parent status is derived from the items.
+- A share is a `sharedWith` map on the job (`{login: "pending"|true}`, lower-cased logins). The Job list already loads the whole node and filters client-side, so it now shows a job when you own it **or** you have accepted a share, and collects any pending invites into the banner.
+
 ## v1.25 — 2026-09-09
 
 **Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). 10 master station records added to Firebase; no change to existing belt positions, parts or jobs.

@@ -560,8 +560,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.25)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Manual Induct Stations</strong>: open a whole station (e.g. CB.SRT.01.ID11) to see all 5 belts and their parts in one place, and add a PM for the entire station to your list in one tap. Follow-up FWOs stay per belt as before.<br>&bull; <strong>Easier to find</strong>: search &quot;Manual Induct Station 6&quot;, &quot;Induct Station 6&quot; or just &quot;MI 6&quot; / &quot;IS 6&quot; and the station comes right up (1-5 = north row ID11-ID15, 6-10 = south row ID21-ID25).<br>&bull; <strong>Fixed</strong>: a note you add while putting a PM on your job list now shows straight away.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.26)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>PM batches</strong>: tap <strong>+ PM batch</strong> at the top of your Job list to build one job that covers several positions. Tick each off as you go (it shows N/M done and completes itself), add findings per position, and each position shows its SCADA screenshot (or a button to add one).<br>&bull; <strong>Share a job</strong>: open a job on your list, tap <strong>Share</strong> and pick a colleague. They get an invite to Accept or Decline; once accepted you both see and update the very same job live.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -625,7 +625,7 @@
             </div>
             <div id="search-results"></div>
             <div class="card" id="home-joblist">
-                <h2 style="display:flex;align-items:center;gap:6px;">Job list <span id="work-count" style="background:#2563eb;color:white;border-radius:10px;padding:1px 7px;font-size:11px;"></span></h2>
+                <h2 style="display:flex;align-items:center;gap:6px;">Job list <span id="work-count" style="background:#2563eb;color:white;border-radius:10px;padding:1px 7px;font-size:11px;"></span><button class="btn btn-primary btn-sm" style="margin-left:auto;font-size:12px;padding:5px 10px;white-space:nowrap;" onclick="openPmBatchWizard()">+ PM batch</button></h2>
                 <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Your jobs for the day. Press and drag the &#9776; grip on a card to reorder.</p>
                 <div id="work-list" style="margin-top:8px;"><div class="empty-state">No jobs assigned yet</div></div>
             </div>
@@ -3762,7 +3762,7 @@
             if(!key||slot.querySelector('img'))return;
             var ck=type+':'+key;
             function place(src){
-                if(!src)return;
+                if(!src){ _placeAddSS(slot); return; }
                 var img=document.createElement('img');
                 img.className='work-scada-thumb';
                 img.src=src;
@@ -3793,6 +3793,342 @@
     function _schedLabelYmd(ymd){return _schedLabel({scheduledFor:ymd});}
     function openSchedPicker(btn){if(!btn||!btn.parentElement)return;var inp=btn.parentElement.querySelector('.sched-input');if(!inp)return;try{if(typeof inp.showPicker==='function'){inp.showPicker();return;}}catch(e){}try{inp.focus();inp.click();}catch(e2){}}
     async function setJobSchedule(inp){if(!requireWrite())return;if(!inp)return;var key=inp.getAttribute('data-key');if(!key||!checkFirebase())return;var val=inp.value||'';var today=_todayYmd();try{if(!val||val===today){await db.ref('workAssigned/'+key+'/scheduledFor').remove();logAudit('scheduleJob','job',key,{scheduledFor:null});showToast('Scheduled for today');}else{await db.ref('workAssigned/'+key+'/scheduledFor').set(val);logAudit('scheduleJob','job',key,{scheduledFor:val});showToast('Scheduled for '+_schedLabelYmd(val));}loadWorkAssigned();}catch(e){showToast('Error: '+e.message,'error');}}
+    // ===== MULTI-EQUIPMENT PM BATCH (v1.26) =====
+    // One "PM batch" job holds a checklist of positions. Each item has its own tick,
+    // findings and SCADA thumbnail; the parent auto-completes when every item is ticked.
+    function renderPmBatchCard(key,item,isOverdue,amOwner){
+        var items=item.items||{};
+        var entries=Object.entries(items);
+        var total=entries.length;
+        var doneN=entries.filter(function(e){return e[1]&&e[1].done;}).length;
+        var isDone=item.status==='done';
+        var pct=total?Math.round(doneN/total*100):0;
+        var h='<div class="work-card'+(isDone?' done':'')+(isOverdue?' overdue':'')+'" onclick="expandWorkCard(this)" data-key="'+key+'" data-status="'+escapeHtml(item.status||'pending')+'">';
+        if(!isDone)h+='<div class="job-drag-handle drag-handle" title="Drag to reorder" aria-label="Drag to reorder job" onclick="event.stopPropagation();">\u2630</div>';
+        h+='<div class="work-card-body"><div class="work-card-info" style="width:100%;">';
+        h+='<span class="work-type pm">PM</span> <span class="work-type" style="background:#ede9fe;color:#6d28d9;">BATCH</span>';
+        if(isOverdue)h+='<span class="overdue-badge">OVERDUE</span>';
+        h+='<div class="work-equipment" style="margin-top:4px;">'+escapeHtml(item.batchLabel||('PM batch ('+total+')'))+'</div>';
+        h+='<div style="font-size:12px;color:#6b7280;margin-top:2px;">'+doneN+' / '+total+' done</div>';
+        h+=_shareBadge(item,amOwner);
+        h+='<div style="height:6px;background:#f1f5f9;border-radius:3px;margin-top:6px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+(pct===100?'#10b981':'#2563eb')+';transition:width .3s;"></div></div>';
+        entries.forEach(function(e){
+            var ik=e[0], it=e[1]||{};
+            var eqName=it.equipment||'';
+            var eqK=sanitizeKey(eqName);
+            var rec=(equipmentCache&&equipmentCache[eqK])||null;
+            var disp=rec?posDisp(rec):escapeHtml(eqName);
+            var idone=!!it.done;
+            h+='<div class="pm-item" style="margin-top:10px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;background:'+(idone?'#f0fdf4':'#fff')+';">';
+            h+='<div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">';
+            h+='<label onclick="event.stopPropagation();" style="flex:0 0 auto;display:inline-flex;align-items:center;min-height:44px;cursor:pointer;">';
+            h+='<input type="checkbox" '+(idone?'checked':'')+' onchange="event.stopPropagation();togglePmItemDone(\x27'+key+'\x27,\x27'+ik+'\x27,this.checked)" style="width:22px;height:22px;flex:0 0 auto;">';
+            h+='</label>';
+            h+='<div style="flex:1;min-width:140px;">';
+            h+='<a class="search-link" href="#" onclick="event.stopPropagation();openDetail(\x27equipment\x27,\x27'+eqK+'\x27);return false;"'+(idone?' style="text-decoration:line-through;color:#9ca3af;"':'')+'>'+disp+'</a>';
+            if(it.doneBy)h+='<div style="font-size:10px;color:#9ca3af;margin-top:2px;">Done by '+escapeHtml(it.doneBy)+(it.doneAt?' \u00b7 '+formatWorkTime(it.doneAt):'')+'</div>';
+            if(it.findings){Object.values(it.findings).forEach(function(n){h+='<div style="margin-top:4px;padding:5px 8px;background:#f8fafc;border-radius:4px;font-size:11px;"><strong>'+escapeHtml(n.author)+':</strong> '+escapeHtml(n.text)+'<span style="color:#6b7280;margin-left:6px;">'+formatWorkTime(n.createdAt)+'</span></div>';});}
+            h+='<div style="display:flex;gap:6px;margin-top:6px;"><input type="text" placeholder="Add finding..." style="flex:1;min-width:0;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;" onclick="event.stopPropagation();" onkeyup="if(event.key===\x27Enter\x27)savePmItemNote(\x27'+key+'\x27,\x27'+ik+'\x27,this)"><button class="btn btn-primary btn-sm" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();savePmItemNote(\x27'+key+'\x27,\x27'+ik+'\x27,this.previousElementSibling)">Add</button></div>';
+            h+='</div>';
+            h+='<div class="work-scada" data-imgtype="equipment" data-imgkey="'+escapeHtml(eqK)+'" data-canadd="1" style="flex:0 0 auto;"></div>';
+            h+='</div></div>';
+        });
+        h+='<div class="work-details" style="font-size:11px;color:#6b7280;margin-top:8px;">Added '+formatWorkTime(item.createdAt)+'</div>';
+        h+='</div></div>';
+        h+='<div class="work-done-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:8px;padding:8px 0 4px;border-top:1px solid #f1f5f9;min-height:44px;">';
+        if(!isDone){var _slbl=_schedLabel(item);var _tdy=_todayYmd();var _sval=_jobSchedYmd(item);if(_sval<_tdy)_sval=_tdy;h+='<span class="sched-wrap" onclick="event.stopPropagation();"><button type="button" class="sched-chip" title="Tap to schedule this job" onclick="event.stopPropagation();openSchedPicker(this)">\uD83D\uDCC5 Job due '+escapeHtml(_slbl)+'</button><input type="date" class="sched-input" data-key="'+key+'" value="'+_sval+'" min="'+_tdy+'" onclick="event.stopPropagation();try{this.showPicker()}catch(e){}" onchange="setJobSchedule(this)"></span>';}else{h+='<span></span>';}
+        h+='<span style="font-size:12px;color:'+(isDone?'#10b981':'#6b7280')+';font-weight:600;">'+(isDone?'All done \u2714':(doneN+' of '+total+' complete'))+'</span>';
+        h+='</div>';
+        h+='<div class="work-card-actions" style="display:none;">';
+        if(amOwner){
+        h+='<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openShareJob(\x27'+key+'\x27)">Share</button>';
+        h+='<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteWork(\x27'+key+'\x27)">Remove batch from Job list</button>';
+        }else{
+        h+='<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();leaveSharedJob(\x27'+key+'\x27)">Leave shared job</button>';
+        }
+        h+='</div></div>';
+        return h;
+    }
+    function _placeAddSS(slot){
+        if(!slot||slot.getAttribute('data-canadd')!=='1')return;
+        if(slot.querySelector('.pm-ss-add'))return;
+        var k=slot.getAttribute('data-imgkey');
+        var b=document.createElement('button');
+        b.type='button';b.className='pm-ss-add';
+        b.innerHTML='\uD83D\uDCF7 Add screenshot';
+        b.style.cssText='width:200px;height:112px;max-width:100%;border:1px dashed #93c5fd;border-radius:8px;background:#f0f9ff;color:#2563eb;font-size:12px;font-weight:600;cursor:pointer;';
+        b.onclick=function(e){e.stopPropagation();pmItemAddScreenshot(k);};
+        slot.appendChild(b);
+    }
+    function pmItemAddScreenshot(eqKey){
+        if(!requireWrite())return;
+        if(!eqKey||!checkFirebase())return;
+        var inp=document.createElement('input');
+        inp.type='file';inp.accept='image/*';
+        inp.onchange=async function(){
+            var f=inp.files&&inp.files[0];if(!f)return;
+            var _ok=await canManageImage('equipment',eqKey);
+            if(!_ok){showToast('Only an admin can replace this screenshot. Contact an admin (Tittus/strtt or Alex/vladesca) if you think this is wrong.','error');return;}
+            showLoading();
+            try{
+                var b64=await fileToBase64(f);
+                await db.ref('equipmentImages/'+eqKey).set(b64);
+                await db.ref('equipmentImageMeta/'+eqKey).set({addedBy:currentUser,addedAt:new Date().toISOString()});
+                invalidateEquipmentCache();
+                delete _scadaImgCache['equipment:'+eqKey];
+                logAudit('addScreenshot','equipment',eqKey,null);
+                showToast('Screenshot saved!','success');
+                loadWorkAssigned();
+            }catch(e){showToast('Error: '+(e.message||e),'error');}
+            hideLoading();
+        };
+        inp.click();
+    }
+    async function togglePmItemDone(jobKey,itemKey,isDone){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        try{
+            var base='workAssigned/'+jobKey+'/items/'+itemKey;
+            if(isDone){await db.ref(base+'/done').set(true);await db.ref(base+'/doneBy').set(currentUser);await db.ref(base+'/doneAt').set(new Date().toISOString());}
+            else{await db.ref(base+'/done').set(false);await db.ref(base+'/doneBy').remove();await db.ref(base+'/doneAt').remove();}
+            var snap=await db.ref('workAssigned/'+jobKey+'/items').once('value');
+            var items=snap.val()||{};
+            var vals=Object.values(items);
+            var allDone=vals.length>0&&vals.every(function(it){return it&&it.done;});
+            if(allDone){await db.ref('workAssigned/'+jobKey+'/status').set('done');await db.ref('workAssigned/'+jobKey+'/completedAt').set(new Date().toISOString());}
+            else{await db.ref('workAssigned/'+jobKey+'/status').set('pending');await db.ref('workAssigned/'+jobKey+'/completedAt').remove();}
+            logAudit('pmItemDone','job',jobKey,{item:itemKey,done:isDone});
+            loadWorkAssigned();
+        }catch(e){showToast('Error: '+(e.message||e),'error');}
+    }
+    async function savePmItemNote(jobKey,itemKey,inputEl){
+        if(!requireWrite())return;
+        if(!inputEl||!inputEl.value.trim())return;
+        if(!checkFirebase())return;
+        var t=inputEl.value.trim();
+        try{
+            await db.ref('workAssigned/'+jobKey+'/items/'+itemKey+'/findings').push({text:t,author:currentUser,createdAt:new Date().toISOString()});
+            logAudit('addJobNote','job',jobKey,{item:itemKey});
+            inputEl.value='';
+            showToast('Finding added!','success');
+            loadWorkAssigned();
+        }catch(e){showToast('Error: '+(e.message||e),'error');}
+    }
+    // ---- PM batch wizard (standalone, launched from the Job list header) ----
+    var _pmb=[];
+    async function openPmBatchWizard(){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        _pmb=[];
+        var body=''+
+            '<div style="font-size:12px;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.4;">One job that holds a checklist of positions to PM. Tick each off as you go - the batch completes when all are done. Adds to <strong>your Job list</strong> only; nothing goes to APM.</div>'+
+            '<div class="form-group"><label>Add a position</label>'+
+                '<div style="position:relative;"><div style="display:flex;gap:8px;align-items:stretch;"><input type="text" id="pmb-input" placeholder="Search position number or name..." oninput="pmbSuggest(this.value)" onkeydown="pmbKey(event)" autocomplete="off" style="flex:1;min-width:0;"><button type="button" class="btn btn-secondary" onclick="openScannerForInput(\x27pmb-input\x27,function(v){pmbSuggest(v);})" title="Scan QR / barcode" aria-label="Scan QR or barcode" style="flex:0 0 auto;min-width:44px;padding:0 12px;font-size:20px;line-height:1;">\uD83D\uDCF7</button></div>'+
+                '<div id="pmb-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:220px;overflow:auto;z-index:10;"></div></div>'+
+            '</div>'+
+            '<div id="pmb-list" style="margin-top:10px;"></div>';
+        document.getElementById('modal-title').textContent='New PM batch';
+        document.getElementById('modal-message').textContent='';
+        document.getElementById('modal-body').innerHTML=body;
+        document.getElementById('modal-actions').innerHTML='<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="pmb-save-btn" onclick="pmbSave()" disabled>Create batch</button>';
+        document.getElementById('modal').classList.add('active');_openModalA11y();
+        pmbRenderList();
+    }
+    async function pmbSuggest(q){
+        var dd=document.getElementById('pmb-dd');if(!dd)return;
+        q=(q||'').trim().toLowerCase();
+        if(q.length<2){dd.style.display='none';dd.innerHTML='';return;}
+        var cache=await getEquipmentCache(),res=[];
+        Object.keys(cache).forEach(function(k){
+            var v=cache[k]||{};if(v.active===false)return;
+            var num=(v.conveyorNumber||'').toString(),nm=(v.positionName||'').toString();
+            var ln=num.toLowerCase(),lm=nm.toLowerCase(),sc=0;
+            if(ln===q||lm===q)sc=100;else if(ln.indexOf(q)===0||lm.indexOf(q)===0)sc=50;else if(ln.indexOf(q)>=0||lm.indexOf(q)>=0)sc=10;
+            if(sc>0)res.push({num:num,rec:v,sc:sc});
+        });
+        res.sort(function(a,b){return b.sc-a.sc||naturalCompare(a.num,b.num);});
+        res=res.slice(0,8);
+        if(!res.length){dd.style.display='none';dd.innerHTML='';return;}
+        var hh='';
+        res.forEach(function(r){
+            hh+='<div class="autocomplete-item" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f1f5f9;font-size:13px;" onmousedown="event.preventDefault();pmbAdd(\x27'+escapeAttrArg(r.num)+'\x27)">'+posDisp(r.rec,r.num)+'</div>';
+        });
+        dd.innerHTML=hh;dd.style.display='block';
+    }
+    async function pmbAdd(name){
+        name=(name||'').trim();if(!name)return;
+        var cache=await getEquipmentCache();
+        var key=sanitizeKey(name);
+        var rec=cache[key];
+        if(!rec){
+            var ln=name.toLowerCase(),mk=null;
+            Object.keys(cache).forEach(function(k){var v=cache[k]||{};if(!mk&&(v.conveyorNumber||'').toString().toLowerCase()===ln){mk=k;}});
+            if(mk){key=mk;rec=cache[mk];name=rec.conveyorNumber||name;}
+        }
+        if(!rec){showToast('That position isn\x27t in the app. Pick one from the list.','error');return;}
+        if(_pmb.some(function(x){return sanitizeKey(x.equipment)===key;})){showToast('Already in this batch','error');}
+        else{_pmb.push({equipment:rec.conveyorNumber||name});}
+        var inp=document.getElementById('pmb-input');if(inp)inp.value='';
+        var dd=document.getElementById('pmb-dd');if(dd){dd.style.display='none';dd.innerHTML='';}
+        pmbRenderList();
+    }
+    function pmbKey(e){
+        if(e.key==='Enter'){e.preventDefault();var inp=document.getElementById('pmb-input');var v=(inp&&inp.value||'').trim();if(v)pmbAdd(v);}
+        else if(e.key==='Escape'){var dd=document.getElementById('pmb-dd');if(dd)dd.style.display='none';}
+    }
+    function pmbRemove(i){_pmb.splice(i,1);pmbRenderList();}
+    function pmbRenderList(){
+        var c=document.getElementById('pmb-list');if(!c)return;
+        var btn=document.getElementById('pmb-save-btn');
+        if(!_pmb.length){c.innerHTML='<div style="font-size:12px;color:#9ca3af;padding:8px 0;">No positions added yet - search above and tap one to add it.</div>';if(btn){btn.disabled=true;btn.textContent='Create batch';}return;}
+        var hh='<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">'+_pmb.length+' position'+(_pmb.length===1?'':'s')+' in this batch</div>';
+        _pmb.forEach(function(pp,i){
+            hh+='<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px;">';
+            hh+='<span style="flex:1;min-width:0;font-size:13px;font-weight:600;word-break:break-all;">'+escapeHtml(pp.equipment)+'</span>';
+            hh+='<button type="button" class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:14px;line-height:1;" onclick="pmbRemove('+i+')" aria-label="Remove position">\u00d7</button>';
+            hh+='</div>';
+            hh+='<input type="text" class="pmb-note" data-idx="'+i+'" placeholder="Finding / note for '+escapeHtml(pp.equipment)+' (optional)" style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;margin:-2px 0 10px;">';
+        });
+        c.innerHTML=hh;
+        if(btn){btn.disabled=false;btn.textContent='Create batch ('+_pmb.length+')';}
+    }
+    async function pmbSave(){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        if(!currentUser){showToast('Not logged in','error');return;}
+        if(!_pmb.length){showToast('Add at least one position','error');return;}
+        var notes={};
+        document.querySelectorAll('#pmb-list .pmb-note').forEach(function(inp){var idx=parseInt(inp.getAttribute('data-idx'),10);var v=(inp.value||'').trim();if(!isNaN(idx)&&v)notes[idx]=v;});
+        try{
+            var now=new Date().toISOString();
+            var items={};
+            _pmb.forEach(function(pp,i){
+                var itemKey=db.ref('workAssigned').push().key;
+                var it={equipment:pp.equipment,done:false};
+                if(notes[i]){var nk=db.ref('workAssigned').push().key;it.findings={};it.findings[nk]={text:notes[i],author:currentUser,createdAt:now};}
+                items[itemKey]=it;
+            });
+            var label=_pmb.length===1?_pmb[0].equipment:(_pmb[0].equipment+' + '+(_pmb.length-1)+' more');
+            var workData={workType:'PM',pmGroup:true,batchLabel:label,assignedTo:currentUser.toLowerCase(),status:'pending',createdAt:now,items:items};
+            await db.ref('workAssigned').push(workData);
+            logAudit('addPmBatch','job',label,{count:_pmb.length});
+            _pmb=[];
+            updateWorkCount();
+            closeModal();
+            showToast('PM batch added to your Job list!','success');
+            loadWorkAssigned();
+        }catch(e){showToast('Error creating batch: '+(e.message||e),'error');}
+    }
+    // ===== SHARE A JOB (v1.26) — live-synced, invite + accept =====
+    var _shareKey='';
+    function _jobLabel(item){ if(!item)return 'Job'; if(item.batchLabel)return item.batchLabel; if(item.routeNumber)return 'Route '+item.routeNumber; if(item.equipment)return item.equipment; return 'Job'; }
+    function _shareBadge(item,amOwner){
+        var sw=(item&&item.sharedWith)||{};var ks=Object.keys(sw);
+        if(amOwner){
+            if(!ks.length)return '';
+            var pend=ks.filter(function(k){return sw[k]!==true;}).length;
+            return '<div style="margin-top:4px;"><span style="display:inline-block;font-size:10px;background:#ede9fe;color:#6d28d9;border-radius:4px;padding:1px 6px;">\uD83D\uDC65 Shared with '+ks.length+(pend?' ('+pend+' pending)':'')+'</span></div>';
+        }
+        return '<div style="margin-top:4px;"><span style="display:inline-block;font-size:10px;background:#eff6ff;color:#1d4ed8;border-radius:4px;padding:1px 6px;">\uD83D\uDC65 Shared by '+escapeHtml(item.assignedTo||'')+'</span></div>';
+    }
+    function renderJobInvites(data,me){
+        if(!data)return '';
+        var inv=[];
+        Object.keys(data).forEach(function(k){var v=data[k];if(v&&v.sharedWith&&v.sharedWith[me]==='pending'&&(v.assignedTo||'').toLowerCase()!==me)inv.push([k,v]);});
+        if(!inv.length)return '';
+        var h='<div style="margin-bottom:12px;">';
+        inv.forEach(function(e){
+            var k=e[0],v=e[1];
+            h+='<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:8px;">';
+            h+='<div style="font-size:13px;color:#92400e;"><strong>'+escapeHtml(v.assignedTo||'A colleague')+'</strong> wants to share a job with you:</div>';
+            h+='<div style="font-size:14px;font-weight:600;color:#1a1a2e;margin:4px 0 8px;">'+escapeHtml(_jobLabel(v))+' <span style="font-size:11px;font-weight:400;color:#6b7280;">('+escapeHtml(v.workType||'')+')</span></div>';
+            h+='<div style="display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="acceptJobShare(\x27'+k+'\x27)">Accept</button><button class="btn btn-secondary btn-sm" onclick="declineJobShare(\x27'+k+'\x27)">Decline</button></div>';
+            h+='</div>';
+        });
+        h+='</div>';
+        return h;
+    }
+    async function acceptJobShare(key){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        try{await db.ref('workAssigned/'+key+'/sharedWith/'+currentUser.toLowerCase()).set(true);logAudit('acceptShare','job',key,null);showToast('Job accepted - it\x27s now in your list','success');loadWorkAssigned();}
+        catch(e){showToast('Error: '+(e.message||e),'error');}
+    }
+    async function declineJobShare(key){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        try{await db.ref('workAssigned/'+key+'/sharedWith/'+currentUser.toLowerCase()).remove();logAudit('declineShare','job',key,null);showToast('Invite declined');loadWorkAssigned();}
+        catch(e){showToast('Error: '+(e.message||e),'error');}
+    }
+    async function leaveSharedJob(key){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        var ok=await showCustomModal('Leave shared job','<p style="font-size:14px;color:#374151;line-height:1.5;">Remove this shared job from your list? The owner keeps it and can re-share it later.</p>',[{label:'Cancel',class:'btn-secondary',value:'cancel'},{label:'Leave',class:'btn-danger',value:'ok'}]);
+        if(ok!=='ok')return;
+        try{await db.ref('workAssigned/'+key+'/sharedWith/'+currentUser.toLowerCase()).remove();logAudit('leaveShare','job',key,null);showToast('Left shared job');loadWorkAssigned();}
+        catch(e){showToast('Error: '+(e.message||e),'error');}
+    }
+    async function openShareJob(key){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        _shareKey=key;
+        var job=null;try{var s=await db.ref('workAssigned/'+key).once('value');job=s.val();}catch(e){}
+        if(!job){showToast('Job not found','error');return;}
+        if((job.assignedTo||'').toLowerCase()!==currentUser.toLowerCase()&&!isAdmin()){showToast('Only the owner can share this job','error');return;}
+        var usersSnap;try{usersSnap=await db.ref('users').once('value');}catch(e){showToast('Could not load users','error');return;}
+        var users=usersSnap.val()||{};
+        var me=currentUser.toLowerCase();
+        var shared=job.sharedWith||{};
+        var rows=[];
+        Object.keys(users).forEach(function(uid){var u=users[uid]||{};var login=(u.login||'').toLowerCase();if(!login||login===me)return;rows.push({login:login,name:u.name||u.login,state:shared[login]});});
+        rows.sort(function(a,b){return String(a.name).localeCompare(String(b.name));});
+        var body='<div style="font-size:13px;color:#374151;margin-bottom:6px;">Share <strong>'+escapeHtml(_jobLabel(job))+'</strong> live with a colleague. They see and update the same job; ticking syncs both ways. They must Accept the invite first.</div>';
+        if(!rows.length){body+='<div style="font-size:13px;color:#9ca3af;padding:8px 0;">No other users found.</div>';}
+        else{
+            if(rows.length>1){body+='<input id="share-user-filter" placeholder="Filter by name or login\u2026" oninput="filterShareUsers(this)" style="width:100%;box-sizing:border-box;padding:8px 10px;margin-bottom:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">';}
+            body+='<div id="share-user-list" style="max-height:320px;overflow:auto;">';
+            rows.forEach(function(r){
+                var st=r.state===true?'<span style="font-size:11px;color:#059669;font-weight:600;">Accepted</span>':(r.state==='pending'?'<span style="font-size:11px;color:#b45309;font-weight:600;">Pending</span>':'');
+                body+='<div class="share-user-row" data-search="'+escapeHtml((r.name+' '+r.login).toLowerCase())+'" style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f1f5f9;">';
+                body+='<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">'+escapeHtml(r.name)+'</div><div style="font-size:11px;color:#9ca3af;">'+escapeHtml(r.login)+' '+st+'</div></div>';
+                if(r.state){body+='<button class="btn btn-secondary btn-sm" onclick="unshareJobWith(\x27'+escapeAttrArg(key)+'\x27,\x27'+escapeAttrArg(r.login)+'\x27)">Unshare</button>';}
+                else{body+='<button class="btn btn-primary btn-sm" onclick="shareJobWith(\x27'+escapeAttrArg(key)+'\x27,\x27'+escapeAttrArg(r.login)+'\x27)">Share</button>';}
+                body+='</div>';
+            });
+            body+='</div>';
+        }
+        document.getElementById('modal-title').textContent='Share job';
+        document.getElementById('modal-message').textContent='';
+        document.getElementById('modal-body').innerHTML=body;
+        document.getElementById('modal-actions').innerHTML='<button class="btn btn-primary" onclick="closeModal()">Done</button>';
+        document.getElementById('modal').classList.add('active');_openModalA11y();
+    }
+    function filterShareUsers(inp){
+        var q=(inp&&inp.value||'').trim().toLowerCase();
+        var terms=q?q.split(/\s+/):[];
+        var box=document.getElementById('share-user-list');if(!box)return;
+        var rows=box.querySelectorAll('.share-user-row');
+        for(var i=0;i<rows.length;i++){
+            var hay=rows[i].getAttribute('data-search')||'';
+            var show=true;
+            for(var j=0;j<terms.length;j++){if(hay.indexOf(terms[j])<0){show=false;break;}}
+            rows[i].style.display=show?'flex':'none';
+        }
+    }
+    async function shareJobWith(key,login){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        login=(login||'').toLowerCase();if(!login)return;
+        try{await db.ref('workAssigned/'+key+'/sharedWith/'+login).set('pending');logAudit('shareJob','job',key,{to:login});showToast('Invite sent to '+login,'success');openShareJob(key);}
+        catch(e){showToast('Error: '+(e.message||e),'error');}
+    }
+    async function unshareJobWith(key,login){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        login=(login||'').toLowerCase();if(!login)return;
+        try{await db.ref('workAssigned/'+key+'/sharedWith/'+login).remove();logAudit('unshareJob','job',key,{to:login});showToast('Unshared from '+login);openShareJob(key);}
+        catch(e){showToast('Error: '+(e.message||e),'error');}
+    }
     function loadWorkAssigned() {
         if(!firebaseReady)return;
         db.ref('workAssigned').off('value');
@@ -3802,16 +4138,21 @@
             if(_dragSortActive)return;
             try{await getEquipmentCache();}catch(_ec){}
             if(!data){container.innerHTML='<div class="empty-state">No jobs assigned yet</div>';updateWorkCount();return;}
-            // Filter to current user's work
+            // Filter to current user's work (owned OR accepted shares); collect pending invites.
             function _ordIdx(v){ return (v&&typeof v.sortIndex==='number')?v.sortIndex:1e9; }
-            const items=Object.entries(data).filter(([k,v])=>(v.assignedTo||'').toLowerCase()===currentUser.toLowerCase()).sort((a,b)=>{var aD=a[1].status==='done'?1:0,bD=b[1].status==='done'?1:0;if(aD!==bD)return aD-bD;var ai=_ordIdx(a[1]),bi=_ordIdx(b[1]);if(ai!==bi)return ai-bi;return new Date(b[1].createdAt)-new Date(a[1].createdAt);});
-            if(items.length===0){container.innerHTML='<div class="empty-state">No jobs assigned to you today</div>';updateWorkCount();return;}
+            var _me=currentUser.toLowerCase();
+            function _mineJob(v){ if(!v)return false; if((v.assignedTo||'').toLowerCase()===_me)return true; return !!(v.sharedWith&&v.sharedWith[_me]===true); }
+            var _invitesHtml=renderJobInvites(data,_me);
+            const items=Object.entries(data).filter(([k,v])=>_mineJob(v)).sort((a,b)=>{var aD=a[1].status==='done'?1:0,bD=b[1].status==='done'?1:0;if(aD!==bD)return aD-bD;var ai=_ordIdx(a[1]),bi=_ordIdx(b[1]);if(ai!==bi)return ai-bi;return new Date(b[1].createdAt)-new Date(a[1].createdAt);});
+            if(items.length===0){container.innerHTML=_invitesHtml+'<div class="empty-state">No jobs assigned to you today</div>';updateWorkCount();return;}
             var _wn=new Date();var _w4=new Date(_wn.getFullYear(),_wn.getMonth(),_wn.getDate(),4,0,0);
             var _workCutoff=_wn.getHours()<4?new Date(_w4.getTime()-86400000):_w4;
-            let html='';
+            let html=_invitesHtml;
             items.forEach(([key,item])=>{
                 if(!item||!item.workType)return;
                 var _isOverdue=item.status!=='done'&&_jobSchedTs(item)&&_jobSchedTs(item)<_workCutoff.getTime();
+                var _amOwner=(item.assignedTo||'').toLowerCase()===currentUser.toLowerCase();
+                if(item.pmGroup){ html+=renderPmBatchCard(key,item,_isOverdue,_amOwner); return; }
                 html+='<div class="work-card'+(item.status==='done'?' done':'')+(_isOverdue?' overdue':'')+'" onclick="expandWorkCard(this)" data-key="'+key+'" data-status="'+escapeHtml(item.status||'pending')+'">';
                 if(item.status!=='done')html+='<div class="job-drag-handle drag-handle" title="Drag to reorder" aria-label="Drag to reorder job" onclick="event.stopPropagation();">\u2630</div>';
                 var _wsType=(item.workType==='CBM'&&item.routeNumber)?'route':'equipment';
@@ -3830,6 +4171,7 @@
                 html+='</div>';
                 if(item.cbmType==='Thermal'&&item.routeNumber)html+='<div class="work-details" style="display:flex;align-items:center;gap:6px;margin-top:6px;"><span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.3px;">trend</span><span class="rspark" data-rk="'+sanitizeKey(item.routeNumber)+'"></span></div>';
                 if(item.details)html+='<div class="work-details" style="margin-top:6px;"><strong>Job details:</strong> <strong>'+escapeHtml(item.details)+'</strong></div>';if(item.parts&&item.parts.length>0){html+='<div class="work-details" style="margin-top:6px;"><strong>Parts:</strong></div>';item.parts.forEach(function(p){html+='<div class="work-details" style="margin-top:2px;"><strong>'+escapeHtml(p.apn||'')+'</strong>'+(p.description?' \u2014 <strong>'+escapeHtml(p.description)+'</strong>':'')+(p.location?' \u2014 <strong>Bin: '+escapeHtml(p.location)+'</strong>':'')+'</div>';});}
+                html+=_shareBadge(item,_amOwner);
                 html+='<div class="work-details" style="font-size:11px;color:#6b7280;">Added '+formatWorkTime(item.createdAt)+'</div>';
                 html+='</div>';
                 if(_wsKey)html+='<div class="work-scada" data-imgtype="'+_wsType+'" data-imgkey="'+escapeHtml(_wsKey)+'"></div>';
@@ -3857,8 +4199,13 @@
                 html+='<button class="btn btn-primary btn-sm" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();saveWorkJobNote(this.previousElementSibling)">Add</button></div>';
                 html+='</div>';
                 html+='<div class="work-card-actions" style="display:none;">';
+                if(_amOwner){
                 html+='<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();editWork(\''+key+'\')">Edit</button>';
+                html+='<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openShareJob(\x27'+key+'\x27)">Share</button>';
                 html+='<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteWork(\''+key+'\')">Remove from Job list</button>';
+                }else{
+                html+='<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();leaveSharedJob(\x27'+key+'\x27)">Leave shared job</button>';
+                }
                 html+='</div></div>';
             });
             container.innerHTML=html;
@@ -7853,8 +8200,8 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.25';
-    var WHATS_NEW_REV = '1.25.0'; // bump to re-show the What's New banner without changing the displayed version
+    var APP_VERSION = '1.26';
+    var WHATS_NEW_REV = '1.26.0'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== WHATS_NEW_REV) {
