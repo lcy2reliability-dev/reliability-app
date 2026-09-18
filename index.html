@@ -4599,14 +4599,15 @@
             html+='<div style="margin-bottom:16px;">';
             html+='<h3 style="font-size:14px;margin:0 0 6px;border-bottom:2px solid #e2e8f0;padding-bottom:4px;"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+bkey+'\x27);return false;">'+escapeHtml(belt)+'</a>'+(brec.description?' <span style="font-weight:400;color:#6b7280;font-size:12px;">'+escapeHtml(brec.description)+'</span>':'')+'</h3>';
             if(bparts.length){
-                html+='<table style="width:100%;font-size:12px;border-collapse:collapse;"><thead><tr style="background:#f8fafc;"><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">APN</th><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Bin</th><th style="text-align:center;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Qty</th><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Description</th></tr></thead><tbody>';
+                html+='<table style="width:100%;font-size:12px;border-collapse:collapse;"><thead><tr style="background:#f8fafc;"><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">APN</th><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Bin</th><th style="text-align:center;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Qty</th><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Description</th><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Observations</th></tr></thead><tbody>';
                 bparts.forEach(function(e){
                     var k=e[0],p=e[1];
                     var cn=p.conveyorNotes&&p.conveyorNotes[sanitizeKey(belt)];
                     html+='<tr><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+k+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td>';
                     html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;font-weight:600;">'+escapeHtml(p.binLocation||p.location||'')+'</td>';
                     html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;text-align:center;">'+escapeHtml((cn&&cn.quantity)?cn.quantity:'\u2014')+'</td>';
-                    html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;color:#4b5563;">'+escapeHtml(p.partDescription||p.notes||'')+'</td></tr>';
+                    html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;color:#4b5563;">'+escapeHtml(p.partDescription||p.notes||'')+'</td>';
+                    html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;color:#4b5563;font-style:italic;">'+escapeHtml((cn&&cn.observations)?cn.observations:'\u2014')+'</td></tr>';
                 });
                 html+='</tbody></table>';
             }else{
