@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- RME Shift Personal Tracker v1.23 - Updated 2026-09-02 -->
+<!-- RME Shift Personal Tracker v1.28 - Updated 2026-10-07 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -271,6 +271,7 @@
         .rec-pad{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
         .rec-pad button{ padding:16px 0; font-size:20px; font-weight:600; border:1px solid #d1d5db; border-radius:8px; background:#f9fafb; color:#111827; min-height:52px; cursor:pointer; -webkit-user-select:none; user-select:none; }
         .rec-pad button:active{ background:#e5e7eb; }
+        #modal-actions .btn:disabled{ opacity:0.5; cursor:not-allowed; }
         .rec-stepnav{ display:flex; gap:8px; }
         .rec-stepnav button{ flex:1; min-height:48px; }
         /* Search results: table on wide screens, tap-cards on mobile (v1.10) */
@@ -561,8 +562,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.27)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br><span class="admin-only">&bull; <strong>Site Overview</strong> (admins, in this menu under Tools): open jobs and overdue per person, team activity for the last 7 and 30 days, thermal readings and open alerts, and how much of the site has parts linked and screenshots added.<br></span>&bull; <strong>Reliability fixes</strong>: linking or unlinking parts is now safe when two people do it at the same moment, and unlinking also tidies away the old qty/observations. Ticking PM batch positions at the same time as a colleague now keeps the batch status right.<br>&bull; <strong>Faster job list</strong>: screenshots on your Job list now load as you scroll, so the list opens quicker on the Zebras. The OVERDUE and Shared labels are also a little bigger.<br>&bull; <strong>Thermal step-by-step keypad</strong>: now laid out like a phone (1-2-3 on top), and typing the same digit twice (44, 66) no longer zooms the screen.<br>&bull; <strong>Shared thermal jobs</strong>: recording readings on a route a colleague shared with you no longer adds a second copy to your Job list, and the Record button now shows on every thermal job.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.28)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Share several jobs at once</strong>: tap <strong>Share</strong> at the top of your Job list, tick the jobs, then tick the people. Your colleague gets one invite with <strong>Accept all</strong>.<br>&bull; <strong>See who completed a shared job</strong>: a shared job now shows who marked it complete and when.<br>&bull; <strong>Also new today (v1.27)</strong>: phone-style keypad for thermal readings, no more zoom when you tap quickly, recording on a shared route no longer duplicates the job, and faster job list on the Zebras.<span class="admin-only"> Admins: <strong>Site Overview</strong> is in this menu under Tools.</span></div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -627,7 +628,7 @@
             </div>
             <div id="search-results"></div>
             <div class="card" id="home-joblist">
-                <h2 style="display:flex;align-items:center;gap:6px;">Job list <span id="work-count" style="background:#2563eb;color:white;border-radius:10px;padding:1px 7px;font-size:11px;"></span><button class="btn btn-primary btn-sm" style="margin-left:auto;font-size:12px;padding:5px 10px;white-space:nowrap;" onclick="openPmBatchWizard()">+ PM batch</button></h2>
+                <h2 style="display:flex;align-items:center;gap:6px;">Job list <span id="work-count" style="background:#2563eb;color:white;border-radius:10px;padding:1px 7px;font-size:11px;"></span><button class="btn btn-secondary btn-sm" style="margin-left:auto;font-size:12px;padding:5px 10px;white-space:nowrap;" onclick="openBulkShare()" title="Share several jobs with colleagues">&#128101; Share</button><button class="btn btn-primary btn-sm" style="font-size:12px;padding:5px 10px;white-space:nowrap;" onclick="openPmBatchWizard()">+ PM batch</button></h2>
                 <p style="font-size:12px;color:#6b7280;margin-bottom:12px;">Your jobs for the day. Press and drag the &#9776; grip on a card to reorder.</p>
                 <div id="work-list" style="margin-top:8px;"><div class="empty-state">No jobs assigned yet</div></div>
             </div>
@@ -3844,7 +3845,7 @@
         h+='</div></div>';
         h+='<div class="work-done-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:8px;padding:8px 0 4px;border-top:1px solid #f1f5f9;min-height:44px;">';
         if(!isDone){var _slbl=_schedLabel(item);var _tdy=_todayYmd();var _sval=_jobSchedYmd(item);if(_sval<_tdy)_sval=_tdy;h+='<span class="sched-wrap" onclick="event.stopPropagation();"><button type="button" class="sched-chip" title="Tap to schedule this job" onclick="event.stopPropagation();openSchedPicker(this)">\uD83D\uDCC5 Job due '+escapeHtml(_slbl)+'</button><input type="date" class="sched-input" data-key="'+key+'" value="'+_sval+'" min="'+_tdy+'" onclick="event.stopPropagation();try{this.showPicker()}catch(e){}" onchange="setJobSchedule(this)"></span>';}else{h+='<span></span>';}
-        h+='<span style="font-size:12px;color:'+(isDone?'#10b981':'#6b7280')+';font-weight:600;">'+(isDone?'All done \u2714':(doneN+' of '+total+' complete'))+'</span>';
+        h+='<span style="font-size:12px;color:'+(isDone?'#10b981':'#6b7280')+';font-weight:600;">'+(isDone?_doneLabel(item,'All done'):(doneN+' of '+total+' complete'))+'</span>';
         h+='</div>';
         h+='<div class="work-card-actions" style="display:none;">';
         if(amOwner){
@@ -3916,8 +3917,8 @@
             var rem=snap2.val()||{};
             var vals=Object.values(rem);
             var allDone=vals.length>0&&vals.every(function(x){return x&&x.done;});
-            if(allDone){await db.ref('workAssigned/'+jobKey+'/status').set('done');await db.ref('workAssigned/'+jobKey+'/completedAt').set(new Date().toISOString());}
-            else{await db.ref('workAssigned/'+jobKey+'/status').set('pending');await db.ref('workAssigned/'+jobKey+'/completedAt').remove();}
+            if(allDone){await db.ref('workAssigned/'+jobKey).update({status:'done',completedAt:new Date().toISOString(),completedBy:(currentUser||'').toLowerCase()});}
+            else{await db.ref('workAssigned/'+jobKey).update({status:'pending',completedAt:null,completedBy:null});}
             var merged=[];Object.keys(rem).forEach(function(k){if(rem[k])merged.push(rem[k]);});
             merged.sort(function(a,b){var sa=(a&&typeof a.sortIndex==='number')?a.sortIndex:0;var sb=(b&&typeof b.sortIndex==='number')?b.sortIndex:0;return sa-sb;});
             var first=(merged[0]&&merged[0].equipment)||'';
@@ -3942,8 +3943,8 @@
                 if(!job)return job;
                 var vals=Object.values(job.items||{});
                 var allDone=vals.length>0&&vals.every(function(it){return it&&it.done;});
-                if(allDone){ if(job.status!=='done'){ job.status='done'; job.completedAt=new Date().toISOString(); _becameDone=true; } }
-                else{ job.status='pending'; delete job.completedAt; }
+                if(allDone){ if(job.status!=='done'){ job.status='done'; job.completedAt=new Date().toISOString(); job.completedBy=(currentUser||'').toLowerCase(); _becameDone=true; } }
+                else{ job.status='pending'; delete job.completedAt; delete job.completedBy; }
                 return job;
             });
             logAudit('pmItemDone','job',jobKey,{item:itemKey,done:isDone});
@@ -4073,6 +4074,7 @@
                 await db.ref('workAssigned/'+_tk+'/items').update(_upd);
                 await db.ref('workAssigned/'+_tk+'/status').set('pending');
                 await db.ref('workAssigned/'+_tk+'/completedAt').remove();
+                await db.ref('workAssigned/'+_tk+'/completedBy').remove(); // v1.28
                 var _merged=[];Object.keys(_ex).forEach(function(k){if(_ex[k])_merged.push(_ex[k]);});Object.keys(_upd).forEach(function(k){_merged.push(_upd[k]);});
                 _merged.sort(function(a,b){var sa=(a&&typeof a.sortIndex==='number')?a.sortIndex:0;var sb=(b&&typeof b.sortIndex==='number')?b.sortIndex:0;return sa-sb;});
                 var _first=(_merged[0]&&_merged[0].equipment)||'';
@@ -4122,17 +4124,60 @@
         var inv=[];
         Object.keys(data).forEach(function(k){var v=data[k];if(v&&v.sharedWith&&v.sharedWith[me]==='pending'&&(v.assignedTo||'').toLowerCase()!==me)inv.push([k,v]);});
         if(!inv.length)return '';
+        // v1.28: group invites by sender, so a bulk share shows as ONE card with Accept all / Decline all
+        var groups={},order=[];
+        inv.forEach(function(e){var s=(e[1].assignedTo||'').toLowerCase();if(!groups[s]){groups[s]=[];order.push(s);}groups[s].push(e);});
         var h='<div style="margin-bottom:12px;">';
-        inv.forEach(function(e){
-            var k=e[0],v=e[1];
+        order.forEach(function(s){
+            var g=groups[s];
             h+='<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:8px;">';
-            h+='<div style="font-size:13px;color:#92400e;"><strong>'+escapeHtml(v.assignedTo||'A colleague')+'</strong> wants to share a job with you:</div>';
-            h+='<div style="font-size:14px;font-weight:600;color:#1a1a2e;margin:4px 0 8px;">'+escapeHtml(_jobLabel(v))+' <span style="font-size:11px;font-weight:400;color:#6b7280;">('+escapeHtml(v.workType||'')+')</span></div>';
-            h+='<div style="display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="acceptJobShare(\x27'+k+'\x27)">Accept</button><button class="btn btn-secondary btn-sm" onclick="declineJobShare(\x27'+k+'\x27)">Decline</button></div>';
+            if(g.length===1){
+                var k=g[0][0],v=g[0][1];
+                h+='<div style="font-size:13px;color:#92400e;"><strong>'+escapeHtml(v.assignedTo||'A colleague')+'</strong> wants to share a job with you:</div>';
+                h+='<div style="font-size:14px;font-weight:600;color:#1a1a2e;margin:4px 0 8px;">'+escapeHtml(_jobLabel(v))+' <span style="font-size:11px;font-weight:400;color:#6b7280;">('+escapeHtml(v.workType||'')+')</span></div>';
+                h+='<div style="display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="acceptJobShare(\x27'+k+'\x27)">Accept</button><button class="btn btn-secondary btn-sm" onclick="declineJobShare(\x27'+k+'\x27)">Decline</button></div>';
+            } else {
+                h+='<div style="font-size:13px;color:#92400e;"><strong>'+escapeHtml(g[0][1].assignedTo||'A colleague')+'</strong> wants to share '+g.length+' jobs with you:</div>';
+                h+='<div style="margin:6px 0 10px;">';
+                g.forEach(function(e){
+                    var k=e[0],v=e[1];
+                    h+='<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px solid #fde68a;"><div style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#1a1a2e;">'+escapeHtml(_jobLabel(v))+' <span style="font-size:11px;font-weight:400;color:#6b7280;">('+escapeHtml(v.workType||'')+')</span></div>';
+                    h+='<button class="btn btn-secondary btn-sm" onclick="acceptJobShare(\x27'+k+'\x27)">Accept</button><button class="btn btn-secondary btn-sm" onclick="declineJobShare(\x27'+k+'\x27)">Decline</button></div>';
+                });
+                h+='</div>';
+                h+='<div style="display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="acceptAllShares(\x27'+escapeAttrArg(s)+'\x27)">Accept all ('+g.length+')</button><button class="btn btn-secondary btn-sm" onclick="declineAllShares(\x27'+escapeAttrArg(s)+'\x27)">Decline all</button></div>';
+            }
             h+='</div>';
         });
         h+='</div>';
         return h;
+    }
+    // v1.28: pending invites to me from one sender (from the live Job list snapshot)
+    function _pendingFrom(sender){
+        var me=(currentUser||'').toLowerCase(), d=_waData||{}, out=[];
+        if(!me||!sender||sender===me)return out;
+        Object.keys(d).forEach(function(k){var v=d[k];if(v&&v.sharedWith&&v.sharedWith[me]==='pending'&&(v.assignedTo||'').toLowerCase()===sender)out.push(k);});
+        return out;
+    }
+    async function acceptAllShares(sender){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        var me=currentUser.toLowerCase(), keys=_pendingFrom(sender);
+        if(!keys.length){showToast('No invites left to accept');loadWorkAssigned();return;}
+        var upd={}; keys.forEach(function(k){upd['workAssigned/'+k+'/sharedWith/'+me]=true;});
+        try{await db.ref().update(upd);keys.forEach(function(k){logAudit('acceptShare','job',k,{bulk:true});});showToast(keys.length+' jobs accepted - they\x27re now in your list','success');loadWorkAssigned();}
+        catch(e){showToast('Error: '+(e.message||e),'error');}
+    }
+    async function declineAllShares(sender){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        var me=currentUser.toLowerCase(), keys=_pendingFrom(sender);
+        if(!keys.length){showToast('No invites left to decline');loadWorkAssigned();return;}
+        var ok=await showCustomModal('Decline all','<p style="font-size:14px;color:#374151;line-height:1.5;">Decline all '+keys.length+' jobs from <strong>'+escapeHtml(sender)+'</strong>? They stay in their Job list.</p>',[{label:'Cancel',class:'btn-secondary',value:'cancel'},{label:'Decline all',class:'btn-danger',value:'ok'}]);
+        if(ok!=='ok')return;
+        var upd={}; keys.forEach(function(k){upd['workAssigned/'+k+'/sharedWith/'+me]=null;});
+        try{await db.ref().update(upd);keys.forEach(function(k){logAudit('declineShare','job',k,{bulk:true});});showToast(keys.length+' invites declined');loadWorkAssigned();}
+        catch(e){showToast('Error: '+(e.message||e),'error');}
     }
     async function acceptJobShare(key){
         if(!requireWrite())return;
@@ -4153,6 +4198,126 @@
         if(ok!=='ok')return;
         try{await db.ref('workAssigned/'+key+'/sharedWith/'+currentUser.toLowerCase()).remove();logAudit('leaveShare','job',key,null);showToast('Left shared job');loadWorkAssigned();}
         catch(e){showToast('Error: '+(e.message||e),'error');}
+    }
+    // ===== BULK SHARE (v1.28): Share (Job list header) -> tick jobs -> tick people.
+    // Same data as the single share: workAssigned/{key}/sharedWith/{login} = 'pending' until they accept.
+    var _bsJobs=[];
+    function _bsJobLabel(v){
+        if(!v)return 'Job';
+        if(v.pmGroup||v.batchLabel)return escapeHtml(_jobLabel(v));
+        if(v.routeNumber)return escapeHtml('Route '+v.routeNumber+(v.cbmType?' ('+v.cbmType+')':''));
+        var r=equipmentCache?equipmentCache[sanitizeKey(v.equipment||'')]:null;
+        return r?posDisp(r):escapeHtml(v.equipment||'Job');
+    }
+    async function openBulkShare(keepSel){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        var data=_waData;
+        if(!data){try{data=await getWorkAssignedData();}catch(e){data={};}}
+        var me=currentUser.toLowerCase();
+        var jobs=Object.entries(data||{}).filter(function(e){var v=e[1];return v&&v.workType&&(v.assignedTo||'').toLowerCase()===me&&v.status!=='done';});
+        jobs.sort(function(a,b){var ai=(typeof a[1].sortIndex==='number')?a[1].sortIndex:1e9,bi=(typeof b[1].sortIndex==='number')?b[1].sortIndex:1e9;if(ai!==bi)return ai-bi;return new Date(b[1].createdAt)-new Date(a[1].createdAt);});
+        if(!jobs.length){showToast('You have no open jobs of your own to share','error');return;}
+        if(!keepSel)_bsJobs=[];
+        var body='<div style="font-size:13px;color:#374151;margin-bottom:8px;"><strong>Step 1 of 2:</strong> tick the jobs you want to share. Only your own open jobs are listed.</div>';
+        body+='<label style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #e5e7eb;font-size:13px;font-weight:600;cursor:pointer;"><input type="checkbox" id="bs-all" onchange="_bsToggleAll(this)" style="width:18px;height:18px;"> Select all ('+jobs.length+')</label>';
+        body+='<div id="bs-job-list" style="max-height:320px;overflow:auto;">';
+        jobs.forEach(function(e){
+            var k=e[0],v=e[1],n=Object.keys(v.sharedWith||{}).length;
+            body+='<label style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer;">';
+            body+='<input type="checkbox" class="bs-job" value="'+escapeHtml(k)+'"'+(_bsJobs.indexOf(k)>=0?' checked':'')+' onchange="_bsCountJobs()" style="width:18px;height:18px;flex:0 0 auto;">';
+            body+='<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">'+_bsJobLabel(v)+'</div><div style="font-size:11px;color:#9ca3af;">'+escapeHtml(v.workType||'')+(n?' &middot; <span style="color:#6d28d9;">Shared with '+n+'</span>':'')+'</div></div>';
+            body+='</label>';
+        });
+        body+='</div>';
+        document.getElementById('modal-title').textContent='Share jobs';
+        document.getElementById('modal-message').textContent='';
+        document.getElementById('modal-body').innerHTML=body;
+        document.getElementById('modal-actions').innerHTML='<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="bs-next" onclick="bulkShareStep2()">Next</button>';
+        document.getElementById('modal').classList.add('active');_openModalA11y();
+        _bsCountJobs();
+    }
+    function _bsCheckedJobs(){ var out=[]; document.querySelectorAll('#bs-job-list .bs-job').forEach(function(c){ if(c.checked)out.push(c.value); }); return out; }
+    function _bsToggleAll(cb){ document.querySelectorAll('#bs-job-list .bs-job').forEach(function(c){ c.checked=cb.checked; }); _bsCountJobs(); }
+    function _bsCountJobs(){
+        var all=document.querySelectorAll('#bs-job-list .bs-job'), n=_bsCheckedJobs().length;
+        var a=document.getElementById('bs-all'); if(a)a.checked=(all.length>0&&n===all.length);
+        var b=document.getElementById('bs-next'); if(b){ b.disabled=(n===0); b.textContent=n?('Next ('+n+' job'+(n===1?'':'s')+')'):'Next'; }
+    }
+    async function bulkShareStep2(){
+        var sel=_bsCheckedJobs();
+        if(!sel.length){showToast('Tick at least one job','error');return;}
+        _bsJobs=sel;
+        var usersSnap;try{usersSnap=await db.ref('users').once('value');}catch(e){showToast('Could not load users','error');return;}
+        var users=usersSnap.val()||{}, me=currentUser.toLowerCase(), data=_waData||{}, nJ=_bsJobs.length, rows=[];
+        Object.keys(users).forEach(function(uid){
+            var u=users[uid]||{}, login=(u.loginId||u.login||'').toLowerCase();
+            if(!login||login===me)return;
+            var has=0; _bsJobs.forEach(function(k){var j=data[k];if(j&&j.sharedWith&&(j.sharedWith[login]===true||j.sharedWith[login]==='pending'))has++;});
+            rows.push({login:login,name:u.name||u.loginId||login,has:has});
+        });
+        rows.sort(function(a,b){return String(a.name).localeCompare(String(b.name));});
+        var body='<div style="font-size:13px;color:#374151;margin-bottom:8px;"><strong>Step 2 of 2:</strong> tick who to share '+(nJ===1?'this job':'these '+nJ+' jobs')+' with. They get one invite to accept.</div>';
+        if(!rows.length){body+='<div style="font-size:13px;color:#9ca3af;padding:8px 0;">No other users found.</div>';}
+        else{
+            if(rows.length>1){body+='<input id="share-user-filter" placeholder="Filter by name or login\u2026" oninput="filterShareUsers(this)" style="width:100%;box-sizing:border-box;padding:8px 10px;margin-bottom:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">';}
+            body+='<div id="share-user-list" style="max-height:320px;overflow:auto;">';
+            rows.forEach(function(r){
+                var full=(r.has===nJ), note=r.has?(full?(nJ===1?'Already has this job':'Already has all of these'):('Already has '+r.has+' of '+nJ)):'';
+                body+='<label class="share-user-row" data-search="'+escapeHtml((r.name+' '+r.login).toLowerCase())+'" style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer;">';
+                body+='<input type="checkbox" class="bs-person" value="'+escapeHtml(r.login)+'"'+(full?' disabled':'')+' onchange="_bsCountPeople()" style="width:18px;height:18px;flex:0 0 auto;">';
+                body+='<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">'+escapeHtml(r.name)+'</div><div style="font-size:11px;color:#9ca3af;">'+escapeHtml(r.login)+(note?' &middot; <span style="color:#059669;">'+note+'</span>':'')+'</div></div>';
+                body+='</label>';
+            });
+            body+='</div>';
+        }
+        document.getElementById('modal-title').textContent='Share jobs';
+        document.getElementById('modal-body').innerHTML=body;
+        document.getElementById('modal-actions').innerHTML='<button class="btn btn-secondary" onclick="openBulkShare(true)">Back</button><button class="btn btn-primary" id="bs-send" onclick="sendBulkShare()">Share</button>';
+        _bsCountPeople();
+    }
+    function _bsCheckedPeople(){ var out=[]; document.querySelectorAll('#share-user-list .bs-person').forEach(function(c){ if(c.checked&&!c.disabled)out.push(c.value); }); return out; }
+    function _bsCountPeople(){
+        var n=_bsCheckedPeople().length, j=_bsJobs.length, b=document.getElementById('bs-send');
+        if(b){ b.disabled=(n===0); b.textContent=n?('Share '+j+' job'+(j===1?'':'s')+' with '+n+' '+(n===1?'person':'people')):'Share'; }
+    }
+    async function sendBulkShare(){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        var people=_bsCheckedPeople();
+        if(!people.length){showToast('Tick at least one person','error');return;}
+        var btn=document.getElementById('bs-send'); if(btn){btn.disabled=true;btn.textContent='Sending\u2026';}
+        var me=currentUser.toLowerCase(), upd={}, pairs=[], skipped=0, gone=0;
+        try{
+            // re-read each job now, so nothing already accepted is reset to pending and finished/removed jobs are skipped
+            var snaps=await Promise.all(_bsJobs.map(function(k){return db.ref('workAssigned/'+k).once('value');}));
+            snaps.forEach(function(s,i){
+                var k=_bsJobs[i], j=s.val();
+                if(!j||(j.assignedTo||'').toLowerCase()!==me||j.status==='done'){gone++;return;}
+                var sw=j.sharedWith||{};
+                people.forEach(function(p){ if(sw[p]===true||sw[p]==='pending'){skipped++;return;} upd['workAssigned/'+k+'/sharedWith/'+p]='pending'; pairs.push([k,p]); });
+            });
+            if(!pairs.length){ showToast('Nothing new to send - they already have these jobs','error'); _bsCountPeople(); return; }
+            await db.ref().update(upd); // one write: either every invite is sent or none is
+            pairs.forEach(function(x){logAudit('shareJob','job',x[0],{to:x[1],bulk:true});});
+            var sentJobs={}; pairs.forEach(function(x){sentJobs[x[0]]=1;}); var nj=Object.keys(sentJobs).length;
+            var msg='Invites sent: '+nj+' job'+(nj===1?'':'s')+' to '+people.length+' '+(people.length===1?'person':'people');
+            if(skipped)msg+=' ('+skipped+' already shared, skipped)';
+            if(gone)msg+='. '+gone+' job'+(gone===1?' was':'s were')+' completed or removed meanwhile';
+            closeModal(); _bsJobs=[];
+            showToast(msg,'success');
+            loadWorkAssigned();
+        }catch(e){ showToast('Error: '+(e.message||e),'error'); _bsCountPeople(); }
+    }
+    // v1.28: on shared jobs, say who completed it (everyone sees the SAME job, so a silent tick was confusing)
+    function _doneLabel(item,base){
+        var sw=(item&&item.sharedWith)||{}, me=(currentUser||'').toLowerCase();
+        var shared=Object.keys(sw).length>0||((item&&item.assignedTo)||'').toLowerCase()!==me;
+        var by=(item&&item.completedBy)||'';
+        if(!shared||!by)return base+' \u2714';
+        var who=(String(by).toLowerCase()===me)?'you':escapeHtml(by);
+        var t=item.completedAt?formatWorkTime(item.completedAt):'';
+        return base+' by '+who+(t?', '+t:'')+' \u2714';
     }
     async function openShareJob(key){
         if(!requireWrite())return;
@@ -4287,7 +4452,7 @@
                 html+='<div class="work-done-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:8px;padding:8px 0 4px;border-top:1px solid #f1f5f9;min-height:44px;">';
                 if(item.status!=='done'){var _slbl=_schedLabel(item);var _tdy=_todayYmd();var _sval=_jobSchedYmd(item);if(_sval<_tdy)_sval=_tdy;html+='<span class="sched-wrap" onclick="event.stopPropagation();"><button type="button" class="sched-chip" title="Tap to schedule this job" onclick="event.stopPropagation();openSchedPicker(this)">\uD83D\uDCC5 Job due '+escapeHtml(_slbl)+'</button><input type="date" class="sched-input" data-key="'+key+'" value="'+_sval+'" min="'+_tdy+'" onclick="event.stopPropagation();try{this.showPicker()}catch(e){}" onchange="setJobSchedule(this)"></span>';}else{html+='<span></span>';}
                 html+='<label onclick="event.stopPropagation();" style="display:flex;align-items:center;gap:8px;cursor:pointer;min-height:44px;">';
-                html+='<span style="font-size:12px;color:#6b7280;">'+(item.status==='done'?'Completed \u2714':'Mark as complete')+'</span>';
+                html+='<span style="font-size:12px;color:#6b7280;">'+(item.status==='done'?_doneLabel(item,'Completed'):'Mark as complete')+'</span>';
                 html+='<span style="position:relative;display:inline-block;width:44px;height:24px;flex:0 0 auto;">';
                 html+='<input type="checkbox" '+(item.status==='done'?'checked':'')+' onchange="event.stopPropagation();toggleJobDone(\x27'+key+'\x27,this.checked)" style="opacity:0;width:0;height:0;">';
                 html+='<span style="position:absolute;top:0;left:0;right:0;bottom:0;background:'+(item.status==='done'?'#10b981':'#d1d5db')+';border-radius:24px;transition:0.3s;"></span>';
@@ -7605,12 +7770,11 @@ function liveSearchSuggest(query,scope){
             if (isDone) {
                 // Overdue jobs complete like any other: mark done, keep it visible (greyed),
                 // then the 4am sweep (cleanupOldWork) deletes it on the next work-day.
-                await db.ref('workAssigned/' + jobKey + '/status').set('done');
-                await db.ref('workAssigned/' + jobKey + '/completedAt').set(new Date().toISOString());
+                // v1.28: one write, and remember WHO completed it (shown on shared jobs)
+                await db.ref('workAssigned/' + jobKey).update({status:'done', completedAt:new Date().toISOString(), completedBy:(currentUser||'').toLowerCase()});
                 logAudit('completeJob','job',jobKey,null);showToast('Job marked as done!', 'success');
             } else {
-                await db.ref('workAssigned/' + jobKey + '/status').set('pending');
-                await db.ref('workAssigned/' + jobKey + '/completedAt').remove();
+                await db.ref('workAssigned/' + jobKey).update({status:'pending', completedAt:null, completedBy:null});
                 logAudit('reopenJob','job',jobKey,null);showToast('Job reopened');
             }
             loadWorkAssigned();
@@ -8541,8 +8705,8 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.27';
-    var WHATS_NEW_REV = '1.27.0'; // bump to re-show the What's New banner without changing the displayed version
+    var APP_VERSION = '1.28';
+    var WHATS_NEW_REV = '1.28.0'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== WHATS_NEW_REV) {

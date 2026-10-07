@@ -7,6 +7,20 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.28 — 2026-10-07
+
+**Status:** Built and verified in the working copy (clean bun build, LF-only, new functions top-level, logic tested against copies of real job data, independent re-verify). No Firebase migration: shares use the same `sharedWith` data as v1.26, so existing shares and invites keep working.
+
+### Share several jobs at once
+- **New Share button at the top of the Job list** (next to + PM batch). Step 1: tick the jobs (only your own open jobs are listed, with Select all, and jobs already shared show "Shared with N"). Step 2: tick one or more people (same name filter as before). The button tells you what will happen, e.g. "Share 5 jobs with 2 people".
+- **All invites go out in one write**, so it's never half-sent. Anyone who already has a job (accepted or invited) is skipped for that job, so an accepted share is never reset to an invite. People who already have every selected job can't be ticked.
+- **One invite card per sender:** when a colleague shares several jobs with you, you see one card listing them with **Accept all** / **Decline all** (Decline all asks first), plus Accept / Decline on each job. A single shared job still shows the same card as before.
+- The Share button on each job card is unchanged, as are Unshare, Leave shared job and the owner-only rule.
+
+### Who completed a shared job
+- A shared job is one job seen by everyone it's shared with, so completing it completes it for all of them (unchanged). The card now also says **who** completed it and when, e.g. "Completed by vladesca, 14:32 ✔" (or "by you"). Works for PM batches too ("All done by ..."). Jobs completed before v1.28 just show "Completed ✔".
+- Completing or reopening a job is now a single write instead of two.
+
 ## v1.27 — 2026-10-07
 
 **Status:** Built and verified in the working copy (clean bun build, LF-only, new functions top-level, Site Overview smoke-tested against a read-only snapshot of live data, independent re-verify). No Firebase migration and no data changes: everything below only affects how the app writes from now on.
