@@ -7,6 +7,42 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.27 — 2026-10-07
+
+**Status:** Built and verified in the working copy (clean bun build, LF-only, new functions top-level, Site Overview smoke-tested against a read-only snapshot of live data, independent re-verify). No Firebase migration and no data changes: everything below only affects how the app writes from now on.
+
+### Site Overview (admins only)
+- **New "Site Overview" page in the menu, under Tools (after Activity Log).** A read-only snapshot of the whole site on one screen:
+  - **Team:** open jobs, overdue jobs (same 4am rule as the Job list), PM batches and shared jobs per person, plus jobs completed and actions in the last 7 and 30 days and when each person was last active.
+  - **Activity:** active users, jobs added and completed, thermal readings, screenshots, part links and notes for the last 7 and 30 days (counted from the Activity Log).
+  - **Thermal:** readings in the last 7 and 30 days, open alerts (linked to the route), how many reading routes have at least one reading, and every route that has been read with its reading count and last-read date. No "due" flags.
+  - **Data coverage:** positions with a linked part, positions with a SCADA screenshot, routes with a route screenshot, repairable parts with a Repair Kit, and catalogue parts linked to a position, plus a by-area table (position ID prefix) so you can see where the gaps are.
+- It never writes to the database and does not download any screenshots (it only counts them). **Refresh** at the top re-reads everything.
+
+### Reliability fixes
+- **Linking and unlinking parts is now safe when two people do it at the same moment.** Before, two links to the same part at once could overwrite each other and drop a link. All four link/unlink paths now use Firebase transactions.
+- **Unlinking a part also removes its old qty/observations note.** Its quantity is still carried back to Parts Associated as before. (4 leftover notes from earlier unlinks are harmless and hidden; Site Overview counts them.)
+- **Renaming a position (admin) now keeps everything attached to it:** its notes, its Parts Associated list, every linked part and each link's qty/observations move to the new ID. Renaming a route now keeps its notes. Before, these were left behind on the old ID.
+- **PM batches:** when two people tick positions in the same batch at once, the batch status is now worked out in one atomic step, so it can't end up "done" with a position unticked (or the reverse). Finishing a PM batch is now recorded in the Activity Log as a completed job.
+- **Notes:** only the person who wrote a note (or an admin) can edit or delete it. The buttons were already hidden for everyone else; the app now also checks before it changes anything.
+- **Share a job:** only the job's owner (or an admin) can share or unshare it. The Share button was already owner-only; the app now also checks before it changes anything. Accept, Decline and Leave are unchanged.
+- **Removed the old one-off parts migration** that ran at every admin login. It finished months ago, and if it had ever been triggered again it would have rewritten the whole parts catalogue.
+
+### Shared jobs and the Record button
+- **Recording readings on a shared route no longer duplicates the job.** After you save readings, the app adds the route to your Job list if it isn't there yet. That check only looked at jobs you own, so a route a colleague had shared with you was missed and a second copy appeared in your list. It now counts accepted shares too. The same fix applies to "Add to Job list" from search.
+- **The Record button now shows on every thermal job that needs readings.** Jobs auto-added after a recording, and thermal jobs created from the Add job form, never saved the "readings required" flag, so they had no Record button. The app now falls back to the route's own setting (shows Record if it can't tell). Auto-added jobs now save the flag as well.
+- One duplicate exists from before the fix (CBM.THERMO.563 for strtt, added 2026-10-07 12:01). It is harmless and can be deleted from the Job list.
+
+### Thermal readings, step-by-step view
+- **Keypad now uses phone layout:** 1-2-3 on the top row, then 4-5-6, 7-8-9 and `.` 0 ⌫ (it was calculator layout, 7-8-9 on top). Every key does exactly what it did before.
+- **No more zoom when typing the same digit twice (44, 66):** keypad keys now respond as your finger lifts and cancel the phone's double-tap zoom, so both taps always count.
+- **Double-tap zoom is switched off across the whole app** (CSS `touch-action: manipulation`). Two-finger pinch zoom still works everywhere, and taps feel slightly quicker because the phone no longer waits to see if a second tap is coming. The photo viewer and drag handles keep their own touch handling. (We deliberately did not use `user-scalable=no`: it also blocks pinch zoom and newer iPhones ignore it.)
+
+### Job list
+- **Screenshots on the Job list now load as you scroll** instead of all at once, so the list opens faster on the Zebras, especially with long PM batches.
+- **Bigger labels:** OVERDUE, Shared with / Shared by, the PM "Done by" line and the trend label go from 10px to 11px.
+- Removed two unused mobile CSS rules (they targeted header elements that no longer exist).
+
 ## v1.26 — 2026-09-11
 
 **Status:** Built and verified in the working copy (bracket balance 0/0/0, clean bun build, independent re-verify). No Firebase migration — PM batches and shared jobs are ordinary children of an existing job record, and every existing job is untouched.

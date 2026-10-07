@@ -10,6 +10,8 @@
     <script>if(!_isPreview)document.write('\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" integrity="sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh" crossorigin="anonymous">\x3C/script>\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" integrity="sha384-f6/UpzjTjIXASlp20cArQsaRh1EvHVJd5kegy/gYR9W2D0a32TnEqUEiW4Zm/5O0" crossorigin="anonymous">\x3C/script>\x3Cscript src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" integrity="sha384-xD1t9dGSVKobUztxDkv6xUI0H4AnFz0NxwlgDJJ7FDlblG9xxr1Z9iauCZuJYj6p" crossorigin="anonymous">\x3C/script>')</script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* v1.27: no double-tap zoom anywhere (two quick taps on a key, e.g. 44/66, zoomed the page). Pinch-zoom still works; more specific rules (drag handles, image viewer) still win */
+        * { touch-action: manipulation; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #232F3E; min-height: 100vh; }
         .header { background: #232F3E; color: white; padding: 16px 20px; text-align: center; position: relative; }
         /* header::after removed — blue line is on .tabs */
@@ -122,7 +124,7 @@
         .work-card .work-details { font-size:12px; color:#6b7280; margin-top:4px; }
         .work-card.overdue { background:#fef2f2; border-color:#fca5a5; }
         .work-card.overdue:hover { border-color:#f87171; }
-        .work-card .overdue-badge { display:inline-block; padding:2px 8px; margin-left:8px; background:#ef4444; color:#fff; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:0.3px; vertical-align:middle; }
+        .work-card .overdue-badge { display:inline-block; padding:2px 8px; margin-left:8px; background:#ef4444; color:#fff; border-radius:4px; font-size:11px; font-weight:700; letter-spacing:0.3px; vertical-align:middle; }
         .work-card-actions { display:flex; gap:6px; margin-top:8px; }
         .work-card .sched-wrap { position:relative; display:inline-block; vertical-align:middle; margin-left:8px; }
         .work-card .sched-chip { display:inline-block; padding:2px 8px; background:#eef2ff; color:#4338ca; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; position:relative; }
@@ -156,8 +158,6 @@
             .header { padding: 8px 10px !important; }
             .header .header-title { display: none; }
             .header > div:first-child svg { width: 90px; height: 21px; }
-            #header-user { font-size: 10px !important; }
-            .header > div:last-of-type button { padding: 4px 6px !important; font-size: 10px !important; }
             #user-menu { top: 44px !important; }
             .tabs { justify-content: flex-start; }
             .tab { padding: 9px 10px; font-size: 11px; min-width: fit-content; min-height: 44px; }
@@ -269,7 +269,7 @@
         .rec-progress-fill{ height:100%; background:#2563eb; transition:width .2s; }
         .rec-step-label{ text-align:center; font-size:14px; color:#111827; margin-bottom:10px; font-weight:600; }
         .rec-pad{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
-        .rec-pad button{ padding:16px 0; font-size:20px; font-weight:600; border:1px solid #d1d5db; border-radius:8px; background:#f9fafb; color:#111827; min-height:52px; cursor:pointer; }
+        .rec-pad button{ padding:16px 0; font-size:20px; font-weight:600; border:1px solid #d1d5db; border-radius:8px; background:#f9fafb; color:#111827; min-height:52px; cursor:pointer; -webkit-user-select:none; user-select:none; }
         .rec-pad button:active{ background:#e5e7eb; }
         .rec-stepnav{ display:flex; gap:8px; }
         .rec-stepnav button{ flex:1; min-height:48px; }
@@ -561,8 +561,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.26)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>PM batches</strong>: tap <strong>+ PM batch</strong> at the top of your Job list to build one job that covers several positions. Tick each off as you go (it shows N/M done and completes itself), add findings per position, and each position shows its SCADA screenshot (or a button to add one).<br>&bull; <strong>Share a job</strong>: open a job on your list, tap <strong>Share</strong> and pick a colleague. They get an invite to Accept or Decline; once accepted you both see and update the very same job live.</div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.27)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br><span class="admin-only">&bull; <strong>Site Overview</strong> (admins, in this menu under Tools): open jobs and overdue per person, team activity for the last 7 and 30 days, thermal readings and open alerts, and how much of the site has parts linked and screenshots added.<br></span>&bull; <strong>Reliability fixes</strong>: linking or unlinking parts is now safe when two people do it at the same moment, and unlinking also tidies away the old qty/observations. Ticking PM batch positions at the same time as a colleague now keeps the batch status right.<br>&bull; <strong>Faster job list</strong>: screenshots on your Job list now load as you scroll, so the list opens quicker on the Zebras. The OVERDUE and Shared labels are also a little bigger.<br>&bull; <strong>Thermal step-by-step keypad</strong>: now laid out like a phone (1-2-3 on top), and typing the same digit twice (44, 66) no longer zooms the screen.<br>&bull; <strong>Shared thermal jobs</strong>: recording readings on a route a colleague shared with you no longer adds a second copy to your Job list, and the Record button now shows on every thermal job.</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -577,6 +577,7 @@
                 <div role="button" tabindex="0" class="admin-only" onclick="openRecentlyDeleted()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128465; Recently Deleted</div>
                 <div class="admin-only" role="button" tabindex="0" onclick="openUsersScreen()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128101; Manage Users <span id="role-review-badge" style="display:none;color:#ef4444;font-weight:600;font-size:12px;">Role review required (<span id="role-review-count">0</span>)<span class="role-review-dot"></span></span></div>
                 <div class="admin-only" role="button" tabindex="0" onclick="openActivityLog()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128220; Activity Log</div>
+                <div class="admin-only" role="button" tabindex="0" onclick="openSiteOverview()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128202; Site Overview</div>
                 <div style="height:1px;background:#e5e7eb;margin:8px 20px;"></div>
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Help</div>
                 <div role="button" tabindex="0" onclick="toggleBurgerMenu();startTour();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Take the Tour</div>
@@ -1329,7 +1330,6 @@
         if (firebaseReady) {
             try {
                 oneTimeCleanup();
-                migratePartsData();
                 loadWorkAssigned();
                 cleanupOldWork();
                 cleanupDuplicateEndpoints();
@@ -1858,30 +1858,8 @@
     // ============================================================
     // DATA MIGRATION & CLEANUP
     // ============================================================
-    async function migratePartsData() {
-        if(!db)return;
-        if(localStorage.getItem('partsMigrated_v1')==='1')return;
-        if(!isAdmin())return;
-        try {
-            const allParts=await getPartsCache();if(!allParts||!Object.keys(allParts).length)return;
-            const entries=Object.entries(allParts);
-            const needsMigration=entries.some(e=>e[1].conveyorNumber&&!e[1].conveyors);
-            if(!needsMigration){localStorage.setItem('partsMigrated_v1','1');return;}
-            const apnMap={};
-            entries.forEach(([key,p])=>{
-                const apn=(p.apn||'').trim();if(!apn)return;
-                const apnKey=sanitizeKey(apn);
-                if(!apnMap[apnKey])apnMap[apnKey]={apn,partType:p.partType||'',location:p.location||'',notes:p.notes||'',conveyors:[],createdAt:p.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
-                const conv=p.conveyorNumber||'';
-                if(conv&&apnMap[apnKey].conveyors.indexOf(conv)<0)apnMap[apnKey].conveyors.push(conv);
-                if(p.notes&&p.notes.length>(apnMap[apnKey].notes||'').length)apnMap[apnKey].notes=p.notes;
-                if(p.location&&p.location.length>(apnMap[apnKey].location||'').length)apnMap[apnKey].location=p.location;
-            });
-            await db.ref('parts').remove();
-            await db.ref('parts').set(Object.fromEntries(Object.entries(apnMap)));
-            invalidatePartsCache();localStorage.setItem('partsMigrated_v1','1');console.info('Migration complete');
-        } catch(e){console.error('Migration error:',e);}
-    }
+    // migratePartsData() removed in v1.27: the one-off parts reshape finished months ago, and if it ever
+    // re-triggered (a stray legacy record + an admin login) it would remove and rewrite the whole /parts node.
 
     async function cleanupDuplicateEndpoints() {
         if(!db)return;
@@ -2297,9 +2275,9 @@
             html += '<div class="rec-progress"><div class="rec-progress-fill" id="rec-progress-fill" style="width:0%;"></div></div>';
             html += '<div class="rec-step-label" id="rec-step-label"></div>';
             html += '<div class="rec-pad">';
-            ['7','8','9','4','5','6','1','2','3','.','0','del'].forEach(function(k){
+            ['1','2','3','4','5','6','7','8','9','.','0','del'].forEach(function(k){ // v1.27: phone layout (was calculator 7-8-9 on top)
                 var lbl = (k === 'del') ? '&#9003;' : k;
-                html += '<button type="button" onclick="padKey(\x27' + k + '\x27)">' + lbl + '</button>';
+                html += '<button type="button" onclick="padKey(\x27' + k + '\x27)" ontouchend="padTouch(event,\x27' + k + '\x27)">' + lbl + '</button>';
             });
             html += '</div>';
             html += '<div id="rec-step-counter" style="text-align:center;font-size:12px;color:#6b7280;margin-bottom:8px;"></div>';
@@ -2426,6 +2404,9 @@
         else v += k;
         inp.value = v; recTint(inp); saveDraft(_recRouteKey); updateRecCounter();
     }
+    // v1.27: on touch screens a key fires as the finger lifts and cancels the follow-up click and double-tap zoom,
+    // so fast repeat taps (44, 66) always count twice. If the browser won't let us cancel, the normal click handles it.
+    function padTouch(e, k){ if (e && e.cancelable){ e.preventDefault(); padKey(k); } }
 
     // Trend sparklines (v1.10): hand-drawn inline SVG, no library
     var _sparkCache = {};
@@ -3755,33 +3736,45 @@
     }
 
     var _scadaImgCache={};
+    var _scadaIO=null;
+    function _loadScadaSlot(slot){
+        var type=slot.getAttribute('data-imgtype');
+        var key=slot.getAttribute('data-imgkey');
+        if(!key||slot.querySelector('img'))return;
+        var ck=type+':'+key;
+        function place(src){
+            if(!src){ _placeAddSS(slot); return; }
+            var img=document.createElement('img');
+            img.className='work-scada-thumb';
+            img.src=src;
+            img.draggable=false;
+            img.alt=(type==='route'?'Route location screenshot':'SCADA location screenshot');
+            img.onclick=function(e){
+                e.stopPropagation();
+                var v=document.getElementById('img-viewer-src'); if(!v)return;
+                v.src=img.src;
+                document.getElementById('img-viewer').classList.add('active');
+                if(typeof _ivReset==='function')_ivReset();
+                document.body.style.overflow='hidden';
+            };
+            slot.appendChild(img);
+        }
+        if(_scadaImgCache[ck]!==undefined){ place(_scadaImgCache[ck]); return; }
+        var p=(type==='route')?getRouteImage(key):getEquipmentImage(key);
+        p.then(function(src){ _scadaImgCache[ck]=src||null; place(src); }).catch(function(){});
+    }
+    // v1.27: lazy-load job-list screenshots as they scroll into view (was: fetch every one at once)
     function renderWorkThumbnails(container){
         if(!container)return;
-        container.querySelectorAll('.work-scada[data-imgkey]').forEach(function(slot){
-            var type=slot.getAttribute('data-imgtype');
-            var key=slot.getAttribute('data-imgkey');
-            if(!key||slot.querySelector('img'))return;
-            var ck=type+':'+key;
-            function place(src){
-                if(!src){ _placeAddSS(slot); return; }
-                var img=document.createElement('img');
-                img.className='work-scada-thumb';
-                img.src=src;
-                img.draggable=false;
-                img.alt=(type==='route'?'Route location screenshot':'SCADA location screenshot');
-                img.onclick=function(e){
-                    e.stopPropagation();
-                    var v=document.getElementById('img-viewer-src'); if(!v)return;
-                    v.src=img.src;
-                    document.getElementById('img-viewer').classList.add('active');
-                    if(typeof _ivReset==='function')_ivReset();
-                    document.body.style.overflow='hidden';
-                };
-                slot.appendChild(img);
-            }
-            if(_scadaImgCache[ck]!==undefined){ place(_scadaImgCache[ck]); return; }
-            var p=(type==='route')?getRouteImage(key):getEquipmentImage(key);
-            p.then(function(src){ _scadaImgCache[ck]=src||null; place(src); }).catch(function(){});
+        var slots=container.querySelectorAll('.work-scada[data-imgkey]');
+        if(typeof IntersectionObserver==='undefined'){ slots.forEach(_loadScadaSlot); return; }
+        if(_scadaIO){ _scadaIO.disconnect(); }
+        else { _scadaIO=new IntersectionObserver(function(entries){ entries.forEach(function(en){ if(en.isIntersecting){ _scadaIO.unobserve(en.target); _loadScadaSlot(en.target); } }); },{rootMargin:'200px 0px'}); }
+        slots.forEach(function(slot){
+            if(slot.querySelector('img'))return;
+            var ck=slot.getAttribute('data-imgtype')+':'+slot.getAttribute('data-imgkey');
+            if(_scadaImgCache[ck]!==undefined){ _loadScadaSlot(slot); return; }
+            _scadaIO.observe(slot);
         });
     }
     function _ymd(d){var y=d.getFullYear(),m=d.getMonth()+1,day=d.getDate();return y+'-'+(m<10?'0'+m:m)+'-'+(day<10?'0'+day:day);}
@@ -3826,7 +3819,7 @@
             h+='<div class="pm-item-drag-handle drag-handle" title="Drag to reorder" aria-label="Drag to reorder position" onclick="event.stopPropagation();" style="flex:0 0 auto;width:32px;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:17px;color:#9ca3af;">\u2630</div>';
             h+='<div style="flex:1;min-width:140px;">';
             h+='<a class="search-link" href="#" onclick="event.stopPropagation();openDetail(\x27equipment\x27,\x27'+eqK+'\x27);return false;"'+(idone?' style="text-decoration:line-through;color:#9ca3af;"':'')+'>'+disp+'</a>';
-            if(it.doneBy)h+='<div style="font-size:10px;color:#9ca3af;margin-top:2px;">Done by '+escapeHtml(it.doneBy)+(it.doneAt?' \u00b7 '+formatWorkTime(it.doneAt):'')+'</div>';
+            if(it.doneBy)h+='<div style="font-size:11px;color:#9ca3af;margin-top:2px;">Done by '+escapeHtml(it.doneBy)+(it.doneAt?' \u00b7 '+formatWorkTime(it.doneAt):'')+'</div>';
             if(it.findings){Object.values(it.findings).forEach(function(n){h+='<div style="margin-top:4px;padding:5px 8px;background:#f8fafc;border-radius:4px;font-size:11px;"><strong>'+escapeHtml(n.author)+':</strong> '+escapeHtml(n.text)+'<span style="color:#6b7280;margin-left:6px;">'+formatWorkTime(n.createdAt)+'</span></div>';});}
             h+='<div style="display:flex;gap:6px;margin-top:6px;"><input type="text" placeholder="Add finding..." style="flex:1;min-width:0;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;" onclick="event.stopPropagation();" onkeyup="if(event.key===\x27Enter\x27)savePmItemNote(\x27'+key+'\x27,\x27'+ik+'\x27,this)"><button class="btn btn-primary btn-sm" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();savePmItemNote(\x27'+key+'\x27,\x27'+ik+'\x27,this.previousElementSibling)">Add</button></div>';
             h+='</div>';
@@ -3940,15 +3933,21 @@
         if(!checkFirebase())return;
         try{
             var base='workAssigned/'+jobKey+'/items/'+itemKey;
-            if(isDone){await db.ref(base+'/done').set(true);await db.ref(base+'/doneBy').set(currentUser);await db.ref(base+'/doneAt').set(new Date().toISOString());}
-            else{await db.ref(base+'/done').set(false);await db.ref(base+'/doneBy').remove();await db.ref(base+'/doneAt').remove();}
-            var snap=await db.ref('workAssigned/'+jobKey+'/items').once('value');
-            var items=snap.val()||{};
-            var vals=Object.values(items);
-            var allDone=vals.length>0&&vals.every(function(it){return it&&it.done;});
-            if(allDone){await db.ref('workAssigned/'+jobKey+'/status').set('done');await db.ref('workAssigned/'+jobKey+'/completedAt').set(new Date().toISOString());}
-            else{await db.ref('workAssigned/'+jobKey+'/status').set('pending');await db.ref('workAssigned/'+jobKey+'/completedAt').remove();}
+            if(isDone){await db.ref(base).update({done:true,doneBy:currentUser,doneAt:new Date().toISOString()});}
+            else{await db.ref(base).update({done:false,doneBy:null,doneAt:null});}
+            // v1.27: recompute the batch status atomically from the CURRENT items, so two people ticking at once can't leave it wrong
+            var _becameDone=false;
+            await db.ref('workAssigned/'+jobKey).transaction(function(job){
+                _becameDone=false;
+                if(!job)return job;
+                var vals=Object.values(job.items||{});
+                var allDone=vals.length>0&&vals.every(function(it){return it&&it.done;});
+                if(allDone){ if(job.status!=='done'){ job.status='done'; job.completedAt=new Date().toISOString(); _becameDone=true; } }
+                else{ job.status='pending'; delete job.completedAt; }
+                return job;
+            });
             logAudit('pmItemDone','job',jobKey,{item:itemKey,done:isDone});
+            if(_becameDone)logAudit('completeJob','job',jobKey,{pmBatch:true});
             loadWorkAssigned();
         }catch(e){showToast('Error: '+(e.message||e),'error');}
     }
@@ -4114,9 +4113,9 @@
         if(amOwner){
             if(!ks.length)return '';
             var pend=ks.filter(function(k){return sw[k]!==true;}).length;
-            return '<div style="margin-top:4px;"><span style="display:inline-block;font-size:10px;background:#ede9fe;color:#6d28d9;border-radius:4px;padding:1px 6px;">\uD83D\uDC65 Shared with '+ks.length+(pend?' ('+pend+' pending)':'')+'</span></div>';
+            return '<div style="margin-top:4px;"><span style="display:inline-block;font-size:11px;background:#ede9fe;color:#6d28d9;border-radius:4px;padding:1px 6px;">\uD83D\uDC65 Shared with '+ks.length+(pend?' ('+pend+' pending)':'')+'</span></div>';
         }
-        return '<div style="margin-top:4px;"><span style="display:inline-block;font-size:10px;background:#eff6ff;color:#1d4ed8;border-radius:4px;padding:1px 6px;">\uD83D\uDC65 Shared by '+escapeHtml(item.assignedTo||'')+'</span></div>';
+        return '<div style="margin-top:4px;"><span style="display:inline-block;font-size:11px;background:#eff6ff;color:#1d4ed8;border-radius:4px;padding:1px 6px;">\uD83D\uDC65 Shared by '+escapeHtml(item.assignedTo||'')+'</span></div>';
     }
     function renderJobInvites(data,me){
         if(!data)return '';
@@ -4202,10 +4201,21 @@
             rows[i].style.display=show?'flex':'none';
         }
     }
+    // v1.27: a job is "in my list" if I own it OR I accepted a share of it (same rule the Job list uses).
+    // Duplicate checks must use this, or recording on a shared route adds a second copy of the job.
+    function _jobIsMine(j){ var me=(currentUser||'').toLowerCase(); if(!j||!me)return false; if((j.assignedTo||'').toLowerCase()===me)return true; return !!(j.sharedWith&&j.sharedWith[me]===true); }
+    // v1.27: show Record on a thermal job unless it is explicitly marked no-reading. Older jobs (auto-added
+    // after a recording, or from the Add job form) never stored readingRequired, so fall back to the route itself.
+    function _jobNeedsReading(item){ if(!item)return false; if(item.readingRequired!==undefined)return item.readingRequired===true; var r=routesCache&&item.routeNumber?routesCache[sanitizeKey(item.routeNumber)]:null; return r?routeReadingRequired(r):true; }
+    async function _isJobOwner(key){
+        if(isAdmin())return true;
+        try{var s=await db.ref('workAssigned/'+key+'/assignedTo').once('value');return String(s.val()||'').toLowerCase()===String(currentUser||'').toLowerCase();}catch(e){return false;}
+    }
     async function shareJobWith(key,login){
         if(!requireWrite())return;
         if(!checkFirebase())return;
         login=(login||'').toLowerCase();if(!login)return;
+        if(!(await _isJobOwner(key))){showToast('Only the owner can share this job','error');return;}
         try{await db.ref('workAssigned/'+key+'/sharedWith/'+login).set('pending');logAudit('shareJob','job',key,{to:login});showToast('Invite sent to '+login,'success');openShareJob(key);}
         catch(e){showToast('Error: '+(e.message||e),'error');}
     }
@@ -4213,6 +4223,7 @@
         if(!requireWrite())return;
         if(!checkFirebase())return;
         login=(login||'').toLowerCase();if(!login)return;
+        if(!(await _isJobOwner(key))){showToast('Only the owner can unshare this job','error');return;}
         try{await db.ref('workAssigned/'+key+'/sharedWith/'+login).remove();logAudit('unshareJob','job',key,{to:login});showToast('Unshared from '+login);openShareJob(key);}
         catch(e){showToast('Error: '+(e.message||e),'error');}
     }
@@ -4260,13 +4271,13 @@
                 html+='<div class="work-equipment">';
                 if(item.workType==='CBM'&&item.routeNumber){
                     html+='<a class="search-link" href="#" onclick="event.stopPropagation();openDetail(\x27route\x27,\x27'+sanitizeKey(item.routeNumber)+'\x27);return false;">Route '+escapeHtml(item.routeNumber)+' ('+escapeHtml(item.cbmType)+')</a>';
-                    if(item.cbmType==='Thermal'&&item.readingRequired){html+=' <button class="btn btn-sm" style="background:#f59e0b;color:white;border:none;padding:3px 8px;font-size:11px;border-radius:4px;margin-left:8px;" onclick="event.stopPropagation();goRecordThermalFromWork(\x27'+sanitizeKey(item.routeNumber)+'\x27,\x27'+escapeAttrArg(item.routeNumber)+'\x27)">Record</button>';}
+                    if(item.cbmType==='Thermal'&&_jobNeedsReading(item)){html+=' <button class="btn btn-sm" style="background:#f59e0b;color:white;border:none;padding:3px 8px;font-size:11px;border-radius:4px;margin-left:8px;" onclick="event.stopPropagation();goRecordThermalFromWork(\x27'+sanitizeKey(item.routeNumber)+'\x27,\x27'+escapeAttrArg(item.routeNumber)+'\x27)">Record</button>';}
                 } else {
                     var _wek=sanitizeKey(item.equipment||'');var _wer=(equipmentCache&&equipmentCache[_wek])||null;var _wed=_wer?posDisp(_wer):escapeHtml(item.equipment||'');
                     html+='<a class="search-link" href="#" onclick="event.stopPropagation();openDetail(\x27equipment\x27,\x27'+_wek+'\x27);return false;">'+_wed+'</a>';
                 }
                 html+='</div>';
-                if(item.cbmType==='Thermal'&&item.routeNumber)html+='<div class="work-details" style="display:flex;align-items:center;gap:6px;margin-top:6px;"><span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.3px;">trend</span><span class="rspark" data-rk="'+sanitizeKey(item.routeNumber)+'"></span></div>';
+                if(item.cbmType==='Thermal'&&item.routeNumber)html+='<div class="work-details" style="display:flex;align-items:center;gap:6px;margin-top:6px;"><span style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.3px;">trend</span><span class="rspark" data-rk="'+sanitizeKey(item.routeNumber)+'"></span></div>';
                 if(item.details)html+='<div class="work-details" style="margin-top:6px;"><strong>Job details:</strong> <strong>'+escapeHtml(item.details)+'</strong></div>';if(item.parts&&item.parts.length>0){html+='<div class="work-details" style="margin-top:6px;"><strong>Parts:</strong></div>';item.parts.forEach(function(p){html+='<div class="work-details" style="margin-top:2px;"><strong>'+escapeHtml(p.apn||'')+'</strong>'+(p.description?' \u2014 <strong>'+escapeHtml(p.description)+'</strong>':'')+(p.location?' \u2014 <strong>Bin: '+escapeHtml(p.location)+'</strong>':'')+'</div>';});}
                 html+=_shareBadge(item,_amOwner);
                 html+='<div class="work-details" style="font-size:11px;color:#6b7280;">Added '+formatWorkTime(item.createdAt)+'</div>';
@@ -5686,6 +5697,186 @@ function liveSearchSuggest(query,scope){
         } catch(e){ showToast('Error: '+e.message,'error'); }
         hideLoading();
     }
+    // ============================================================
+    // SITE OVERVIEW (v1.27, admins only) - read-only summary of jobs, activity, thermal and data coverage
+    // ============================================================
+    function _soArea(id){ id=String(id||''); if(/^\d{6}$/.test(id))return id.substring(0,2)+'xxxx'; var m=id.match(/^[A-Za-z]+/); return m?m[0].toUpperCase():'Other'; }
+    function _soPct(n,d){ return d?Math.round(n*100/d)+'%':'\u2014'; }
+    function _soDate(ts){ if(!ts)return '\u2014'; try{ return new Date(ts).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return '\u2014'; } }
+    function _soTile(num,label,warn){ return '<div style="flex:1 1 130px;min-width:120px;padding:12px;border:1px solid '+(warn?'#fca5a5':'#e2e8f0')+';background:'+(warn?'#fef2f2':'#f8fafc')+';border-radius:8px;"><div style="font-size:22px;font-weight:700;color:'+(warn?'#b91c1c':'#1a1a2e')+';">'+escapeHtml(String(num))+'</div><div style="font-size:12px;color:#6b7280;">'+escapeHtml(label)+'</div></div>'; }
+    // Keys under a node without downloading the values (images are large). Returns null if it cannot be read.
+    async function _soShallowKeys(path){
+        try{
+            var url=FIREBASE_CONFIG.databaseURL+'/'+path+'.json?shallow=true';
+            var tok=null; try{ if(auth&&auth.currentUser)tok=await auth.currentUser.getIdToken(); }catch(_te){}
+            if(tok)url+='&auth='+encodeURIComponent(tok);
+            var r=await fetch(url); if(!r.ok)return null;
+            var j=await r.json(); return j?Object.keys(j):[];
+        }catch(e){ return null; }
+    }
+    async function openSiteOverview(force){
+        if(!requireAdmin())return;
+        if(!checkFirebase())return;
+        var bm=document.getElementById('burger-menu');var bb=document.getElementById('burger-backdrop');
+        if(bm)bm.style.display='none';if(bb)bb.style.display='none';
+        showLoading();
+        try{
+            if(force){ invalidateEquipmentCache(); invalidatePartsCache(); invalidateRoutesCache(); }
+            var now=Date.now(), d7=now-7*86400000, d30=now-30*86400000;
+            var res=await Promise.all([
+                getEquipmentCache(), getPartsCache(), getRoutesCache(), getWorkAssignedData(),
+                db.ref('users').once('value').then(function(s){ return s.val()||{}; }).catch(function(){ return {}; }),
+                db.ref('auditLog').orderByChild('ts').startAt(d30).once('value').then(function(s){ var a=[]; s.forEach(function(c){ a.push(c.val()||{}); }); return a; }).catch(function(){ return []; }),
+                db.ref('readings').once('value').then(function(s){ return s.val()||{}; }).catch(function(){ return {}; }),
+                _runThermalScan(!!force).catch(function(){ return {alerts:[]}; }),
+                _soShallowKeys('equipmentImages'), _soShallowKeys('routeImages')
+            ]);
+            var eq=res[0]||{}, parts=res[1]||{}, routes=res[2]||{}, wa=res[3]||{}, users=res[4]||{}, audit=res[5]||[], readings=res[6]||{};
+            var alerts=(res[7]&&res[7].alerts)||[], eqImgKeys=res[8], rtImgKeys=res[9];
+
+            // ---- Team: jobs per person + activity from the audit log ----
+            var team={};
+            function T(l){ l=String(l||'').toLowerCase(); if(!l)l='(unknown)'; if(!team[l])team[l]={login:l,name:'',role:'',open:0,overdue:0,shared:0,pm:0,done7:0,acts7:0,acts30:0,last:0}; return team[l]; }
+            Object.keys(users).forEach(function(uid){ var u=users[uid]||{}; var l=(u.loginId||u.login||'').toLowerCase(); if(!l)return; var t=T(l); t.name=u.name||u.loginId||l; t.role=normalizeRole(u.role); });
+            var _wn=new Date(); var _w4=new Date(_wn.getFullYear(),_wn.getMonth(),_wn.getDate(),4,0,0);
+            var cut=_wn.getHours()<4?_w4.getTime()-86400000:_w4.getTime();
+            var tot={open:0,overdue:0,shared:0,pm:0};
+            Object.keys(wa).forEach(function(k){
+                var j=wa[k]; if(!j||!j.workType||j.status==='done')return;
+                var t=T(j.assignedTo); t.open++; tot.open++;
+                var ts=_jobSchedTs(j); if(ts&&ts<cut){ t.overdue++; tot.overdue++; }
+                if(j.pmGroup){ t.pm++; tot.pm++; }
+                if(j.sharedWith&&Object.keys(j.sharedWith).length){ t.shared++; tot.shared++; }
+            });
+            var CAT={addJob:'jobs',addPmBatch:'jobs',completeJob:'done',addReading:'readings',addScreenshot:'shots',editImage:'shots',link:'links',addNote:'notes',addJobNote:'notes'};
+            var a7={jobs:0,done:0,readings:0,shots:0,links:0,notes:0}, a30={jobs:0,done:0,readings:0,shots:0,links:0,notes:0};
+            var active7={}, active30={};
+            audit.forEach(function(r){
+                var ts=(typeof r.ts==='number')?r.ts:(r.ts?new Date(r.ts).getTime():0);
+                if(!ts||ts<d30)return;
+                var t=T(r.user); t.acts30++; active30[t.login]=1; if(ts>t.last)t.last=ts;
+                if(ts>=d7){ t.acts7++; active7[t.login]=1; }
+                var c=CAT[r.action]; if(c){ a30[c]++; if(ts>=d7)a7[c]++; if(c==='done'&&ts>=d7)t.done7++; }
+            });
+
+            // ---- Thermal ----
+            var lastRead={}, readCount={}, rd7=0, rd30=0;
+            Object.keys(readings).forEach(function(rk){
+                var h=readings[rk]||{};
+                Object.keys(h).forEach(function(id){
+                    var e=h[id]||{}; var ts=e.timestamp?new Date(e.timestamp).getTime():0; if(!ts||isNaN(ts))return;
+                    readCount[rk]=(readCount[rk]||0)+1;
+                    if(ts>=d30)rd30++; if(ts>=d7)rd7++;
+                    if(ts>(lastRead[rk]||0))lastRead[rk]=ts;
+                });
+            });
+            var reqRoutes=Object.keys(routes).filter(function(k){ var r=routes[k]; return r&&r.active!==false&&routeReadingRequired(r); });
+            var reqNeverRead=reqRoutes.filter(function(k){ return !lastRead[k]; }).length;
+            var readRoutes=Object.keys(lastRead).sort(function(a,b){ return lastRead[b]-lastRead[a]; });
+
+            // ---- Coverage ----
+            var activeEq=Object.keys(eq).filter(function(k){ return eq[k]&&eq[k].active!==false; });
+            var linkedPos={}, partsLinked=0, repairable=0, repWithKit=0, orphanNotes=0;
+            Object.keys(parts).forEach(function(pk){
+                var p=parts[pk]||{}; var conv=_convArr(p.conveyors); var ks={};
+                conv.forEach(function(c){ var sk=sanitizeKey(String(c)); ks[sk]=1; linkedPos[sk]=1; });
+                if(conv.length)partsLinked++;
+                if(p.repairable===true){ repairable++; if(p.components&&Object.keys(p.components).length)repWithKit++; }
+                if(p.conveyorNotes)Object.keys(p.conveyorNotes).forEach(function(nk){ if(!ks[nk])orphanNotes++; });
+            });
+            var eqShot={}; if(eqImgKeys)eqImgKeys.forEach(function(k){ eqShot[k]=1; });
+            activeEq.forEach(function(k){ if(eq[k].imageUrl)eqShot[k]=1; });
+            var rtShot={}; if(rtImgKeys)rtImgKeys.forEach(function(k){ rtShot[k]=1; });
+            var activeRt=Object.keys(routes).filter(function(k){ return routes[k]&&routes[k].active!==false; });
+            activeRt.forEach(function(k){ if(routes[k].routeImageUrl)rtShot[k]=1; });
+            var posWithParts=0, posWithShot=0, rtWithShot=0, areas={};
+            activeEq.forEach(function(k){
+                var a=_soArea(eq[k].conveyorNumber||k); if(!areas[a])areas[a]={n:0,parts:0,shots:0};
+                areas[a].n++;
+                if(linkedPos[k]){ posWithParts++; areas[a].parts++; }
+                if(eqShot[k]){ posWithShot++; areas[a].shots++; }
+            });
+            activeRt.forEach(function(k){ if(rtShot[k])rtWithShot++; });
+            // fold small areas into "Other" so the table stays readable
+            var areaRows={};
+            Object.keys(areas).forEach(function(a){ var tgt=(areas[a].n>=20)?a:'Other'; if(!areaRows[tgt])areaRows[tgt]={n:0,parts:0,shots:0}; areaRows[tgt].n+=areas[a].n; areaRows[tgt].parts+=areas[a].parts; areaRows[tgt].shots+=areas[a].shots; });
+            var areaList=Object.keys(areaRows).sort(function(a,b){ return areaRows[b].n-areaRows[a].n; });
+
+            // ---- Render ----
+            var html='<div class="card"><h2>Site Overview</h2>';
+            html+='<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">A read-only snapshot for admins. Nothing here changes any data. Generated '+escapeHtml(new Date().toLocaleString('en-GB'))+'. <a href="#" onclick="openSiteOverview(true);return false;" style="color:#2563eb;">Refresh</a></p>';
+            html+='<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+            html+=_soTile(tot.open,'Open jobs');
+            html+=_soTile(tot.overdue,'Overdue jobs',tot.overdue>0);
+            html+=_soTile(alerts.length,'Open thermal alerts',alerts.length>0);
+            html+=_soTile(Object.keys(active7).length,'Active users (7 days)');
+            html+='</div></div>';
+
+            // Team
+            var teamRows=Object.keys(team).map(function(l){ return team[l]; }).filter(function(t){ return t.open||t.acts30||t.role; });
+            teamRows.sort(function(a,b){ return (b.open-a.open)||(b.acts30-a.acts30)||String(a.login).localeCompare(String(b.login)); });
+            html+='<div class="card"><h2>Team</h2>';
+            html+='<p style="font-size:13px;color:#6b7280;margin-bottom:8px;">Open jobs on each person\x27s list right now (overdue uses the same 4am rule as the Job list). Completed and actions come from the Activity Log.</p>';
+            html+='<div style="overflow-x:auto;"><table id="so-team"><thead><tr>'+sortTh('so-team',0,'Person')+sortTh('so-team',1,'Open')+sortTh('so-team',2,'Overdue')+sortTh('so-team',3,'PM batches')+sortTh('so-team',4,'Shared')+sortTh('so-team',5,'Completed (7d)')+sortTh('so-team',6,'Actions (7d)')+sortTh('so-team',7,'Actions (30d)')+'<th>Last active</th></tr></thead><tbody>';
+            teamRows.forEach(function(t){
+                html+='<tr><td style="font-size:13px;"><strong>'+escapeHtml(t.name||t.login)+'</strong>'+(t.name&&t.name!==t.login?' <span style="color:#9ca3af;font-size:12px;">'+escapeHtml(t.login)+'</span>':'')+(t.role==='admin'?' <span style="font-size:11px;color:#6d28d9;">admin</span>':'')+'</td>';
+                html+='<td>'+t.open+'</td><td'+(t.overdue?' style="color:#b91c1c;font-weight:700;"':'')+'>'+t.overdue+'</td><td>'+t.pm+'</td><td>'+t.shared+'</td><td>'+t.done7+'</td><td>'+t.acts7+'</td><td>'+t.acts30+'</td>';
+                html+='<td style="white-space:nowrap;font-size:12px;">'+escapeHtml(_soDate(t.last))+'</td></tr>';
+            });
+            html+='</tbody></table></div></div>';
+
+            // Activity
+            html+='<div class="card"><h2>Activity</h2>';
+            html+='<div style="overflow-x:auto;"><table id="so-activity"><thead><tr><th></th><th>Last 7 days</th><th>Last 30 days</th></tr></thead><tbody>';
+            [['Active users',Object.keys(active7).length,Object.keys(active30).length],['Jobs added',a7.jobs,a30.jobs],['Jobs completed',a7.done,a30.done],['Thermal readings saved',a7.readings,a30.readings],['Screenshots added or replaced',a7.shots,a30.shots],['Parts linked',a7.links,a30.links],['Notes added',a7.notes,a30.notes]].forEach(function(r){
+                html+='<tr><td style="font-size:13px;">'+escapeHtml(r[0])+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>';
+            });
+            html+='</tbody></table></div>';
+            html+='<p style="font-size:12px;color:#9ca3af;margin-top:6px;">Counted from the Activity Log. PM batch completions are counted from v1.27 onwards.</p></div>';
+
+            // Thermal
+            html+='<div class="card"><h2>Thermal</h2>';
+            html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">';
+            html+=_soTile(rd7,'Readings (7 days)')+_soTile(rd30,'Readings (30 days)')+_soTile(alerts.length,'Open alerts',alerts.length>0)+_soTile((reqRoutes.length-reqNeverRead)+' / '+reqRoutes.length,'Reading routes with at least one reading');
+            html+='</div>';
+            if(alerts.length){
+                html+='<div style="font-size:13px;margin-bottom:10px;">Open alerts: '+alerts.slice(0,10).map(function(a){ return '<a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+escapeAttrArg(a.routeKey)+'\x27);return false;">'+escapeHtml(a.routeNumber)+'</a>'; }).join(', ')+(alerts.length>10?' and '+(alerts.length-10)+' more (see Open Alerts)':'')+'</div>';
+            }
+            if(readRoutes.length){
+                html+='<div style="overflow-x:auto;"><table id="so-thermal"><thead><tr>'+sortTh('so-thermal',0,'Route')+sortTh('so-thermal',1,'Readings')+'<th>Last read</th></tr></thead><tbody>';
+                readRoutes.forEach(function(rk){
+                    var r=routes[rk]||{};
+                    html+='<tr><td style="font-size:13px;"><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+escapeAttrArg(rk)+'\x27);return false;">'+escapeHtml(r.routeNumber||rk)+'</a></td><td>'+(readCount[rk]||0)+'</td><td style="white-space:nowrap;font-size:12px;">'+escapeHtml(_soDate(lastRead[rk]))+'</td></tr>';
+                });
+                html+='</tbody></table></div>';
+            } else { html+='<div class="empty-state">No thermal readings recorded yet.</div>'; }
+            html+='</div>';
+
+            // Coverage
+            html+='<div class="card"><h2>Data coverage</h2>';
+            html+='<p style="font-size:13px;color:#6b7280;margin-bottom:8px;">How much of the site has been filled in so far (active items only).</p>';
+            html+='<div style="overflow-x:auto;"><table id="so-coverage"><thead><tr><th>What</th><th>Done</th><th>Total</th><th>%</th></tr></thead><tbody>';
+            var shotNote=(eqImgKeys===null||rtImgKeys===null)?' <span style="color:#9ca3af;font-size:11px;">(could not count)</span>':'';
+            [['Positions with at least one linked part',posWithParts,activeEq.length,''],['Positions with a SCADA screenshot',posWithShot,activeEq.length,(eqImgKeys===null?shotNote:'')],['Routes with a route screenshot',rtWithShot,activeRt.length,(rtImgKeys===null?shotNote:'')],['Repairable parts with a Repair Kit',repWithKit,repairable,''],['Catalogue parts linked to a position',partsLinked,Object.keys(parts).length,'']].forEach(function(r){
+                html+='<tr><td style="font-size:13px;">'+escapeHtml(r[0])+r[3]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+_soPct(r[1],r[2])+'</td></tr>';
+            });
+            html+='</tbody></table></div>';
+            if(orphanNotes)html+='<p style="font-size:12px;color:#b45309;margin-top:6px;">'+orphanNotes+' old qty/observation note'+(orphanNotes===1?' is':'s are')+' left over from links removed before v1.27 (harmless, hidden in the app).</p>';
+            html+='<h3 style="font-size:14px;margin:14px 0 6px;">By area (position ID prefix)</h3>';
+            html+='<div style="overflow-x:auto;"><table id="so-areas"><thead><tr>'+sortTh('so-areas',0,'Area')+sortTh('so-areas',1,'Positions')+sortTh('so-areas',2,'With parts')+sortTh('so-areas',3,'With screenshot')+'</tr></thead><tbody>';
+            areaList.forEach(function(a){
+                var r=areaRows[a];
+                html+='<tr><td style="font-size:13px;">'+escapeHtml(a)+'</td><td>'+r.n+'</td><td>'+r.parts+' ('+_soPct(r.parts,r.n)+')</td><td>'+r.shots+' ('+_soPct(r.shots,r.n)+')</td></tr>';
+            });
+            html+='</tbody></table></div>';
+            html+='<p style="font-size:12px;color:#9ca3af;margin-top:6px;">Areas with fewer than 20 positions are grouped under Other.</p></div>';
+
+            document.getElementById('detail-content').innerHTML=html;
+            document.getElementById('detail-title').textContent='Site Overview';
+            document.getElementById('detail-overlay').classList.add('active');
+        }catch(e){ showToast('Error: '+e.message,'error'); }
+        hideLoading();
+    }
     function _auditWhen(ts){ if(!ts) return ''; try { return new Date(ts).toLocaleString(); } catch(e){ return String(ts); } }
     function _auditDetails(d){ if(d==null) return ''; if(typeof d==='object'){ try { return Object.keys(d).map(function(k){ return k+': '+d[k]; }).join(', '); } catch(e){ return ''; } } return String(d); }
     function _auditRowHtml(r){
@@ -6075,15 +6266,23 @@ function liveSearchSuggest(query,scope){
         }).sort(function(a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
     }
 
-    async function deleteNote(entityType, entityKey, noteId) { if(!requireWrite())return;
+    async function _canChangeNote(entityType, entityKey, noteId){
+        if(isAdmin())return true;
+        try{ var s=await db.ref('notes/' + entityType + '/' + entityKey + '/' + noteId + '/author').once('value'); return s.val()===currentUser; }catch(e){ return false; }
+    }
+    async function deleteNote(entityType, entityKey, noteId) { if(!requireWrite())return false;
+        if(!(await _canChangeNote(entityType, entityKey, noteId))){ showToast('Only the person who wrote this note (or an admin) can delete it.', 'error'); return false; }
         await db.ref('notes/' + entityType + '/' + entityKey + '/' + noteId).remove();logAudit('deleteNote',entityType,entityKey,{noteId:noteId});
+        return true;
     }
 
-    async function editNote(entityType, entityKey, noteId, newText) { if(!requireWrite())return;
+    async function editNote(entityType, entityKey, noteId, newText) { if(!requireWrite())return false;
+        if(!(await _canChangeNote(entityType, entityKey, noteId))){ showToast('Only the person who wrote this note (or an admin) can edit it.', 'error'); return false; }
         await db.ref('notes/' + entityType + '/' + entityKey + '/' + noteId).update({
             text: newText, editedAt: new Date().toISOString()
         });
         logAudit('editNote',entityType,entityKey,{noteId:noteId});
+        return true;
     }
 
     async function renderNotesSection(entityType, entityKey, container) {
@@ -6138,9 +6337,10 @@ function liveSearchSuggest(query,scope){
             var _el = document.getElementById('edit-note-input');
             var newText = _el ? _el.value : '';
             if (newText && newText.trim()) {
-                await editNote(entityType, entityKey, noteId, newText);
-                refreshNotesList(entityType, entityKey);
-                showToast('Note updated!');
+                if (await editNote(entityType, entityKey, noteId, newText)) {
+                    refreshNotesList(entityType, entityKey);
+                    showToast('Note updated!');
+                }
             }
         }
     }
@@ -6148,9 +6348,10 @@ function liveSearchSuggest(query,scope){
     async function promptDeleteNote(entityType, entityKey, noteId) { if(!requireWrite())return;
         var confirmed = await showModal('Delete Note', 'Are you sure you want to delete this note?');
         if (confirmed) {
-            await deleteNote(entityType, entityKey, noteId);
-            refreshNotesList(entityType, entityKey);
-            showToast('Note deleted!');
+            if (await deleteNote(entityType, entityKey, noteId)) {
+                refreshNotesList(entityType, entityKey);
+                showToast('Note deleted!');
+            }
         }
     }
 
@@ -6393,7 +6594,7 @@ function liveSearchSuggest(query,scope){
             var waAll = await getWorkAssignedData();
             var itemName = title || key;
             var isDuplicate = Object.values(waAll).some(function(j) {
-                return (j.assignedTo||'').toLowerCase() === currentUser.toLowerCase() &&
+                return _jobIsMine(j) &&
                        ((j.routeNumber && j.routeNumber === itemName) || (j.equipment && j.equipment === itemName));
             });
             if (isDuplicate) {
@@ -6738,11 +6939,11 @@ function liveSearchSuggest(query,scope){
             var waAll = await getWorkAssignedData();
             var alreadyExists = false;
             Object.values(waAll).forEach(function(j) {
-                if ((j.routeNumber === _routeDisplay || j.equipment === _routeDisplay) && (j.assignedTo||'').toLowerCase() === (currentUser||'').toLowerCase()) alreadyExists = true;
+                if ((j.routeNumber === _routeDisplay || j.equipment === _routeDisplay) && _jobIsMine(j)) alreadyExists = true; // v1.27: a job shared with me counts too
             });
             if (!alreadyExists && currentUser) {
                 await db.ref('workAssigned').push({
-                    workType: 'CBM', cbmType: 'Thermal',
+                    workType: 'CBM', cbmType: 'Thermal', readingRequired: true,
                     routeNumber: _routeDisplay, equipment: _routeDisplay,
                     assignedTo: currentUser.toLowerCase(),
                     status: 'pending', createdAt: new Date().toISOString()
@@ -7039,6 +7240,7 @@ function liveSearchSuggest(query,scope){
                 // Position ID changed — move data
                 var existing = await db.ref('equipment/' + key).once('value');
                 var existingData = existing.val() || {};
+                var _oldConvRaw = existingData.conveyorNumber || key;
                 delete existingData.imageUrl;
                 await db.ref('equipment/' + newKey).set(Object.assign(existingData, updates));
                 var _posOldImg = _posImg || await getEquipmentImage(key);
@@ -7048,6 +7250,25 @@ function liveSearchSuggest(query,scope){
                 await db.ref('equipmentImageMeta/' + key).remove();
                 await db.ref('equipmentImages/' + key).remove();
                 await db.ref('equipment/' + key).remove();
+                // v1.27: carry notes, Parts Associated and every part link over to the new ID (they used to be left behind on the old key)
+                try { var _pnSnap = await db.ref('notes/equipment/' + key).once('value'); if (_pnSnap.val()) { await db.ref('notes/equipment/' + newKey).update(_pnSnap.val()); await db.ref('notes/equipment/' + key).remove(); } } catch(_pne) { console.error('Rename: notes move failed', _pne); }
+                try {
+                    var _apSnap = await db.ref('associatedParts/' + key).once('value'); var _apList = _apSnap.val();
+                    if (_apList) { if (!Array.isArray(_apList)) _apList = Object.values(_apList); for (var _ai = 0; _ai < _apList.length; _ai++) { if (_apList[_ai]) await _addAssoc(newKey, _apList[_ai]); } await db.ref('associatedParts/' + key).remove(); }
+                } catch(_ape) { console.error('Rename: associated parts move failed', _ape); }
+                try {
+                    invalidatePartsCache();
+                    var _allPartsR = await getPartsCache();
+                    var _pkR = Object.keys(_allPartsR || {});
+                    for (var _pi = 0; _pi < _pkR.length; _pi++) {
+                        var _pR = _allPartsR[_pkR[_pi]] || {};
+                        var _cv = _pR.conveyors; if (_cv && !Array.isArray(_cv)) _cv = Object.values(_cv); _cv = _cv || [];
+                        var _hit = _cv.some(function(c){ return c != null && (c === _oldConvRaw || sanitizeKey(String(c)) === key); });
+                        if (_hit) await _txRenameConveyor(_pkR[_pi], _oldConvRaw, key, id);
+                        if (_pR.conveyorNotes && _pR.conveyorNotes[key]) { await db.ref('parts/' + _pkR[_pi] + '/conveyorNotes/' + newKey).set(_pR.conveyorNotes[key]); await db.ref('parts/' + _pkR[_pi] + '/conveyorNotes/' + key).remove(); }
+                    }
+                    invalidatePartsCache();
+                } catch(_lre) { console.error('Rename: part links move failed', _lre); showToast('Position renamed, but some part links could not be moved. Check Linked Parts.', 'error'); }
             } else {
                 await db.ref('equipment/' + key).update(updates);
                 if (_posImg) { await db.ref('equipmentImages/' + key).set(_posImg); await db.ref('equipmentImageMeta/' + key).set({ addedBy: currentUser, addedAt: new Date().toISOString() }); }
@@ -7104,6 +7325,8 @@ function liveSearchSuggest(query,scope){
                 await db.ref('routeImageMeta/' + key).remove();
                 await db.ref('routeImages/' + key).remove();
                 await db.ref('routes/' + key).remove();
+                // v1.27: carry route notes over to the new route number
+                try { var _rnSnap = await db.ref('notes/routes/' + key).once('value'); if (_rnSnap.val()) { await db.ref('notes/routes/' + newKey).update(_rnSnap.val()); await db.ref('notes/routes/' + key).remove(); } } catch(_rne) { console.error('Rename: route notes move failed', _rne); }
             } else {
                 await db.ref('routes/' + key).update(updates);
                 if (_rEditImg) { await db.ref('routeImages/' + key).set(_rEditImg); await db.ref('routeImageMeta/' + key).set({ addedBy: currentUser, addedAt: new Date().toISOString() }); }
@@ -7454,16 +7677,42 @@ function liveSearchSuggest(query,scope){
             }
         }
     }
+    // v1.27: race-safe edits of parts/{k}/conveyors (array of raw position IDs). Transactions re-run on conflict,
+    // so two people linking/unlinking the same part at once can no longer overwrite each other.
+    function _convArr(cur){ if(cur==null)return []; var a=Array.isArray(cur)?cur:Object.values(cur); return a.filter(function(x){ return x!=null; }); }
+    async function _txAddConveyor(partKey, conv){
+        await db.ref('parts/' + partKey + '/conveyors').transaction(function(cur){
+            var arr=_convArr(cur);
+            if(arr.indexOf(conv)<0)arr.push(conv);
+            return arr;
+        });
+    }
+    async function _txRemoveConveyor(partKey, conv){
+        var found=false;
+        await db.ref('parts/' + partKey + '/conveyors').transaction(function(cur){
+            found=false;
+            if(cur==null)return null;
+            var arr=_convArr(cur);
+            var i=arr.indexOf(conv);
+            if(i<0)return cur;
+            found=true; arr.splice(i,1);
+            return arr;
+        });
+        return found;
+    }
+    async function _txRenameConveyor(partKey, oldRaw, oldKey, newRaw){
+        await db.ref('parts/' + partKey + '/conveyors').transaction(function(cur){
+            if(cur==null)return null;
+            var out=[];
+            _convArr(cur).forEach(function(c){ var v=(c===oldRaw||sanitizeKey(String(c))===oldKey)?newRaw:c; if(out.indexOf(v)<0)out.push(v); });
+            return out;
+        });
+    }
     async function confirmLinkPart(partKey, conveyorNumber) { if(!requireWrite())return;
         if (!checkFirebase()) return;
         showLoading();
         try {
-            var snap = await db.ref('parts/' + partKey + '/conveyors').once('value');
-            var conveyors = snap.val() || [];
-            if (conveyors.indexOf(conveyorNumber) < 0) {
-                conveyors.push(conveyorNumber);
-                await db.ref('parts/' + partKey + '/conveyors').set(conveyors);
-            }
+            await _txAddConveyor(partKey, conveyorNumber);
             var qty = document.getElementById('link-qty') ? document.getElementById('link-qty').value.trim() : '';
             var obs = document.getElementById('link-obs') ? document.getElementById('link-obs').value.trim() : '';
             await db.ref('parts/' + partKey + '/conveyorNotes/' + sanitizeKey(conveyorNumber)).set({
@@ -7554,9 +7803,7 @@ function liveSearchSuggest(query,scope){
         if(!checkFirebase())return;
         showLoading();
         try{
-            var snap=await db.ref('parts/'+partKey+'/conveyors').once('value');
-            var conveyors=snap.val()||[];
-            if(conveyors.indexOf(conveyorNumber)<0){ conveyors.push(conveyorNumber); await db.ref('parts/'+partKey+'/conveyors').set(conveyors); }
+            await _txAddConveyor(partKey, conveyorNumber);
             var qty=document.getElementById('link-qty')?document.getElementById('link-qty').value.trim():'';
             var obs=document.getElementById('link-obs')?document.getElementById('link-obs').value.trim():'';
             await db.ref('parts/'+partKey+'/conveyorNotes/'+sanitizeKey(conveyorNumber)).set({ quantity: qty||null, observations: obs||null, linkedBy: auditUser(), linkedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
@@ -7734,12 +7981,10 @@ function liveSearchSuggest(query,scope){
         if (!checkFirebase()) return;
         showLoading();
         try {
-            var snap = await db.ref('parts/' + partKey + '/conveyors').once('value');
-            var conveyors = snap.val() || [];
-            var idx = conveyors.indexOf(conveyorNumber);
-            if (idx >= 0) {
-                conveyors.splice(idx, 1);
-                await db.ref('parts/' + partKey + '/conveyors').set(conveyors);
+            var _unlinked = await _txRemoveConveyor(partKey, conveyorNumber);
+            if (_unlinked) {
+                // v1.27: remove the qty/observations note as well (its qty is carried back to Parts Associated below), so no orphan is left
+                try { await db.ref('parts/' + partKey + '/conveyorNotes/' + sanitizeKey(conveyorNumber)).remove(); } catch(_cne) {}
                 // restore the reference to Parts Associated so it is never lost
                 try {
                     var _psnap = await db.ref('parts/'+partKey).once('value');
@@ -7857,9 +8102,7 @@ function liveSearchSuggest(query,scope){
                 partKey = newRef.key;
                 invalidatePartsCache();
             }
-            var csnap = await db.ref('parts/'+partKey+'/conveyors').once('value');
-            var conveyors = csnap.val() || [];
-            if(conveyors.indexOf(conveyorNumber) < 0){ conveyors.push(conveyorNumber); await db.ref('parts/'+partKey+'/conveyors').set(conveyors); }
+            await _txAddConveyor(partKey, conveyorNumber);
             var qty = document.getElementById('link-qty') ? document.getElementById('link-qty').value.trim() : '';
             var obs = document.getElementById('link-obs') ? document.getElementById('link-obs').value.trim() : '';
             await db.ref('parts/'+partKey+'/conveyorNotes/'+sanitizeKey(conveyorNumber)).set({ quantity: qty||null, observations: obs||null, linkedBy: auditUser(), linkedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
@@ -8298,8 +8541,8 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.26';
-    var WHATS_NEW_REV = '1.26.0'; // bump to re-show the What's New banner without changing the displayed version
+    var APP_VERSION = '1.27';
+    var WHATS_NEW_REV = '1.27.0'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== WHATS_NEW_REV) {
