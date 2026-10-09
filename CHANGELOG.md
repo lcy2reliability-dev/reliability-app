@@ -53,7 +53,7 @@
 - **Double-tap zoom is switched off across the whole app** (CSS `touch-action: manipulation`). Two-finger pinch zoom still works everywhere, and taps feel slightly quicker because the phone no longer waits to see if a second tap is coming. The photo viewer and drag handles keep their own touch handling. (We deliberately did not use `user-scalable=no`: it also blocks pinch zoom and newer iPhones ignore it.)
 
 ### Job list
-- **Screenshots on the Job list now load as you scroll** instead of all at once, so the list opens faster on the Zebras, especially with long PM batches.
+- **Screenshots on the Job list now load as you scroll** instead of all at once, so the list opens faster, especially on slower phones and with long PM batches.
 - **Bigger labels:** OVERDUE, Shared with / Shared by, the PM "Done by" line and the trend label go from 10px to 11px.
 - Removed two unused mobile CSS rules (they targeted header elements that no longer exist).
 
@@ -93,7 +93,7 @@
 
 ### Fixes
 - **A note added while putting a PM on your job list now shows straight away.** Before, the note only appeared after you added a second note — the job and its first note were written separately and the note lost a race with the screen refresh. They are now saved together in one write.
-- **The job schedule date chip now opens the calendar on the floor phones.** Previously it relied on a browser feature that iPhones and older Android/Zebra devices do not support, so tapping it did nothing on those phones. The chip is now a proper tappable field that opens the native date picker directly.
+- **The job schedule date chip now opens the calendar on phones.** Previously it relied on a browser feature that iPhones and older Android phones do not support, so tapping it did nothing on those phones. The chip is now a proper tappable field that opens the native date picker directly.
 
 ### Under the hood
 - Master stations are lightweight grouping records (`isStation` plus a list of their belts). The detail view unions each belt's linked parts on the fly, so there is no part-data duplication and no migration.
