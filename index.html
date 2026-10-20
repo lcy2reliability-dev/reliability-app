@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- RME Shift Personal Tracker v1.28 - Updated 2026-10-07 -->
+<!-- RME Shift Personal Tracker v1.28 - Updated 2026-10-20 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1518,6 +1518,32 @@
                 else if (!now && wasActive) _closeDetailFocus();
                 wasActive = now;
             }).observe(ov, { attributes: true, attributeFilter: ['class'] });
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+        else wire();
+    })();
+    // v1.28 fix (2026-10-20): the detail overlay is ONE scroll container reused by every screen (route,
+    // position, Record Readings, Alerts...). Swapping its content kept the old scroll position, so e.g.
+    // Route page -> scroll down -> Record New Readings opened the form half-way down. Reset to the top
+    // when the overlay opens or switches to a DIFFERENT screen (title changes); same-screen refreshes
+    // (e.g. after adding a note) keep their place.
+    (function _wireDetailScrollReset(){
+        function wire(){
+            var ov = document.getElementById('detail-overlay'), dc = document.getElementById('detail-content'), dt = document.getElementById('detail-title');
+            if (!ov || !dc || !dt || ov._scrollResetWired) return;
+            ov._scrollResetWired = true;
+            var lastTitle = null;
+            new MutationObserver(function(recs){
+                var now = ov.classList.contains('active');
+                if (!now) { lastTitle = null; return; }
+                var opened = recs.some(function(r){ return !/(^|\s)active(\s|$)/.test(r.oldValue || ''); });
+                if (opened) { ov.scrollTop = 0; lastTitle = dt.textContent; }
+            }).observe(ov, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+            new MutationObserver(function(){
+                if (!ov.classList.contains('active')) return;
+                var t = dt.textContent;
+                if (t !== lastTitle) { ov.scrollTop = 0; lastTitle = t; }
+            }).observe(dc, { childList: true });
         }
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
         else wire();

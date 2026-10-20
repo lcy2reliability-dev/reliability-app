@@ -11,6 +11,9 @@
 
 **Status:** Built and verified in the working copy (clean bun build, LF-only, new functions top-level, logic tested against copies of real job data, independent re-verify). No Firebase migration: shares use the same `sharedWith` data as v1.26, so existing shares and invites keep working.
 
+### Fix — 2026-10-20
+- **Record New Readings now opens at the top of the form.** Opening it from lower down a route page (or from Open Alerts) used to keep the old scroll position, so the form appeared half-way down with the first positions hidden above. Every screen in the full-page view now starts at the top when you move to a different screen; refreshing the same screen (e.g. after adding a note) keeps your place.
+
 ### Share several jobs at once
 - **New Share button at the top of the Job list** (next to + PM batch). Step 1: tick the jobs (only your own open jobs are listed, with Select all, and jobs already shared show "Shared with N"). Step 2: tick one or more people (same name filter as before). The button tells you what will happen, e.g. "Share 5 jobs with 2 people".
 - **All invites go out in one write**, so it's never half-sent. Anyone who already has a job (accepted or invited) is skipped for that job, so an accepted share is never reset to an invite. People who already have every selected job can't be ticked.
