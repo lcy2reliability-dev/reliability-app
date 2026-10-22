@@ -252,6 +252,72 @@
         body:not(.role-technician):not(.role-admin) .write-only{display:none!important;}
         .role-review-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-left:6px;vertical-align:middle;}
         .sync-status{ display:none; position:fixed; bottom:12px; left:12px; z-index:9996; padding:8px 14px; border-radius:20px; font-size:12px; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.15); max-width:72vw; }
+        /* Messages (v1.30): chat button bottom-right, pop-up for new messages, panel (full screen on phones) */
+        .toast.info { background: #2563eb; }
+        .msg-fab{ display:none; position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom, 0px)); width:56px; height:56px; border-radius:50%; background:#232F3E; color:#fff; border:none; box-shadow:0 4px 12px rgba(0,0,0,0.28); z-index:9996; cursor:pointer; align-items:center; justify-content:center; font-size:24px; line-height:1; padding:0; }
+        body.msg-on .msg-fab{ display:flex; }
+        body.msg-on.msg-panel-on .msg-fab{ display:none; } /* panel covers it; stops the badge peeking out */
+        body.msg-on .content{ padding-bottom:88px; }
+        .msg-fab:hover{ background:#37475A; }
+        .msg-fab-badge{ display:none; position:absolute; top:-4px; right:-4px; min-width:22px; height:22px; line-height:18px; padding:0 5px; box-sizing:border-box; border-radius:11px; background:#ef4444; color:#fff; font-size:12px; font-weight:700; text-align:center; border:2px solid #fff; }
+        .msg-pop{ display:none; position:fixed; right:16px; bottom:calc(84px + env(safe-area-inset-bottom, 0px)); width:300px; max-width:calc(100vw - 32px); box-sizing:border-box; background:#fff; border-left:4px solid #2563eb; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,0.22); padding:10px 44px 10px 12px; z-index:9998; cursor:pointer; }
+        .msg-pop.show{ display:block; }
+        body:not(.msg-on) .msg-pop{ display:none !important; }
+        .msg-pop-who{ font-size:13px; font-weight:700; color:#1a1a2e; }
+        .msg-pop-more{ font-weight:400; color:#6b7280; }
+        .msg-pop-text{ font-size:13px; color:#374151; margin-top:2px; overflow-wrap:anywhere; word-break:break-word; }
+        .msg-pop-x{ position:absolute; top:0; right:0; width:44px; height:44px; border:none; background:none; color:#6b7280; font-size:14px; cursor:pointer; padding:0; }
+        .msg-panel{ display:none; position:fixed; right:16px; bottom:16px; width:380px; max-width:calc(100vw - 32px); height:580px; max-height:calc(100vh - 32px); background:#fff; border-radius:12px; box-shadow:0 10px 32px rgba(0,0,0,0.3); z-index:9998; flex-direction:column; overflow:hidden; }
+        .msg-panel.open{ display:flex; }
+        .msg-head{ flex:0 0 auto; background:#232F3E; color:#fff; display:flex; align-items:center; gap:4px; padding:4px; }
+        .msg-head button{ background:none; border:none; color:#fff; font-size:22px; min-width:44px; min-height:44px; cursor:pointer; padding:0; flex:0 0 auto; }
+        .msg-title{ flex:1 1 auto; min-width:0; font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .msg-body{ flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:10px 12px; background:#f8fafc; }
+        .msg-foot{ flex:0 0 auto; border-top:1px solid #e5e7eb; padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); background:#fff; }
+        .msg-foot:empty{ display:none; }
+        @media (max-width:600px){ .msg-panel{ top:0; left:0; right:0; bottom:0; width:auto; height:auto; max-width:none; max-height:none; border-radius:0; } }
+        .msg-row{ display:flex; align-items:center; gap:10px; padding:10px; min-height:44px; box-sizing:border-box; background:#fff; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:6px; cursor:pointer; }
+        .msg-row.unread{ border-left:4px solid #2563eb; }
+        .msg-row-main{ flex:1 1 auto; min-width:0; }
+        .msg-row-name{ font-size:14px; font-weight:600; color:#1a1a2e; overflow-wrap:anywhere; }
+        .msg-row.unread .msg-row-name{ font-weight:800; }
+        .msg-row-gone{ font-size:11px; font-weight:400; color:#9ca3af; }
+        .msg-row-sub{ font-size:12px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+        .msg-row-meta{ flex:0 0 auto; text-align:right; font-size:11px; color:#9ca3af; }
+        .msg-row-read{ font-size:11px; color:#059669; margin-top:4px; }
+        .msg-unread-dot{ display:inline-block; margin-top:4px; min-width:20px; height:20px; line-height:20px; padding:0 6px; box-sizing:border-box; border-radius:10px; background:#2563eb; color:#fff; font-weight:700; text-align:center; }
+        .msg-tag{ display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; background:#e0e7ff; color:#3730a3; border-radius:4px; padding:1px 5px; vertical-align:middle; }
+        .msg-empty{ font-size:13px; color:#6b7280; text-align:center; padding:24px 8px; }
+        .msg-note{ font-size:11px; color:#9ca3af; text-align:center; padding:12px 8px 4px; line-height:1.5; }
+        .msg-hint{ font-size:13px; color:#374151; margin-bottom:8px; line-height:1.5; }
+        .msg-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+        .msg-actions .btn{ flex:1 1 140px; min-height:44px; }
+        .msg-filter{ width:100%; box-sizing:border-box; padding:8px 10px; margin-bottom:8px; border:1px solid #d1d5db; border-radius:6px; font-size:16px; }
+        .msg-person-row{ display:flex; align-items:center; gap:10px; padding:8px 6px; min-height:44px; box-sizing:border-box; border-bottom:1px solid #f1f5f9; cursor:pointer; background:#fff; }
+        .msg-person-row input[type=checkbox]{ width:20px; height:20px; flex:0 0 auto; margin:0; }
+        .msg-person-main{ flex:1 1 auto; min-width:0; }
+        .msg-person-name{ font-size:14px; font-weight:600; color:#1a1a2e; }
+        .msg-person-login{ font-size:11px; color:#9ca3af; }
+        .msg-chev{ flex:0 0 auto; font-size:22px; color:#9ca3af; }
+        .msg-all-row{ display:flex; align-items:center; gap:10px; padding:8px 6px; min-height:44px; box-sizing:border-box; border-bottom:2px solid #e2e8f0; cursor:pointer; font-size:14px; background:#fff; }
+        .msg-all-row input{ width:20px; height:20px; flex:0 0 auto; margin:0; }
+        .msg-b-wrap{ display:flex; justify-content:flex-start; margin-bottom:8px; }
+        .msg-b-wrap.mine{ justify-content:flex-end; }
+        .msg-b{ max-width:82%; min-width:0; background:#fff; border:1px solid #e5e7eb; border-radius:12px 12px 12px 4px; padding:8px 10px; overflow-wrap:anywhere; word-break:break-word; }
+        .msg-b-wrap.mine .msg-b{ background:#dbeafe; border-color:#bfdbfe; border-radius:12px 12px 4px 12px; }
+        .msg-b-text{ font-size:14px; color:#1a1a2e; line-height:1.45; }
+        .msg-b-meta{ font-size:11px; color:#6b7280; margin-top:3px; text-align:right; }
+        .msg-b-tag{ font-size:11px; font-weight:700; color:#3730a3; margin-bottom:3px; }
+        .msg-b-quote{ font-size:12px; color:#6b7280; border-left:3px solid #93c5fd; padding-left:6px; margin-bottom:4px; }
+        .msg-compose{ display:flex; gap:8px; align-items:flex-end; }
+        .msg-compose textarea{ flex:1 1 auto; min-width:0; resize:none; font-size:16px; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px; min-height:44px; max-height:120px; box-sizing:border-box; font-family:inherit; }
+        .msg-send{ min-height:44px; min-width:72px; flex:0 0 auto; }
+        .msg-reply-note{ font-size:12px; color:#3730a3; background:#eef2ff; border-radius:6px; padding:6px 8px; margin-bottom:6px; }
+        .msg-group-stat{ font-size:13px; color:#374151; margin:4px 0 8px; }
+        .msg-read-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 4px; border-bottom:1px solid #f1f5f9; font-size:13px; }
+        .msg-read-name{ flex:1 1 auto; min-width:0; color:#1a1a2e; font-weight:600; }
+        .msg-read-state{ flex:0 0 auto; color:#b45309; font-size:12px; }
+        .msg-read-state.yes{ color:#059669; }
         .sync-status.pending{ background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
         .sync-status.ok{ background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; }
         /* Record-form v1.10: baseline hints, live tint, sticky save bar, step-through, number pad */
@@ -570,8 +636,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.29)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Edit or delete your job notes</strong>: open a job on your Job list and tap &#9998; (edit) or &#128465; (delete) at the end of your note. Works on PM batch findings too.<br>&bull; <strong>Also new (v1.28)</strong>: share several jobs at once (tap <strong>Share</strong> at the top of your Job list), and a shared job shows who completed it.<span class="admin-only"> Admins: <strong>Site Overview</strong> is in this menu under Tools.</span></div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.30)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Messages</strong>: tap the &#128172; button at the bottom right to message a colleague. New messages pop up while the app is open and the button shows how many are unread. Read messages clear at the 4am sweep; unread ones stay.<span class="admin-only"> Admins: send a <strong>Group message</strong> to everyone or the people you tick, and see every message in <strong>Message Log</strong> (Tools).</span><br>&bull; <strong>Also new (v1.29)</strong>: edit or delete your own job notes (open a job and tap &#9998; or &#128465; at the end of your note).</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -581,11 +647,13 @@
                 <div style="height:1px;background:#e5e7eb;margin:8px 20px;"></div>
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Tools</div>
                 <div role="button" tabindex="0" onclick="toggleBurgerMenu();openAlertsView();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#9888; Open Alerts <span id="burger-alerts-badge" style="display:none;background:#ef4444;color:white;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:4px;"></span></div>
+                <div role="button" tabindex="0" onclick="toggleBurgerMenu();openMessages();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128172; Messages <span id="burger-msg-badge" style="display:none;background:#2563eb;color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;"></span></div>
                 <div role="button" tabindex="0" class="admin-only" onclick="openManageInactive()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Manage Inactive Items</div>
                 <div role="button" tabindex="0" onclick="downloadAllData()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#11015; Download Backup</div>
                 <div role="button" tabindex="0" class="admin-only" onclick="openRecentlyDeleted()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128465; Recently Deleted</div>
                 <div class="admin-only" role="button" tabindex="0" onclick="openUsersScreen()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128101; Manage Users <span id="role-review-badge" style="display:none;color:#ef4444;font-weight:600;font-size:12px;">Role review required (<span id="role-review-count">0</span>)<span class="role-review-dot"></span></span></div>
                 <div class="admin-only" role="button" tabindex="0" onclick="openActivityLog()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128220; Activity Log</div>
+                <div class="admin-only" role="button" tabindex="0" onclick="openMessageLog()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128450; Message Log</div>
                 <div class="admin-only" role="button" tabindex="0" onclick="openSiteOverview()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128202; Site Overview</div>
                 <div style="height:1px;background:#e5e7eb;margin:8px 20px;"></div>
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Help</div>
@@ -942,6 +1010,13 @@
         </div>
     </div>
     <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
+    <button type="button" id="msg-fab" class="msg-fab" aria-label="Messages" onclick="openMessages()"><span aria-hidden="true">&#128172;</span><span id="msg-fab-badge" class="msg-fab-badge"></span></button>
+    <div id="msg-pop" class="msg-pop" role="status" aria-live="polite" onclick="_msgPopTap()"></div>
+    <div id="msg-panel" class="msg-panel" role="dialog" aria-labelledby="msg-panel-title">
+        <div class="msg-head"><button type="button" id="msg-back" onclick="msgBack()" aria-label="Back to all messages" style="visibility:hidden;">&#8249;</button><div id="msg-panel-title" class="msg-title">Messages</div><button type="button" onclick="closeMessages()" aria-label="Close messages">&#10005;</button></div>
+        <div id="msg-body" class="msg-body"></div>
+        <div id="msg-foot" class="msg-foot"></div>
+    </div>
 
     <script>
     // Skip all app logic in sandboxed iframe/preview
@@ -1313,6 +1388,7 @@
                 } catch (e) { hideLoading(); console.error('Auth profile load failed:', e); showToast('Could not load your profile', 'error'); }
             } else {
                 currentUid = null; currentRole = 'technician'; currentReviewed = false; currentEmailVerified = false;
+                if (typeof _msgStop === 'function') _msgStop();
                 applyRoleVisibility();
                 initLogin();
             }
@@ -1342,8 +1418,9 @@
                 loadWorkAssigned();
                 cleanupOldWork();
                 cleanupDuplicateEndpoints();
+                try{ _msgStart(); }catch(_me){ console.warn('Messages failed to start:', _me); }
                 db.ref('.info/connected').on('value', function(cs){ _fbConnected = cs.val()===true; _updateOfflineBanner(); if(_fbConnected) flushPendingReadings(); });
-                setTimeout(function() { initJobPointerSort(); initWalkPointerSort(); updateWorkCount(); ensureChart().catch(function(){}); ensureXLSX().catch(function(){}); try{renderDashboard();}catch(e){} try{pruneAuditLog();}catch(e){} setTimeout(function(){ try{maybeAutoTour();}catch(e){} }, 900); }, 1000);
+                setTimeout(function() { initJobPointerSort(); initWalkPointerSort(); updateWorkCount(); ensureChart().catch(function(){}); ensureXLSX().catch(function(){}); try{renderDashboard();}catch(e){} try{pruneAuditLog();}catch(e){} try{pruneMessageLog();}catch(e){} setTimeout(function(){ try{maybeAutoTour();}catch(e){} }, 900); }, 1000);
             } catch(e) { console.error('Init error:', e); showToast('Something failed to load — please refresh the page.', 'error'); }
         }
     }
@@ -1438,6 +1515,7 @@
         if(e.key!=='Escape'&&e.key!=='Esc')return;
         var iv=document.getElementById('img-viewer');
         if(iv&&iv.classList.contains('active')){iv.classList.remove('active');if(typeof _ivReset==='function'){try{_ivReset();}catch(_e){}}document.body.style.overflow='';return;}
+        if(typeof _msgPanelOpen==='function'&&_msgPanelOpen()){var _mo=document.getElementById('modal');if(!(_mo&&_mo.classList.contains('active'))){closeMessages();return;}}
         var ov=document.getElementById('detail-overlay');
         if(ov&&ov.classList.contains('active')){if(typeof closeDetail==='function')closeDetail();return;}
         var bm=document.getElementById('burger-menu');
@@ -1489,6 +1567,7 @@
     function _detailModalStacked() {
         var m = document.getElementById('modal'); if (m && m.classList.contains('active')) return true;
         var iv = document.getElementById('img-viewer'); if (iv && iv.classList.contains('active')) return true;
+        var mp = document.getElementById('msg-panel'); if (mp && mp.classList.contains('open')) return true;
         return false;
     }
     function _openDetailFocus() {
@@ -4445,7 +4524,7 @@
     function filterShareUsers(inp){
         var q=(inp&&inp.value||'').trim().toLowerCase();
         var terms=q?q.split(/\s+/):[];
-        var box=document.getElementById('share-user-list');if(!box)return;
+        var box=document.getElementById((inp&&inp.getAttribute&&inp.getAttribute('data-list'))||'share-user-list');if(!box)return;
         var rows=box.querySelectorAll('.share-user-row');
         for(var i=0;i<rows.length;i++){
             var hay=rows[i].getAttribute('data-search')||'';
@@ -7243,7 +7322,7 @@ function liveSearchSuggest(query,scope){
         }
     }
     function burgerSwitchUser() { toggleBurgerMenu(); showNewLogin(); }
-    function burgerLogout() { toggleBurgerMenu(); try{if(db){db.ref('equipment').off();db.ref('parts').off();db.ref('routes').off();db.ref('workAssigned').off();}}catch(e){} currentUser=null; currentUid=null; currentReviewed=false; currentEmailVerified=false; _waData=null; currentRole = AUTH_ENABLED ? 'technician' : 'admin'; applyRoleVisibility(); if(!AUTH_ENABLED){ localStorage.removeItem('reliability_app_user'); initLogin(); return; } if(auth){ auth.signOut().catch(function(){}); } else { initLogin(); } }
+    function burgerLogout() { toggleBurgerMenu(); try{_msgStop();}catch(_me){} try{if(db){db.ref('equipment').off();db.ref('parts').off();db.ref('routes').off();db.ref('workAssigned').off();}}catch(e){} currentUser=null; currentUid=null; currentReviewed=false; currentEmailVerified=false; _waData=null; currentRole = AUTH_ENABLED ? 'technician' : 'admin'; applyRoleVisibility(); if(!AUTH_ENABLED){ localStorage.removeItem('reliability_app_user'); initLogin(); return; } if(auth){ auth.signOut().catch(function(){}); } else { initLogin(); } }
     
     // ============================================================
     // ADD FORM OVERLAY (from burger menu)
@@ -7780,6 +7859,7 @@ function liveSearchSuggest(query,scope){
     // BROWSER BACK BUTTON SUPPORT (History API)
     // ============================================================
     window.addEventListener('popstate', function(e) {
+        if (typeof _msgHandlePop === 'function' && _msgHandlePop()) return;
         // Close any open overlay when browser Back is pressed
         var detailOverlay = document.getElementById('detail-overlay');
         var addFormOverlay = document.getElementById('add-form-overlay');
@@ -8714,6 +8794,17 @@ function liveSearchSuggest(query,scope){
         html += '<li>You cannot add the same item to your list twice</li>';
         html += '</ul></div>';
 
+        // Messages (v1.30)
+        html += '<div class="card"><h2>\uD83D\uDCAC Messages</h2>';
+        html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
+        html += '<li>Tap the <strong>\uD83D\uDCAC button</strong> at the bottom right (or <strong>Messages</strong> in the menu) to message a colleague, one person at a time</li>';
+        html += '<li>The red number on the button is how many messages you have not read. A new message pops up while the app is open; tap it to read it</li>';
+        html += '<li>Opening a conversation marks it as read, and the sender sees <strong>Read</strong> under their message</li>';
+        html += '<li><strong>Read</strong> messages clear at the daily <strong>4am sweep</strong>; <strong>unread</strong> messages stay until they are read</li>';
+        html += '<li>A reply to a <strong>group message</strong> goes only to the admin who sent it, not to the whole group</li>';
+        html += '<li>Admins keep a copy of every message for 12 months</li>';
+        html += '</ul></div>';
+
         // Account
         html += '<div class="card"><h2>\uD83D\uDD10 Your account</h2>';
         html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
@@ -8743,6 +8834,8 @@ function liveSearchSuggest(query,scope){
             html += '<li><strong>Add New</strong> \u2014 add a Position, Part or Route</li>';
             html += '<li><strong>Manage Users</strong> \u2014 review new sign-ups, set roles and remove users</li>';
             html += '<li><strong>Activity Log</strong> \u2014 a full record of who changed what and when</li>';
+            html += '<li><strong>Group message</strong> \u2014 in Messages, send one message to everyone or to the people you tick. Replies come back to you only</li>';
+            html += '<li><strong>Message Log</strong> \u2014 a copy of every message sent in the app, kept for 12 months</li>';
             html += '<li><strong>Manage Inactive Items</strong> \u2014 find and reactivate decommissioned positions, parts and routes</li>';
             html += '<li><strong>Recently Deleted</strong> \u2014 restore items that were deleted</li>';
             html += '</ul></div>';
@@ -8773,6 +8866,8 @@ function liveSearchSuggest(query,scope){
             ['Do I stay signed in?', 'On your own device, yes. Tick "shared device" when you sign in and you will be logged out when you close the app. Either way, if your account is idle for more than 7 days you will be asked for your PIN again.'],
             ['I forgot my PIN, or want to change it.', 'Use Forgot PIN on the sign-in screen to get a reset email, or Change PIN under Account in the menu once you are signed in.'],
             ['Something looks out of date.', 'Reload the page \u2014 the app updates live from the database. If a number looks stuck, a hard refresh clears it.'],
+            ['Who can read my messages?', 'The person you send it to, and the app admins: a copy of every message is kept in an admin-only Message Log for 12 months. Messages stay inside the app; nothing is sent by email or to APM.'],
+            ['Why did my messages disappear?', 'Read messages clear at the daily 4am sweep, the same as completed jobs. Unread messages stay until they are read.'],
             ['Who do I contact about the app?', 'The app admins \u2014 <span id="faq-admin-list">Tittus (strtt) or Alex (vladesca)</span>.']
         ];
         faq.forEach(function(qa){
@@ -8793,10 +8888,444 @@ function liveSearchSuggest(query,scope){
 
 
     // ============================================================
+    // MESSAGES (v1.30) - in-app messages between users
+    //   messages/{k}   = one record per recipient: {from, fromName, to, toName, text, sentAt, read, readAt,
+    //                    groupId?, groupSize?, groupAll?, replyTo?, replyToText?}
+    //   messageLog/{k} = admin copy of every message, written in the SAME update as messages/{k}.
+    //                    Kept 12 months (same retention as the Activity Log), then pruned.
+    //   Technicians message one person at a time. Admins can also send a group message (one record per
+    //   recipient, sharing a groupId). A reply to a group message is a normal 1:1 message to the sender.
+    //   4am sweep: READ messages read before the cutoff are deleted; UNREAD ones carry over.
+    // ============================================================
+    var MSG_MAX_LEN = 1000;
+    var _msgInRef = null, _msgOutRef = null, _msgIn = {}, _msgOut = {}, _msgUsers = {}, _msgUsersAt = 0;
+    var _msgView = {v:'inbox'}, _msgSeen = {}, _msgInLoaded = false, _msgSwept = {}, _msgPopTimer = null, _msgIgnorePop = false, _msgTick = null;
+    function _msgMe(){ return (currentUser || '').toLowerCase(); }
+    function _msgCutoff(){ var now=new Date(); var t4=new Date(now.getFullYear(),now.getMonth(),now.getDate(),4,0,0); return (now.getHours()<4 ? new Date(t4.getTime()-86400000) : t4).getTime(); }
+    function _msgTs(){ try{ return firebase.database.ServerValue.TIMESTAMP; }catch(_e){ return Date.now(); } }
+    function _msgName(login, fallback){ var u=_msgUsers[login]; return (u && u.name) || fallback || login || '?'; }
+    function _msgTime(ts){
+        if(!ts || typeof ts !== 'number') return 'sending\u2026';
+        var d=new Date(ts), n=new Date(), hm=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        if(d.toDateString()===n.toDateString()) return hm;
+        return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+', '+hm;
+    }
+    function _msgTextHtml(t){ return escapeHtml(t == null ? '' : String(t)).replace(/\r?\n/g,'<br>'); }
+    function _msgExpired(m){ return !!(m && m.read===true && typeof m.readAt==='number' && m.readAt < _msgCutoff()); }
+    function _msgPanelOpen(){ var p=document.getElementById('msg-panel'); return !!(p && p.classList.contains('open')); }
+    async function _msgLoadUsers(force){
+        if(!db) return _msgUsers;
+        if(!force && _msgUsersAt && (Date.now()-_msgUsersAt) < 60000) return _msgUsers;
+        try{
+            var s=await db.ref('users').once('value'); var v=s.val()||{}, out={};
+            Object.keys(v).forEach(function(uid){ var u=v[uid]||{}, login=(u.loginId||u.login||'').toLowerCase(); if(!login) return; out[login]={name:(u.name||u.loginId||login), role:normalizeRole(u.role), removed:(u.status==='removed')}; });
+            _msgUsers=out; _msgUsersAt=Date.now();
+        }catch(_e){}
+        return _msgUsers;
+    }
+    // Everyone I can message: active users except me, sorted by name.
+    function _msgRecipients(){
+        var me=_msgMe();
+        return Object.keys(_msgUsers).filter(function(l){ return l!==me && !_msgUsers[l].removed; })
+            .sort(function(a,b){ return String(_msgUsers[a].name).localeCompare(String(_msgUsers[b].name)); });
+    }
+    // ---- live listeners (started at login, stopped at logout / idle re-lock) ----
+    function _msgStart(){
+        _msgStop();
+        if(!db || !currentUser || _isPreview) return;
+        var me=_msgMe();
+        document.body.classList.add('msg-on');
+        _msgLoadUsers(true).then(function(){ _msgRender(false); });
+        _msgInRef=db.ref('messages').orderByChild('to').equalTo(me);
+        _msgOutRef=db.ref('messages').orderByChild('from').equalTo(me);
+        _msgInRef.on('value', function(s){ var v={}; s.forEach(function(c){ v[c.key]=c.val()||{}; }); _msgIn=v; _msgOnIncoming(); _msgSweep(); _msgRender(false); }, function(e){ console.warn('messages (in):', e && e.message); });
+        _msgOutRef.on('value', function(s){ var v={}; s.forEach(function(c){ v[c.key]=c.val()||{}; }); _msgOut=v; _msgSweep(); _msgRender(false); }, function(e){ console.warn('messages (out):', e && e.message); });
+        _msgTick=setInterval(function(){ _msgSweep(); _msgRender(false); }, 600000); // app left open across 4am still clears
+    }
+    function _msgStop(){
+        try{ if(_msgInRef) _msgInRef.off(); }catch(_e){}
+        try{ if(_msgOutRef) _msgOutRef.off(); }catch(_e){}
+        if(_msgTick){ clearInterval(_msgTick); _msgTick=null; }
+        _msgInRef=null; _msgOutRef=null; _msgIn={}; _msgOut={}; _msgSeen={}; _msgInLoaded=false; _msgView={v:'inbox'};
+        _msgUsers={}; _msgUsersAt=0; _msgSwept={}; // next login (maybe a different person on this phone) starts clean
+        document.body.classList.remove('msg-on');
+        _msgClosePanel();
+        _msgHidePop();
+        _msgBadge();
+    }
+    // New message while the app is open: small pop-up above the chat button (tap to open it).
+    function _msgOnIncoming(){
+        var keys=Object.keys(_msgIn), fresh=[];
+        keys.forEach(function(k){ if(!_msgSeen[k]){ _msgSeen[k]=1; if(_msgInLoaded && _msgIn[k].read!==true) fresh.push(k); } });
+        if(!_msgInLoaded){
+            _msgInLoaded=true;
+            var unread=keys.filter(function(k){ return _msgIn[k].read!==true; });
+            if(unread.length===1) _msgShowPop(_msgIn[unread[0]], 1);
+            else if(unread.length>1) _msgShowPop(null, unread.length);
+            return;
+        }
+        if(!fresh.length) return;
+        fresh.sort(function(a,b){ return (_msgIn[a].sentAt||0)-(_msgIn[b].sentAt||0); });
+        var m=_msgIn[fresh[fresh.length-1]];
+        if(_msgPanelOpen() && _msgView.v==='thread' && _msgView.who===m.from && !document.hidden) return; // already reading it
+        _msgShowPop(m, fresh.length);
+        try{ if(navigator.vibrate) navigator.vibrate(120); }catch(_e){}
+    }
+    function _msgShowPop(m, n){
+        var el=document.getElementById('msg-pop'); if(!el) return;
+        var html;
+        if(m){
+            html='<div class="msg-pop-who">'+escapeHtml(_msgName(m.from, m.fromName))+(m.groupId?' <span class="msg-tag">group</span>':'')+(n>1?' <span class="msg-pop-more">+'+(n-1)+' more</span>':'')+'</div>'
+                +'<div class="msg-pop-text">'+escapeHtml(String(m.text||'').slice(0,140))+'</div>';
+            el.setAttribute('data-who', m.from||'');
+        } else {
+            html='<div class="msg-pop-who">You have '+n+' unread messages</div><div class="msg-pop-text">Tap to read them</div>';
+            el.setAttribute('data-who', '');
+        }
+        el.innerHTML=html+'<button type="button" class="msg-pop-x" aria-label="Dismiss" onclick="event.stopPropagation();_msgHidePop()">&#10005;</button>';
+        el.classList.add('show');
+        clearTimeout(_msgPopTimer); _msgPopTimer=setTimeout(_msgHidePop, 8000);
+    }
+    function _msgHidePop(){ clearTimeout(_msgPopTimer); var el=document.getElementById('msg-pop'); if(el) el.classList.remove('show'); }
+    function _msgPopTap(){ var el=document.getElementById('msg-pop'); var who=el ? el.getAttribute('data-who') : ''; _msgHidePop(); if(who) openMessageThread(who); else openMessages(); }
+    function _msgUnreadCount(){ var n=0; Object.keys(_msgIn).forEach(function(k){ if(_msgIn[k].read!==true) n++; }); return n; }
+    function _msgBadge(){
+        var n=_msgUnreadCount();
+        var b=document.getElementById('msg-fab-badge'); if(b){ b.textContent=(n>99?'99+':String(n)); b.style.display=n?'block':'none'; }
+        var bm=document.getElementById('burger-msg-badge'); if(bm){ bm.textContent=String(n); bm.style.display=n?'inline-block':'none'; }
+        var f=document.getElementById('msg-fab'); if(f) f.setAttribute('aria-label', n ? ('Messages, '+n+' unread') : 'Messages');
+    }
+    // 4am sweep: delete my READ messages (sent or received) that were read before the cutoff. Unread ones stay.
+    function _msgSweep(){
+        if(!db) return;
+        var upd={}, n=0;
+        [_msgIn, _msgOut].forEach(function(src){ Object.keys(src).forEach(function(k){ if(_msgSwept[k]) return; if(_msgExpired(src[k])){ upd['messages/'+k]=null; _msgSwept[k]=1; n++; } }); });
+        if(n) db.ref().update(upd).catch(function(){ Object.keys(upd).forEach(function(p){ delete _msgSwept[p.slice(9)]; }); });
+    }
+    // Inbox rows: one per person I talk to, plus one per group message I sent (admins).
+    function _msgConversations(){
+        var conv={};
+        function add(id, m, incoming){
+            var c=conv[id]||(conv[id]={id:id, last:null, unread:0, count:0});
+            c.count++;
+            if(!c.last || (m.sentAt||0) > (c.last.sentAt||0)) c.last=m;
+            if(incoming && m.read!==true) c.unread++;
+        }
+        Object.keys(_msgIn).forEach(function(k){ var m=_msgIn[k]; if(!m.from || _msgExpired(m)) return; add('u:'+m.from, m, true); });
+        Object.keys(_msgOut).forEach(function(k){ var m=_msgOut[k]; if(!m.to || _msgExpired(m)) return; add(m.groupId ? ('g:'+m.groupId) : ('u:'+m.to), m, false); });
+        return Object.keys(conv).map(function(id){ return conv[id]; }).sort(function(a,b){ return (b.last.sentAt||0)-(a.last.sentAt||0); });
+    }
+    function _msgThreadMsgs(who){
+        var arr=[];
+        Object.keys(_msgIn).forEach(function(k){ var m=_msgIn[k]; if(m.from===who && !_msgExpired(m)) arr.push({k:k, m:m, mine:false}); });
+        Object.keys(_msgOut).forEach(function(k){ var m=_msgOut[k]; if(m.to===who && !m.groupId && !_msgExpired(m)) arr.push({k:k, m:m, mine:true}); });
+        arr.sort(function(a,b){ return (a.m.sentAt||0)-(b.m.sentAt||0); });
+        return arr;
+    }
+    // If the newest message in this conversation is a group message to me, my reply goes to its sender only.
+    function _msgReplyTarget(who){ var arr=_msgThreadMsgs(who); var x=arr.length ? arr[arr.length-1] : null; return (x && !x.mine && x.m.groupId) ? x : null; }
+    // ---- panel ----
+    function _msgOpenPanel(){
+        var p=document.getElementById('msg-panel'); if(!p) return false;
+        _msgHidePop();
+        if(!p.classList.contains('open')){ p.classList.add('open'); try{ history.pushState({view:'messages'}, '', '#messages'); }catch(_e){} }
+        document.body.classList.add('msg-panel-on');
+        return true;
+    }
+    function _msgClosePanel(){ var p=document.getElementById('msg-panel'); if(p) p.classList.remove('open'); document.body.classList.remove('msg-panel-on'); _msgView={v:'inbox'}; }
+    function openMessages(){
+        if(!db || !currentUser){ showToast('Log in to use messages', 'error'); return; }
+        if(!_msgOpenPanel()) return;
+        _msgView={v:'inbox'}; _msgRender(true);
+    }
+    function openMessageThread(who){
+        if(!who){ openMessages(); return; }
+        if(!db || !currentUser) return;
+        if(!_msgOpenPanel()) return;
+        _msgView={v:'thread', who:who}; _msgRender(true);
+        var ta=document.getElementById('msg-text'); if(ta && window.innerWidth > 600){ try{ ta.focus(); }catch(_e){} }
+    }
+    function closeMessages(){
+        if(!_msgPanelOpen()) return;
+        _msgClosePanel();
+        try{ if(history.state && history.state.view==='messages'){ _msgIgnorePop=true; history.back(); } }catch(_e){ _msgIgnorePop=false; }
+    }
+    function msgBack(){ _msgView={v:'inbox'}; _msgRender(true); }
+    // Browser Back while the panel is open: a sub-screen goes back to the inbox, the inbox closes the panel.
+    function _msgHandlePop(){
+        if(_msgIgnorePop){ _msgIgnorePop=false; return true; }
+        if(!_msgPanelOpen()) return false;
+        if(_msgView.v!=='inbox'){ msgBack(); try{ history.pushState({view:'messages'}, '', '#messages'); }catch(_e){} }
+        else _msgClosePanel();
+        return true;
+    }
+    function _msgRender(full){
+        _msgBadge();
+        if(!_msgPanelOpen()) return;
+        var v=_msgView.v;
+        var title=document.getElementById('msg-panel-title'), back=document.getElementById('msg-back'), body=document.getElementById('msg-body'), foot=document.getElementById('msg-foot');
+        if(!body || !foot || !title) return;
+        if(back) back.style.visibility=(v==='inbox') ? 'hidden' : 'visible';
+        if(v==='inbox'){
+            title.textContent='Messages'; body.innerHTML=_msgInboxHtml();
+            if(full) foot.innerHTML=_msgInboxFootHtml();
+        } else if(v==='thread'){
+            var who=_msgView.who, nearBottom=(body.scrollHeight-body.scrollTop-body.clientHeight) < 80;
+            var u=_msgUsers[who];
+            title.textContent=_msgName(who)+((u && u.removed) ? ' (removed)' : '');
+            body.innerHTML=_msgThreadHtml(who);
+            if(full) foot.innerHTML=(u && u.removed) ? '<div class="msg-note">This user has been removed, so you cannot reply.</div>' : _msgComposerHtml(false);
+            _msgUpdateReplyNote();
+            if(full || nearBottom) body.scrollTop=body.scrollHeight;
+            _msgMarkRead(who);
+        } else if(v==='group'){
+            title.textContent='Group message'; body.innerHTML=_msgGroupHtml(_msgView.gid);
+            if(full) foot.innerHTML='';
+        } else if(v==='pick'){
+            if(full){ title.textContent='New message'; body.innerHTML=_msgPickHtml(); foot.innerHTML=''; body.scrollTop=0; }
+        } else if(v==='groupnew'){
+            if(full){ title.textContent='Group message'; body.innerHTML=_msgGroupNewHtml(); foot.innerHTML=_msgComposerHtml(true); body.scrollTop=0; _msgGroupCount(); }
+        }
+    }
+    function _msgInboxHtml(){
+        var list=_msgConversations(), me=_msgMe(), h='';
+        if(!list.length) h+='<div class="msg-empty">No messages yet. Tap <strong>New message</strong> to start one.</div>';
+        list.forEach(function(c){
+            var m=c.last, isG=(c.id.indexOf('g:')===0), name, sub, meta='', click;
+            if(isG){
+                var gid=c.id.slice(2), size=m.groupSize||c.count, unread=0;
+                Object.keys(_msgOut).forEach(function(k){ var x=_msgOut[k]; if(x.groupId===gid && x.read!==true) unread++; });
+                name=(m.groupAll ? 'Everyone' : (size+' people'))+' <span class="msg-tag">group</span>';
+                sub='You: '+escapeHtml(String(m.text||'').slice(0,90));
+                meta='<div class="msg-row-read">Read by '+Math.max(0,size-unread)+' of '+size+'</div>';
+                click='_msgOpenGroup(\x27'+escapeAttrArg(gid)+'\x27)';
+            } else {
+                var who=c.id.slice(2), u=_msgUsers[who];
+                name=escapeHtml(_msgName(who, (m.from===who ? m.fromName : m.toName)))+((u && u.removed) ? ' <span class="msg-row-gone">(removed)</span>' : '');
+                sub=(m.from===me ? 'You: ' : '')+(m.groupId && m.from!==me ? '<span class="msg-tag">group</span> ' : '')+escapeHtml(String(m.text||'').slice(0,90));
+                if(c.unread) meta='<div class="msg-unread-dot">'+c.unread+'</div>';
+                click='openMessageThread(\x27'+escapeAttrArg(who)+'\x27)';
+            }
+            h+='<div class="msg-row'+(c.unread ? ' unread' : '')+'" role="button" tabindex="0" onclick="'+click+'">'
+                +'<div class="msg-row-main"><div class="msg-row-name">'+name+'</div><div class="msg-row-sub">'+sub+'</div></div>'
+                +'<div class="msg-row-meta"><div>'+escapeHtml(_msgTime(m.sentAt))+'</div>'+meta+'</div></div>';
+        });
+        h+='<div class="msg-note">Read messages clear at the 4am sweep; unread ones stay until they are read. Admins keep a copy of every message for 12 months.</div>';
+        return h;
+    }
+    function _msgInboxFootHtml(){
+        return '<div class="msg-actions"><button class="btn btn-primary" onclick="_msgOpenPick()">&#9998; New message</button>'
+            +(isAdmin() ? '<button class="btn btn-secondary" onclick="_msgOpenGroupNew()">&#128101; Group message</button>' : '')+'</div>';
+    }
+    function _msgThreadHtml(who){
+        var arr=_msgThreadMsgs(who), h='';
+        if(!arr.length) h+='<div class="msg-empty">No messages yet. Write one below.</div>';
+        arr.forEach(function(x){
+            var m=x.m;
+            h+='<div class="msg-b-wrap'+(x.mine ? ' mine' : '')+'"><div class="msg-b">';
+            if(m.groupId && !x.mine) h+='<div class="msg-b-tag">Group message'+(m.groupAll ? ' to everyone' : '')+'</div>';
+            if(m.replyToText) h+='<div class="msg-b-quote">'+_msgTextHtml(m.replyToText)+'</div>';
+            h+='<div class="msg-b-text">'+_msgTextHtml(m.text)+'</div>';
+            h+='<div class="msg-b-meta">'+escapeHtml(_msgTime(m.sentAt))+(x.mine ? (m.read===true ? ' &middot; Read' : ' &middot; Sent') : '')+'</div>';
+            h+='</div></div>';
+        });
+        return h;
+    }
+    function _msgComposerHtml(group){
+        return '<div id="msg-reply-note" class="msg-reply-note" style="display:none;"></div>'
+            +'<div class="msg-compose"><textarea id="msg-text" maxlength="'+MSG_MAX_LEN+'" rows="2" placeholder="'+(group ? 'Message to the people you ticked\u2026' : 'Write a message\u2026')+'" aria-label="Message" onkeydown="_msgKey(event,'+(group ? 'true' : 'false')+')"></textarea>'
+            +'<button class="btn btn-primary msg-send" id="msg-send" onclick="'+(group ? '_msgSendGroup()' : '_msgSendThread()')+'">Send</button></div>';
+    }
+    function _msgUpdateReplyNote(){
+        var el=document.getElementById('msg-reply-note'); if(!el || _msgView.v!=='thread') return;
+        var t=_msgReplyTarget(_msgView.who);
+        if(t){ el.innerHTML='Replying to a group message. Your reply goes to <strong>'+escapeHtml(_msgName(_msgView.who))+'</strong> only.'; el.style.display='block'; }
+        else { el.innerHTML=''; el.style.display='none'; }
+    }
+    function _msgKey(e, group){ if(e.key==='Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); if(group) _msgSendGroup(); else _msgSendThread(); } }
+    // Mark everything from this person as read (only while the panel is actually on screen).
+    function _msgMarkRead(who){
+        if(!db || document.hidden || !_msgPanelOpen()) return;
+        var upd={}, n=0, ts=_msgTs();
+        Object.keys(_msgIn).forEach(function(k){ var m=_msgIn[k]; if(m.from===who && m.read!==true){ upd['messages/'+k+'/read']=true; upd['messages/'+k+'/readAt']=ts; upd['messageLog/'+k+'/readAt']=ts; n++; } });
+        if(n) db.ref().update(upd).catch(function(){});
+    }
+    function _msgRecord(to, text, extra){
+        var me=_msgMe(), r={from:me, fromName:(currentName||me), to:to, toName:_msgName(to), text:text, sentAt:_msgTs(), read:false};
+        if(extra) Object.keys(extra).forEach(function(x){ if(extra[x]!=null) r[x]=extra[x]; });
+        return r;
+    }
+    function _msgSendThread(){
+        if(!requireWrite()) return; if(!checkFirebase()) return;
+        var who=_msgView.who, ta=document.getElementById('msg-text'), text=(ta ? ta.value : '').trim();
+        if(!who) return;
+        if(!text){ showToast('Write a message first', 'error'); return; }
+        if(text.length > MSG_MAX_LEN){ showToast('Message is too long (max '+MSG_MAX_LEN+' characters)', 'error'); return; }
+        var u=_msgUsers[who]; if(u && u.removed){ showToast('This user has been removed', 'error'); return; }
+        var t=_msgReplyTarget(who), extra=t ? {replyTo:t.k, replyToText:String(t.m.text||'').slice(0,120)} : null;
+        var k=db.ref('messages').push().key, rec=_msgRecord(who, text, extra), upd={};
+        upd['messages/'+k]=rec; upd['messageLog/'+k]=rec; // one write: the admin copy can never be missed
+        var p=db.ref().update(upd);
+        if(ta){ ta.value=''; try{ ta.focus(); }catch(_e){} }
+        logAudit('sendMessage', 'message', k, {to:who, reply:!!t});
+        p.catch(function(e){ showToast('Message not sent: '+((e && e.message) || e), 'error'); if(ta && !ta.value) ta.value=text; });
+    }
+    function _msgOpenPick(){ if(!requireWrite()) return; _msgLoadUsers(false).then(function(){ _msgView={v:'pick'}; _msgRender(true); }); }
+    function _msgFilterHtml(listId){ return '<input class="msg-filter" placeholder="Filter by name or login\u2026" data-list="'+listId+'" oninput="filterShareUsers(this)" aria-label="Filter people">'; }
+    function _msgPickHtml(){
+        var rows=_msgRecipients(), h='';
+        if(!rows.length) return '<div class="msg-empty">No other users found.</div>';
+        h+='<div class="msg-hint">Tap a person to message them.</div>';
+        if(rows.length > 1) h+=_msgFilterHtml('msg-pick-list');
+        h+='<div id="msg-pick-list">';
+        rows.forEach(function(l){
+            var u=_msgUsers[l];
+            h+='<div class="share-user-row msg-person-row" role="button" tabindex="0" data-search="'+escapeHtml((u.name+' '+l).toLowerCase())+'" onclick="openMessageThread(\x27'+escapeAttrArg(l)+'\x27)">'
+                +'<div class="msg-person-main"><div class="msg-person-name">'+escapeHtml(u.name)+(u.role==='admin' ? ' <span class="msg-tag">admin</span>' : '')+'</div><div class="msg-person-login">'+escapeHtml(l)+'</div></div>'
+                +'<span class="msg-chev" aria-hidden="true">&#8250;</span></div>';
+        });
+        return h+'</div>';
+    }
+    function _msgOpenGroupNew(){ if(!requireAdmin()) return; _msgLoadUsers(false).then(function(){ _msgView={v:'groupnew'}; _msgRender(true); }); }
+    function _msgGroupNewHtml(){
+        var rows=_msgRecipients(), h='';
+        if(!rows.length) return '<div class="msg-empty">No other users found.</div>';
+        h+='<div class="msg-hint">Tick who gets it, or tick <strong>Everyone</strong>. Each person gets their own copy, and their replies come back to you only.</div>';
+        h+='<label class="msg-all-row"><input type="checkbox" id="msg-all" onchange="_msgToggleAll(this)"><span><strong>Everyone</strong> ('+rows.length+' people)</span></label>';
+        if(rows.length > 1) h+=_msgFilterHtml('msg-user-list');
+        h+='<div id="msg-user-list">';
+        rows.forEach(function(l){
+            var u=_msgUsers[l];
+            h+='<label class="share-user-row msg-person-row" data-search="'+escapeHtml((u.name+' '+l).toLowerCase())+'">'
+                +'<input type="checkbox" class="msg-person" value="'+escapeHtml(l)+'" onchange="_msgGroupCount()">'
+                +'<div class="msg-person-main"><div class="msg-person-name">'+escapeHtml(u.name)+(u.role==='admin' ? ' <span class="msg-tag">admin</span>' : '')+'</div><div class="msg-person-login">'+escapeHtml(l)+'</div></div></label>';
+        });
+        return h+'</div>';
+    }
+    function _msgCheckedPeople(){ var out=[]; document.querySelectorAll('#msg-user-list .msg-person').forEach(function(c){ if(c.checked) out.push(c.value); }); return out; }
+    function _msgToggleAll(cb){ document.querySelectorAll('#msg-user-list .msg-person').forEach(function(c){ c.checked=cb.checked; }); _msgGroupCount(); }
+    function _msgGroupCount(){
+        var all=document.querySelectorAll('#msg-user-list .msg-person').length, n=_msgCheckedPeople().length;
+        var a=document.getElementById('msg-all'); if(a){ a.checked=(all>0 && n===all); a.indeterminate=(n>0 && n<all); }
+        var b=document.getElementById('msg-send'); if(b){ b.disabled=(n===0); b.textContent=n ? ('Send to '+n) : 'Send'; }
+    }
+    function _msgSendGroup(){
+        if(!requireAdmin()) return; if(!checkFirebase()) return;
+        var people=_msgCheckedPeople(), ta=document.getElementById('msg-text'), text=(ta ? ta.value : '').trim();
+        if(!people.length){ showToast('Tick at least one person', 'error'); return; }
+        if(!text){ showToast('Write a message first', 'error'); return; }
+        if(text.length > MSG_MAX_LEN){ showToast('Message is too long (max '+MSG_MAX_LEN+' characters)', 'error'); return; }
+        var total=document.querySelectorAll('#msg-user-list .msg-person').length, n=people.length, upd={};
+        // One person ticked = an ordinary 1:1 message, so it shows in your conversation with them.
+        var gid=(n > 1) ? db.ref('messages').push().key : null, extra=gid ? {groupId:gid, groupSize:n, groupAll:(n===total)} : null;
+        people.forEach(function(l){ var k=db.ref('messages').push().key, rec=_msgRecord(l, text, extra); upd['messages/'+k]=rec; upd['messageLog/'+k]=rec; });
+        var p=db.ref().update(upd); // one write: everyone gets it, or nobody does
+        logAudit('sendMessage', 'message', gid || people[0], gid ? {group:true, count:n, everyone:(n===total)} : {to:people[0]});
+        showToast('Message sent to '+n+' '+(n===1 ? 'person' : 'people'));
+        p.catch(function(e){ showToast('Message not sent: '+((e && e.message) || e), 'error'); });
+        _msgView=gid ? {v:'group', gid:gid} : {v:'thread', who:people[0]};
+        _msgRender(true);
+    }
+    function _msgOpenGroup(gid){ _msgView={v:'group', gid:gid}; _msgRender(true); }
+    // Admin's view of a group message they sent: the text plus who has / has not read it yet.
+    function _msgGroupHtml(gid){
+        var recs=[];
+        Object.keys(_msgOut).forEach(function(k){ var m=_msgOut[k]; if(m.groupId===gid && !_msgExpired(m)) recs.push(m); });
+        if(!recs.length) return '<div class="msg-empty">Everyone has read this message and it was cleared at the 4am sweep. The Message Log (menu, Tools) keeps the copy.</div>';
+        recs.sort(function(a,b){ return String(_msgName(a.to,a.toName)).localeCompare(String(_msgName(b.to,b.toName))); });
+        var m=recs[0], size=m.groupSize||recs.length, unread=recs.filter(function(x){ return x.read!==true; }).length;
+        var h='<div class="msg-b-wrap mine"><div class="msg-b"><div class="msg-b-tag">To '+(m.groupAll ? 'everyone' : size+' people')+'</div><div class="msg-b-text">'+_msgTextHtml(m.text)+'</div><div class="msg-b-meta">'+escapeHtml(_msgTime(m.sentAt))+'</div></div></div>';
+        h+='<div class="msg-group-stat">Read by <strong>'+Math.max(0,size-unread)+'</strong> of '+size+'</div>';
+        recs.forEach(function(x){
+            h+='<div class="msg-read-row"><div class="msg-read-name">'+escapeHtml(_msgName(x.to, x.toName))+'</div><div class="msg-read-state'+(x.read===true ? ' yes' : '')+'">'+(x.read===true ? ('Read '+escapeHtml(_msgTime(x.readAt))) : 'Not read yet')+'</div></div>';
+        });
+        if(size > recs.length) h+='<div class="msg-note">'+(size-recs.length)+' more read it earlier (cleared at the 4am sweep).</div>';
+        h+='<div class="msg-note">Replies come to you as normal one-to-one messages.</div>';
+        return h;
+    }
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden && _msgPanelOpen() && _msgView.v==='thread') _msgMarkRead(_msgView.who); });
+    // ---- Message Log (admins): every message, kept 12 months ----
+    async function pruneMessageLog(){
+        if(!db || !isAdmin()) return 0;
+        try{
+            var cutoff=Date.now()-365*24*60*60*1000;
+            var snap=await db.ref('messageLog').orderByChild('sentAt').endAt(cutoff).once('value');
+            var upd={}, n=0; snap.forEach(function(ch){ upd['messageLog/'+ch.key]=null; n++; });
+            if(n > 0) await db.ref().update(upd);
+            return n;
+        }catch(_e){ return 0; }
+    }
+    async function openMessageLog(){
+        if(!requireAdmin()) return;
+        if(!checkFirebase()) return;
+        var bm=document.getElementById('burger-menu'); var bb=document.getElementById('burger-backdrop');
+        if(bm) bm.style.display='none'; if(bb) bb.style.display='none';
+        if(_msgPanelOpen()) _msgClosePanel();
+        showLoading();
+        try{
+            pruneMessageLog();
+            var snap=await db.ref('messageLog').orderByChild('sentAt').limitToLast(2000).once('value');
+            var rows=[], groups={}, cut=Date.now()-365*24*60*60*1000;
+            snap.forEach(function(ch){
+                var v=ch.val()||{}; if(!v.from) return;
+                if(typeof v.sentAt==='number' && v.sentAt < cut) return; // past 12 months: being pruned
+                if(v.groupId){
+                    var g=groups[v.groupId];
+                    if(!g){ g=groups[v.groupId]={from:v.from, fromName:v.fromName, text:v.text, sentAt:v.sentAt, groupId:v.groupId, groupAll:v.groupAll, size:(v.groupSize||0), to:[], toLogins:[], read:0}; rows.push(g); }
+                    g.to.push(v.toName||v.to); g.toLogins.push(v.to||''); if(v.readAt) g.read++;
+                } else {
+                    rows.push({from:v.from, fromName:v.fromName, to:[v.toName||v.to], toLogin:v.to, text:v.text, sentAt:v.sentAt, readAt:v.readAt, replyToText:v.replyToText});
+                }
+            });
+            rows.reverse();
+            window._msgLogRows=rows;
+            var html='<div class="card"><h2>Message Log</h2>';
+            html+='<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">A copy of every message sent in the app, including ones already cleared from people\u2019s inboxes. Showing the most recent '+rows.length+' (a group message counts once). Messages older than 12 months are removed automatically.</p>';
+            html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
+            html+='<input id="msglog-f-user" oninput="filterMessageLog()" placeholder="Filter by person" style="flex:1;min-width:120px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">';
+            html+='<input id="msglog-f-text" oninput="filterMessageLog()" placeholder="Filter by text" style="flex:1;min-width:120px;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">';
+            html+='</div>';
+            if(!rows.length){ html+='<div class="empty-state">No messages yet.</div>'; }
+            else {
+                html+='<div style="overflow-x:auto;"><table id="msglog-table"><thead><tr><th>Sent</th><th>From</th><th>To</th><th>Message</th><th>Read</th></tr></thead><tbody>';
+                html+=rows.map(_msgLogRowHtml).join('');
+                html+='</tbody></table></div>';
+            }
+            html+='</div>';
+            document.getElementById('detail-content').innerHTML=html;
+            document.getElementById('detail-title').textContent='Message Log';
+            document.getElementById('detail-overlay').classList.add('active');
+        }catch(e){ showToast('Error: '+e.message, 'error'); }
+        hideLoading();
+    }
+    function _msgLogRowHtml(r){
+        var size=r.size||r.to.length;
+        var to=r.groupId ? ((r.groupAll ? 'Everyone' : 'Group')+' ('+size+')') : (r.to[0]||'');
+        var read=r.groupId ? (r.read+' of '+size) : (r.readAt ? _auditWhen(r.readAt) : 'Not yet');
+        return '<tr><td style="white-space:nowrap;font-size:12px;">'+escapeHtml(_auditWhen(r.sentAt))+'</td>'
+            +'<td style="font-size:12px;font-weight:600;">'+escapeHtml(r.fromName||r.from)+'</td>'
+            +'<td style="font-size:12px;"'+(r.groupId ? ' title="'+escapeHtml(r.to.join(', '))+'"' : '')+'>'+escapeHtml(to)+'</td>'
+            +'<td style="font-size:12px;color:#1f2937;min-width:180px;overflow-wrap:anywhere;word-break:break-word;">'+(r.replyToText ? '<div style="color:#6b7280;font-size:11px;border-left:3px solid #d1d5db;padding-left:6px;margin-bottom:2px;">Re: '+escapeHtml(r.replyToText)+'</div>' : '')+_msgTextHtml(r.text)+'</td>'
+            +'<td style="white-space:nowrap;font-size:12px;color:#4b5563;">'+escapeHtml(read)+'</td></tr>';
+    }
+    function filterMessageLog(){
+        var uf=document.getElementById('msglog-f-user'), tf=document.getElementById('msglog-f-text');
+        var u=(uf ? uf.value : '').trim().toLowerCase(), t=(tf ? tf.value : '').trim().toLowerCase();
+        var tb=document.querySelector('#msglog-table tbody'); if(!tb || !window._msgLogRows) return;
+        var rows=window._msgLogRows.filter(function(r){
+            var who=((r.from||'')+' '+(r.fromName||'')+' '+(r.toLogin||'')+' '+(r.toLogins||[]).join(' ')+' '+r.to.join(' ')).toLowerCase();
+            var okU=!u || who.indexOf(u)>=0;
+            var okT=!t || (String(r.text||'')+' '+String(r.replyToText||'')).toLowerCase().indexOf(t)>=0;
+            return okU && okT;
+        });
+        tb.innerHTML=rows.length ? rows.map(_msgLogRowHtml).join('') : '<tr><td colspan="5" style="text-align:center;color:#9ca3af;font-size:13px;padding:12px;">No messages match</td></tr>';
+    }
+
+    // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.29';
-    var WHATS_NEW_REV = '1.29.0'; // bump to re-show the What's New banner without changing the displayed version
+    var APP_VERSION = '1.30';
+    var WHATS_NEW_REV = '1.30.0'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== WHATS_NEW_REV) {

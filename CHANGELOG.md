@@ -7,6 +7,33 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.30 — 2026-10-22
+
+**Status:** Built and verified in the working copy (clean bun build, LF-only, tested on a phone-sized screen with a stand-in database). Includes everything in v1.29, so upload this one file. No migration: messages use two new Firebase nodes, `messages` and `messageLog`; nothing existing is changed.
+
+### Messages between users
+- **New 💬 chat button at the bottom right** of the main screens (also **Messages** in the menu under Tools). A red number shows how many messages you have not read.
+- **Technicians message one person at a time.** Tap **New message**, filter by name or login, tap the person. Any active user can be messaged (removed users are left out).
+- **Admins can also send a group message:** tap **Group message**, tick **Everyone** or the people you want, write it and send. It goes out in one write, so everyone gets it or nobody does. Each person gets their own copy.
+- **Replies to a group message go only to the admin who sent it**, never to the whole group. The reply box says so, and the admin sees the reply in their normal one-to-one conversation with a quote of the group message.
+- **Admins see who has read a group message** ("Read by 9 of 14", plus who has not read it yet). In a one-to-one conversation the sender sees **Sent** or **Read** under each message.
+- **In-app notifications only:** a new message pops up above the chat button while the app is open (tap it to read, or ✕ to dismiss; phones that support it give a short buzz). When you log in with unread messages, the pop-up tells you how many. Nothing is sent by email or push.
+- **Opening a conversation marks it as read.**
+- **4am sweep:** read messages are deleted at the next daily 4am cutoff, the same rule as completed jobs. Unread messages carry over until they are read.
+- **Message Log (admins, menu → Tools):** a copy of every message, written in the same save as the message itself, so it can never be missed. It is kept after the 4am sweep and after a user is removed. Filter by person or by text; a group message shows as one row with its read count. Entries older than 12 months are removed automatically (same retention as the Activity Log). The inbox and Help page tell users that admins keep this copy.
+- Sending is written to the audit log (`sendMessage`); the message text itself is only in the Message Log.
+- Messages are up to 1,000 characters. Ctrl+Enter sends on a computer.
+- On a phone the messages panel fills the screen; on a computer it opens as a window in the bottom-right corner. Browser Back goes from a conversation to the inbox, then closes the panel. Escape closes it.
+
+### Small fixes
+- Info messages (e.g. "You have been away for a while. Please re-enter your PIN.") were white text on no background, so they were unreadable. They now have a blue background.
+
+### For the Firebase rules (when they are published)
+- Allow read/write on `messages` (sender and recipient) and `messageLog` (write for signed-in users, read for admins only).
+- Add `".indexOn": ["to", "from"]` on `messages` and `".indexOn": ["sentAt"]` on `messageLog`. Without the index the app still works but downloads the whole `messages` node and filters it on the phone (small, because read messages are cleared daily).
+- When locking down, also check the sender on write: `newData.child('from').val()` must equal the signed-in user's login, so nobody can send as someone else.
+
+
 ## v1.29 — 2026-10-22
 
 **Status:** Built and verified in the working copy (clean bun build, LF-only, tested on a phone-sized screen against a read-only copy of the app). No Firebase migration: notes keep the same `jobNotes` / `findings` data, edits just add `editedAt`.
