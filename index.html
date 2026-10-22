@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- RME Shift Personal Tracker v1.28 - Updated 2026-10-20 -->
+<!-- RME Shift Personal Tracker v1.29 - Updated 2026-10-22 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -210,6 +210,14 @@
         .note-entry .note-text { font-size: 13px; color: #1a1a2e; }
         .note-entry .note-actions { margin-top: 6px; }
         .note-entry .note-actions button { font-size: 11px; padding: 2px 8px; margin-right: 4px; }
+        /* v1.29: edit / delete buttons at the end of your own job notes + PM findings */
+        .jn-act{ display:flex; gap:4px; flex:0 0 auto; margin-left:auto; }
+        .work-card-comments .jn-act{ display:none; }
+        .work-card.jn-open .work-card-comments .jn-act{ display:flex; }
+        .jn-btn{ width:32px; height:30px; padding:0; border:1px solid #d1d5db; border-radius:6px; background:#fff; color:#374151; font-size:14px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .jn-btn:active{ background:#e5e7eb; }
+        .jn-btn.jn-del{ color:#dc2626; border-color:#fecaca; }
+        @media (max-width:640px){ .jn-btn{ width:44px; height:44px; font-size:17px; } }
         .note-input-area { display: flex; gap: 8px; margin-top: 8px; }
         .note-input-area input { flex: 1; }
         .work-job-actions { display: flex; gap: 6px; margin-top: 10px; }
@@ -562,8 +570,8 @@
             </div>
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
-                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.28)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Share several jobs at once</strong>: tap <strong>Share</strong> at the top of your Job list, tick the jobs, then tick the people. Your colleague gets one invite with <strong>Accept all</strong>.<br>&bull; <strong>See who completed a shared job</strong>: a shared job now shows who marked it complete and when.<br>&bull; <strong>Also new today (v1.27)</strong>: phone-style keypad for thermal readings, no more zoom when you tap quickly, recording on a shared route no longer duplicates the job, and a faster job list on slower phones.<span class="admin-only"> Admins: <strong>Site Overview</strong> is in this menu under Tools.</span></div>
+                    <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.29)</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Edit or delete your job notes</strong>: open a job on your Job list and tap &#9998; (edit) or &#128465; (delete) at the end of your note. Works on PM batch findings too.<br>&bull; <strong>Also new (v1.28)</strong>: share several jobs at once (tap <strong>Share</strong> at the top of your Job list), and a shared job shows who completed it.<span class="admin-only"> Admins: <strong>Site Overview</strong> is in this menu under Tools.</span></div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -3847,7 +3855,7 @@
             h+='<div style="flex:1;min-width:140px;">';
             h+='<a class="search-link" href="#" onclick="event.stopPropagation();openDetail(\x27equipment\x27,\x27'+eqK+'\x27);return false;"'+(idone?' style="text-decoration:line-through;color:#9ca3af;"':'')+'>'+disp+'</a>';
             if(it.doneBy)h+='<div style="font-size:11px;color:#9ca3af;margin-top:2px;">Done by '+escapeHtml(it.doneBy)+(it.doneAt?' \u00b7 '+formatWorkTime(it.doneAt):'')+'</div>';
-            if(it.findings){Object.values(it.findings).forEach(function(n){h+='<div style="margin-top:4px;padding:5px 8px;background:#f8fafc;border-radius:4px;font-size:11px;"><strong>'+escapeHtml(n.author)+':</strong> '+escapeHtml(n.text)+'<span style="color:#6b7280;margin-left:6px;">'+formatWorkTime(n.createdAt)+'</span></div>';});}
+            if(it.findings){Object.entries(it.findings).forEach(function(_fe){var fid=_fe[0],n=_fe[1];if(!n)return;h+='<div style="margin-top:4px;padding:5px 8px;background:#f8fafc;border-radius:4px;font-size:11px;display:flex;align-items:center;gap:8px;"><span style="flex:1;min-width:0;overflow-wrap:anywhere;"><strong>'+escapeHtml(n.author)+':</strong> '+escapeHtml(n.text)+'<span style="color:#6b7280;margin-left:6px;">'+formatWorkTime(n.createdAt)+(n.editedAt?' (edited)':'')+'</span></span>'+_jobNoteActions(key,ik,fid,n)+'</div>';});}
             h+='<div style="display:flex;gap:6px;margin-top:6px;"><input type="text" placeholder="Add finding..." style="flex:1;min-width:0;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;" onclick="event.stopPropagation();" onkeyup="if(event.key===\x27Enter\x27)savePmItemNote(\x27'+key+'\x27,\x27'+ik+'\x27,this)"><button class="btn btn-primary btn-sm" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation();savePmItemNote(\x27'+key+'\x27,\x27'+ik+'\x27,this.previousElementSibling)">Add</button></div>';
             h+='</div>';
             h+='<div class="work-scada" data-imgtype="equipment" data-imgkey="'+escapeHtml(eqK)+'" data-canadd="1" style="flex:0 0 auto;"></div>';
@@ -3990,6 +3998,60 @@
             showToast('Finding added!','success');
             loadWorkAssigned();
         }catch(e){showToast('Error: '+(e.message||e),'error');}
+    }
+    // ---- v1.29: edit / delete your own job notes (jobNotes) and PM batch findings (items/{ik}/findings).
+    // itemKey '' = a normal job note. Only the author gets the buttons, and ownership is re-checked
+    // against the live record before every write (same rule as Route/Position page notes).
+    function _jnPath(jobKey,itemKey,noteId){ return 'workAssigned/'+jobKey+(itemKey?'/items/'+itemKey+'/findings/':'/jobNotes/')+noteId; }
+    function _jobNoteActions(jobKey,itemKey,noteId,n){
+        if(!n||!currentUser||!canWrite())return '';
+        if(String(n.author||'').toLowerCase()!==String(currentUser).toLowerCase())return '';
+        var a='\x27'+escapeAttrArg(jobKey)+'\x27,\x27'+escapeAttrArg(itemKey||'')+'\x27,\x27'+escapeAttrArg(noteId)+'\x27';
+        var what=itemKey?'finding':'note';
+        return '<span class="jn-act"><button type="button" class="jn-btn" title="Edit '+what+'" aria-label="Edit '+what+'" onclick="event.stopPropagation();editJobNote('+a+')">&#9998;</button><button type="button" class="jn-btn jn-del" title="Delete '+what+'" aria-label="Delete '+what+'" onclick="event.stopPropagation();deleteJobNote('+a+')">&#128465;</button></span>';
+    }
+    async function _jnLoadOwn(jobKey,itemKey,noteId){
+        var n=(await db.ref(_jnPath(jobKey,itemKey,noteId)).once('value')).val();
+        if(!n){ showToast('That '+(itemKey?'finding':'note')+' no longer exists.','error'); loadWorkAssigned(); return null; }
+        if(String(n.author||'').toLowerCase()!==String(currentUser||'').toLowerCase()){ showToast('Only the person who wrote it can change it.','error'); return null; }
+        return n;
+    }
+    var _JN_COPY_HINT='<p style="font-size:12px;color:#6b7280;margin-top:8px;">If you also saved it to the Route or Position page, that copy is not changed.</p>';
+    async function editJobNote(jobKey,itemKey,noteId){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        try{
+            var n=await _jnLoadOwn(jobKey,itemKey,noteId); if(!n)return;
+            var what=itemKey?'finding':'note';
+            var body='<div class="form-group"><textarea id="edit-jobnote-input" rows="3" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;"></textarea></div>'+(itemKey?'':_JN_COPY_HINT);
+            var p=showCustomModal('Edit '+what, body, [{label:'Cancel',class:'btn-secondary',value:'cancel'},{label:'Save',class:'btn-primary',value:'save'}]);
+            var el=document.getElementById('edit-jobnote-input'); if(el) el.value=n.text||'';
+            var r=await p; if(r!=='save')return;
+            var el2=document.getElementById('edit-jobnote-input');
+            var t=(el2?el2.value:'').trim();
+            if(!t){ showToast('A '+what+' cannot be empty. Use the bin button to delete it.','error'); return; }
+            if(t===String(n.text||'').trim())return;
+            if(!(await _jnLoadOwn(jobKey,itemKey,noteId)))return;
+            await db.ref(_jnPath(jobKey,itemKey,noteId)).update({text:t,editedAt:new Date().toISOString()});
+            logAudit('editJobNote','job',jobKey,itemKey?{noteId:noteId,item:itemKey}:{noteId:noteId});
+            showToast(itemKey?'Finding updated!':'Note updated!','success');
+            loadWorkAssigned();
+        }catch(e){ showToast('Error: '+(e.message||e),'error'); }
+    }
+    async function deleteJobNote(jobKey,itemKey,noteId){
+        if(!requireWrite())return;
+        if(!checkFirebase())return;
+        try{
+            var n=await _jnLoadOwn(jobKey,itemKey,noteId); if(!n)return;
+            var what=itemKey?'finding':'note';
+            var body='<p style="font-size:14px;color:#374151;margin-bottom:8px;">This removes it for everyone on this job.</p><p style="font-size:13px;color:#6b7280;font-style:italic;overflow-wrap:anywhere;">&ldquo;'+escapeHtml(n.text||'')+'&rdquo;</p>'+(itemKey?'':_JN_COPY_HINT);
+            var r=await showCustomModal('Delete '+what+'?', body, [{label:'Cancel',class:'btn-secondary',value:'cancel'},{label:'Delete',class:'btn-danger',value:'delete'}]);
+            if(r!=='delete')return;
+            await db.ref(_jnPath(jobKey,itemKey,noteId)).remove();
+            logAudit('deleteJobNote','job',jobKey,itemKey?{noteId:noteId,item:itemKey}:{noteId:noteId});
+            showToast(itemKey?'Finding deleted':'Note deleted','success');
+            loadWorkAssigned();
+        }catch(e){ showToast('Error: '+(e.message||e),'error'); }
     }
     // ---- PM batch wizard (standalone, launched from the Job list header) ----
     var _pmb=[];var _pmbTarget=null;var _pmbExisting={};
@@ -4488,8 +4550,8 @@
                 html+='</div>';
                 if(item.jobNotes){
                     html+='<div class="work-card-comments" style="margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">';
-                    Object.values(item.jobNotes).forEach(function(n){
-                        html+='<div style="margin-top:6px;padding:6px 8px;background:#f8fafc;border-radius:4px;font-size:11px;"><strong>'+escapeHtml(n.author)+':</strong> '+escapeHtml(n.text)+'<span style="color:#6b7280;margin-left:8px;">'+formatWorkTime(n.createdAt)+'</span></div>';
+                    Object.entries(item.jobNotes).forEach(function(_ne){ var nid=_ne[0], n=_ne[1]; if(!n)return;
+                        html+='<div style="margin-top:6px;padding:6px 8px;background:#f8fafc;border-radius:4px;font-size:11px;display:flex;align-items:center;gap:8px;"><span style="flex:1;min-width:0;overflow-wrap:anywhere;"><strong>'+escapeHtml(n.author)+':</strong> '+escapeHtml(n.text)+'<span style="color:#6b7280;margin-left:8px;">'+formatWorkTime(n.createdAt)+(n.editedAt?' (edited)':'')+'</span></span>'+_jobNoteActions(key,'',nid,n)+'</div>';
                     });
                     html+='</div>';
                 }
@@ -4517,6 +4579,7 @@
                 if(!card){delete _expandedJobs[k];return;}
                 var a=card.querySelector('.work-card-actions'); if(a)a.style.display='flex';
                 var nt=card.querySelector('.work-card-notes'); if(nt)nt.style.display='block';
+                card.classList.add('jn-open');
             });
             } catch(e) { console.error('Work list error:', e); }
         }, function(err){ console.warn('Work listener error:', err); showToast('Lost connection to Job list — refresh to retry.', 'error'); });
@@ -4531,6 +4594,7 @@
         var willShow = notes ? notes.style.display === 'none' : (actions && actions.style.display === 'none');
         if (actions) actions.style.display = willShow ? 'flex' : 'none';
         if (notes) notes.style.display = willShow ? 'block' : 'none';
+        el.classList.toggle('jn-open', !!willShow); // v1.29: shows edit/delete on your notes
         var k = el.dataset.key;
         if (k) { if (willShow) _expandedJobs[k] = true; else delete _expandedJobs[k]; }
     }
@@ -8731,8 +8795,8 @@ function liveSearchSuggest(query,scope){
     // ============================================================
     // WHAT'S NEW BADGE
     // ============================================================
-    var APP_VERSION = '1.28';
-    var WHATS_NEW_REV = '1.28.0'; // bump to re-show the What's New banner without changing the displayed version
+    var APP_VERSION = '1.29';
+    var WHATS_NEW_REV = '1.29.0'; // bump to re-show the What's New banner without changing the displayed version
     function checkWhatsNew() {
         var seen = localStorage.getItem('seenVersion');
         if (seen !== WHATS_NEW_REV) {

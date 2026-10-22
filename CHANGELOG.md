@@ -7,6 +7,20 @@
 **Note:** From v1.04 onward, changes are made via Aki, working from a copy in `Reliability App - AKI/`. The Quick-built file is kept untouched as a fallback. Every app change is logged here in parallel — version bumps reflect feature changes; bug fixes are noted under the version they were fixed in without a version bump unless bundled with a feature change.
 
 
+## v1.29 — 2026-10-22
+
+**Status:** Built and verified in the working copy (clean bun build, LF-only, tested on a phone-sized screen against a read-only copy of the app). No Firebase migration: notes keep the same `jobNotes` / `findings` data, edits just add `editedAt`.
+
+### Edit or delete your job notes
+- **Two buttons at the end of each of your own notes on a Job list card:** ✎ edit and 🗑 delete. They show when you open the card (the same tap that shows the Add a note box), so the closed Job list stays tidy. On phones they are full finger-size (44px).
+- **PM batch findings get the same buttons**, next to each finding you wrote.
+- **Edit** opens the note in a box with Save / Cancel. An edited note shows "(edited)" after its time. An empty edit is refused (use delete instead).
+- **Delete** asks first and shows the note text. It removes the note for everyone on the job (shared jobs included).
+- **Only the person who wrote a note can change it**, the same rule as notes on Route and Position pages. The app re-checks who wrote it against the live record before saving, so a stale screen cannot change someone else's note.
+- If you also saved the note to the Route or Position page ("Save to page?"), that copy is separate and is not changed. Edit or delete it on that page.
+- Both actions are written to the audit log (`editJobNote`, `deleteJobNote`).
+
+
 ## v1.28 — 2026-10-07
 
 **Status:** Built and verified in the working copy (clean bun build, LF-only, new functions top-level, logic tested against copies of real job data, independent re-verify). No Firebase migration: shares use the same `sharedWith` data as v1.26, so existing shares and invites keep working.
