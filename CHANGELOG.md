@@ -37,6 +37,12 @@
 - Announcements are plain text (anything typed is shown as text, never as formatting). Records older than 12 months are removed automatically when an admin signs in.
 - Also added: a **What's New** bullet, an **Announcements** card in Help & Reference, an admin Help line and an FAQ entry. The What's New banner itself is not re-shown to people who already dismissed it (the revision stays 1.30.0); the pop-up is the notice.
 
+### Linked parts: orange until enough bookings back them - added 2026-10-26, still v1.30
+- **Parts linked automatically from APM bookings (the weekly database update) now show in orange until the same part has been booked against the same position on 3 different work orders.** At 3 or more it turns normal black. Orange means "treat with caution": one wrong booking could have caused the link. The app still lists the part either way.
+- **Where it shows:** the parts table on a position's page, Linked Parts on a position (page and Edit screen), and Linked Positions on a part (page and Edit screen). A short key explains the colour under any list that has an orange row. On a computer, hovering an orange row shows how many work orders back it; on the Edit screens the count is written under the row.
+- **Links a technician adds by hand are never orange.**
+- **No migration and no new version number.** The weekly job writes two small fields on each link (`unconfirmed`, `woCount`) and flips them itself when the third work order arrives; the threshold of 3 is a setting in that job (`confirm_wos`), not in the app. Until this build is uploaded the old app simply ignores the two fields.
+
 ### Small fixes
 - Info messages (e.g. "You have been away for a while. Please re-enter your PIN.") were white text on no background, so they were unreadable. They now have a blue background.
 

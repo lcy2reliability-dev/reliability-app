@@ -276,6 +276,10 @@
         .msg-foot{ flex:0 0 auto; border-top:1px solid #e5e7eb; padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); background:#fff; }
         .msg-foot:empty{ display:none; }
         @media (max-width:600px){ .msg-panel{ top:0; left:0; right:0; bottom:0; width:auto; height:auto; max-width:none; max-height:none; border-radius:0; } }
+        /* v1.30: links made from only a few APM work orders are flagged unconfirmed (orange) until enough bookings back them up */
+        .unconf-row, .unconf-row * { color:#c2410c !important; }
+        .unconf-legend { font-size:12px; color:#c2410c; margin:6px 0 0; line-height:1.4; }
+        .unconf-note { font-size:11px; margin-top:2px; }
         /* Announcements (v1.30): admin broadcast. Full-screen pop-up shown once per person; admin screen in the detail overlay */
         .ann-overlay{ display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:100000; background:rgba(15,23,42,0.74); align-items:center; justify-content:center; padding:16px; box-sizing:border-box; }
         .ann-card{ background:#fff; border-radius:14px; width:100%; max-width:480px; max-height:100%; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.4); }
@@ -3869,6 +3873,14 @@
     }
 
     // ============================================================
+    // UNCONFIRMED LINKS (v1.30): the weekly APM job sets unconfirmed:true + woCount on links backed by few work orders
+    // ============================================================
+    function _unconf(cn){ return !!(cn && cn.unconfirmed === true); }
+    function _unconfTip(cn){ var n = (cn && typeof cn.woCount === 'number') ? cn.woCount : null; return 'Not yet confirmed: booked on ' + (n === null ? 'only a few' : n) + ' work order' + (n === 1 ? '' : 's') + ' in APM'; }
+    function _unconfAttr(cn){ return _unconf(cn) ? ' class="unconf-row" title="' + escapeHtml(_unconfTip(cn)) + '"' : ''; }
+    function _unconfLegend(){ return '<p class="unconf-legend">Orange = not yet confirmed: only a few APM work orders back this link. It turns black once enough bookings do.</p>'; }
+
+    // ============================================================
     // WORK ASSIGNED
     // ============================================================
     function cleanupOldWork() {
@@ -4985,16 +4997,19 @@
             html+='<h3 style="font-size:14px;margin:0 0 6px;border-bottom:2px solid #e2e8f0;padding-bottom:4px;"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+bkey+'\x27);return false;">'+escapeHtml(belt)+'</a>'+(brec.description?' <span style="font-weight:400;color:#6b7280;font-size:12px;">'+escapeHtml(brec.description)+'</span>':'')+'</h3>';
             if(bparts.length){
                 html+='<table style="width:100%;font-size:12px;border-collapse:collapse;"><thead><tr style="background:#f8fafc;"><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">APN</th><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Bin</th><th style="text-align:center;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Qty</th><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Description</th><th style="text-align:left;padding:4px 6px;border-bottom:1px solid #e2e8f0;">Observations</th></tr></thead><tbody>';
+                var _ucAny1=false;
                 bparts.forEach(function(e){
                     var k=e[0],p=e[1];
                     var cn=p.conveyorNotes&&p.conveyorNotes[sanitizeKey(belt)];
-                    html+='<tr><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+k+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td>';
+                    if(_unconf(cn))_ucAny1=true;
+                    html+='<tr'+_unconfAttr(cn)+'><td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+k+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td>';
                     html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;font-weight:600;">'+escapeHtml(p.binLocation||p.location||'')+'</td>';
                     html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;text-align:center;">'+escapeHtml((cn&&cn.quantity)?cn.quantity:'\u2014')+'</td>';
                     html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;color:#4b5563;">'+escapeHtml(p.partDescription||p.notes||'')+'</td>';
                     html+='<td style="padding:4px 6px;border-bottom:1px solid #f1f5f9;color:#4b5563;font-style:italic;">'+escapeHtml((cn&&cn.observations)?cn.observations:'\u2014')+'</td></tr>';
                 });
                 html+='</tbody></table>';
+                if(_ucAny1)html+=_unconfLegend();
             }else{
                 html+='<p style="font-size:12px;color:#9ca3af;margin:0;font-style:italic;">No parts linked yet \u2014 open '+escapeHtml(belt)+' to add its parts.</p>';
             }
@@ -5048,9 +5063,12 @@
                 html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Linked Parts <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkPartPopup(\x27'+escapeAttrArg(data.conveyorNumber)+'\x27)">+ Link Part</button></h2>';
                 if(eqParts.length>0){
                     html+='<table id="lp-table"><thead><tr><th onclick="sortTable(\x27lp-table\x27,0)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">APN <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27lp-table\x27,1)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Class <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th data-sort="bin" onclick="sortTable(\x27lp-table\x27,2)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Bin <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27lp-table\x27,3)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Qty <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27lp-table\x27,4)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Description <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27lp-table\x27,5)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Criticality <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27lp-table\x27,6)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Observations <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th></tr><tr class="filter-row"><td><input class="col-filter" data-col="0" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by APN" placeholder="APN"></td><td><input class="col-filter" data-col="1" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Class" placeholder="Class"></td><td><input class="col-filter" data-col="2" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Bin" placeholder="Bin"></td><td><input class="col-filter" data-col="3" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Qty" placeholder="Qty"></td><td><input class="col-filter" data-col="4" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Description" placeholder="Description"></td><td><input class="col-filter" data-col="5" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Criticality" placeholder="Criticality"></td><td><input class="col-filter" data-col="6" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Observations" placeholder="Observations"></td></tr></thead><tbody>';
+                    var _ucAny2=false;
                     eqParts.forEach(([k,p])=>{
                         var cc=critFg(p.criticality);
-                        html+='<tr><td data-label="APN"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+k+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td>';
+                        var _cn0=p.conveyorNotes&&p.conveyorNotes[sanitizeKey(data.conveyorNumber)];
+                        if(_unconf(_cn0))_ucAny2=true;
+                        html+='<tr'+_unconfAttr(_cn0)+'><td data-label="APN"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+k+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td>';
                         html+='<td data-label="Class"><span style="font-size:11px;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:8px;">'+escapeHtml(p.partClass||p.partType||'')+'</span></td>';
                         html+='<td data-label="Bin" style="font-weight:600;">'+escapeHtml(p.binLocation||p.location||'')+'</td>';
                         var _cn=p.conveyorNotes&&p.conveyorNotes[sanitizeKey(data.conveyorNumber)];
@@ -5061,6 +5079,7 @@
                         html+='</tr>';
                     });
                     html+='</tbody></table>';
+                    if(_ucAny2)html+=_unconfLegend();
                 } else {
                     html+='<p class="empty-state">No parts linked</p>';
                 }
@@ -5136,8 +5155,9 @@
                 if(conveyors.length>0){
                     if(conveyors.length>1){ html+='<input class="col-filter" style="width:100%;margin-bottom:8px;padding:6px 8px;font-size:12px;" placeholder="Filter positions..." oninput="filterPosChips(this)">'; }
                     html+='<div id="lp-chip-box" style="display:flex;flex-wrap:wrap;gap:8px;">';
-                    conveyors.forEach(function(c){var _pr=_eqc[sanitizeKey(c)];html+='<span class="pos-chip" style="display:inline-flex;align-items:center;padding:4px 12px;background:#f1f5f9;border-radius:6px;font-size:13px;"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(c)+'\x27);return false;">'+posDisp(_pr,c)+'</a></span>';});
+                    var _ucAny4=false;conveyors.forEach(function(c){var _pr=_eqc[sanitizeKey(c)];var _ccn=data.conveyorNotes&&data.conveyorNotes[sanitizeKey(c)];if(_unconf(_ccn))_ucAny4=true;html+='<span class="pos-chip'+(_unconf(_ccn)?' unconf-row':'')+'"'+(_unconf(_ccn)?' title="'+escapeHtml(_unconfTip(_ccn))+'"':'')+' style="display:inline-flex;align-items:center;padding:4px 12px;background:#f1f5f9;border-radius:6px;font-size:13px;"><a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+sanitizeKey(c)+'\x27);return false;">'+posDisp(_pr,c)+'</a></span>';});
                     html+='</div>';
+                    if(_ucAny4)html+=_unconfLegend();
                 } else {
                     html+='<p class="empty-state">Not linked to any position</p>';
                 }
@@ -5472,9 +5492,10 @@
                 var _cq=(_cn&&_cn.quantity!=null&&_cn.quantity!=='')?_cn.quantity:null;
                 var _co=(_cn&&_cn.observations)?_cn.observations:null;
                 html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:white;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;gap:8px;">';
-                html += '<div style="flex:1;min-width:0;"><span style="font-size:13px;font-weight:600;">' + escapeHtml(p.apn) + '</span>';
+                html += '<div style="flex:1;min-width:0;"' + (_unconf(_cn) ? ' class="unconf-row"' : '') + '><span style="font-size:13px;font-weight:600;">' + escapeHtml(p.apn) + '</span>';
                 if(p.partType||p.partClass) html += ' <span style="font-size:11px;color:#6b7280;">(' + escapeHtml(p.partType||p.partClass) + ')</span>';
                 html += '<div style="font-size:12px;color:#6b7280;margin-top:2px;">Qty: <strong>' + escapeHtml(_cq!=null?String(_cq):'\u2014') + '</strong>' + (_co ? ' \u00B7 <span style="font-style:italic;">' + escapeHtml(_co) + '</span>' : '') + '</div>';
+                if (_unconf(_cn)) html += '<div class="unconf-note">' + escapeHtml(_unconfTip(_cn)) + '</div>';
                 html += '</div>';
                 html += '<div style="display:flex;gap:6px;white-space:nowrap;">';
                 html += '<button class="btn btn-secondary btn-sm" onclick="editLinkedPartNote(\x27' + escapeAttrArg(k) + '\x27,\x27' + escapeAttrArg(conveyorNumber) + '\x27)">Edit Qty/Obs</button>';
@@ -5532,7 +5553,7 @@
             var _cn7 = _notes[sanitizeKey(c)];
             var _lo7 = (_cn7 && _cn7.linkedBy) ? String(_cn7.linkedBy) : null;
             html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:white;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;">';
-            html += '<span style="font-size:13px;font-weight:600;">' + escapeHtml(c) + '</span>';
+            html += '<span style="font-size:13px;font-weight:600;"' + (_unconf(_cn7) ? ' class="unconf-row" title="' + escapeHtml(_unconfTip(_cn7)) + '"' : '') + '>' + escapeHtml(c) + '</span>';
             if (isAdmin() || (_lo7 && _lo7.toLowerCase() === (auditUser()||'').toLowerCase())) {
                 html += '<button class="btn btn-danger btn-sm" onclick="unlinkPart(\x27' + escapeAttrArg(partKey) + '\x27,\x27' + escapeAttrArg(c) + '\x27)" style="white-space:nowrap;">Unlink</button>';
             } else {
