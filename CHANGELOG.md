@@ -9,7 +9,8 @@
 
 ## v1.30 — 2026-10-22
 
-**Status:** Built and verified in the working copy (clean bun build, LF-only, tested on a phone-sized screen with a stand-in database). Includes everything in v1.29, so upload this one file. No migration: messages use two new Firebase nodes, `messages` and `messageLog`; nothing existing is changed.
+**Status:** Built and verified in the working copy (clean bun build, LF-only, tested on a phone-sized screen with a stand-in database). Includes everything in v1.29, so upload this one file. No migration: messages use two new Firebase nodes, `messages` and `messageLog`, and announcements one more, `announcements`; nothing existing is changed.
+**Update 2026-10-23:** admin **Announcements** added to this same build. The version number stays 1.30 (see the Announcements section below).
 
 ### Messages between users
 - **New 💬 chat button at the bottom right** of the main screens (also **Messages** in the menu under Tools). A red number shows how many messages you have not read.
@@ -25,6 +26,17 @@
 - Messages are up to 1,000 characters. Ctrl+Enter sends on a computer.
 - On a phone the messages panel fills the screen; on a computer it opens as a window in the bottom-right corner. Browser Back goes from a conversation to the inbox, then closes the panel. Escape closes it.
 
+### Announcements (admin broadcast pop-ups) - added 2026-10-23, still v1.30
+- **An admin can send an announcement to everyone.** It pops up full-screen the **first time each person opens the app after it is sent** (or straight away if they already have the app open), and stays until they tap **Got it**. After that it does not come back for them.
+- **Where:** menu → Tools → **Announcements** (admins also get an **Announcement** button in the Messages inbox). Write an optional title and the text (up to 1,000 characters), choose how long it stays live (7, 14, 30 or 90 days; 30 is the default) and tap **Send to everyone**. A confirm box shows exactly what will pop up and how many people will get it.
+- **Admins see who has seen it:** each announcement shows "Seen by 9 of 14" and a "Not seen yet" list of names, updating live. **End now** stops it popping up for anyone who has not seen it yet (people who already saw it are not affected, and it stays in the list as Ended). Past ones show Active, Ended or Expired.
+- **Everyone** can re-read the active announcements under **Announcements** in the menu (Tools). Ended and expired ones are hidden from technicians.
+- **Seen is remembered per person, not per phone:** the tick is saved against the person's login in the database, and also on the device, so a shared phone shows each person their own, and a failed save can never make it pop up again and again.
+- **It never pops up at a bad moment:** not behind the sign-in screen, not in the middle of the tour or a confirm box, and not over a half-typed entry (it waits until the box is empty). Escape does not close it; **Got it** does. If several are waiting they show together, oldest first, with one **Got it**.
+- **The sender does not get their own pop-up.** Sending and ending are written to the audit log (`sendAnnouncement`, `endAnnouncement`); the audit entry has the title and length, not the text.
+- Announcements are plain text (anything typed is shown as text, never as formatting). Records older than 12 months are removed automatically when an admin signs in.
+- Also added: a **What's New** bullet, an **Announcements** card in Help & Reference, an admin Help line and an FAQ entry. The What's New banner itself is not re-shown to people who already dismissed it (the revision stays 1.30.0); the pop-up is the notice.
+
 ### Small fixes
 - Info messages (e.g. "You have been away for a while. Please re-enter your PIN.") were white text on no background, so they were unreadable. They now have a blue background.
 
@@ -32,6 +44,7 @@
 - Allow read/write on `messages` (sender and recipient) and `messageLog` (write for signed-in users, read for admins only).
 - Add `".indexOn": ["to", "from"]` on `messages` and `".indexOn": ["sentAt"]` on `messageLog`. Without the index the app still works but downloads the whole `messages` node and filters it on the phone (small, because read messages are cleared daily).
 - When locking down, also check the sender on write: `newData.child('from').val()` must equal the signed-in user's login, so nobody can send as someone else.
+- `announcements`: read for any signed-in user; create / set `active` for admins only; each person may write only their own `announcements/$id/ack/$login`. `orderByKey` needs no index; the 12-month clean-up uses `orderByChild('sentAt')`, so add `".indexOn": ["sentAt"]` on `announcements` too.
 
 
 ## v1.29 — 2026-10-22

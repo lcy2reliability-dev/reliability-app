@@ -276,6 +276,35 @@
         .msg-foot{ flex:0 0 auto; border-top:1px solid #e5e7eb; padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); background:#fff; }
         .msg-foot:empty{ display:none; }
         @media (max-width:600px){ .msg-panel{ top:0; left:0; right:0; bottom:0; width:auto; height:auto; max-width:none; max-height:none; border-radius:0; } }
+        /* Announcements (v1.30): admin broadcast. Full-screen pop-up shown once per person; admin screen in the detail overlay */
+        .ann-overlay{ display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:100000; background:rgba(15,23,42,0.74); align-items:center; justify-content:center; padding:16px; box-sizing:border-box; }
+        .ann-card{ background:#fff; border-radius:14px; width:100%; max-width:480px; max-height:100%; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.4); }
+        .ann-head{ flex:0 0 auto; background:#232F3E; color:#fff; padding:14px 16px; font-size:16px; font-weight:700; border-bottom:4px solid #f59e0b; }
+        .ann-body{ flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:14px 16px; }
+        .ann-item + .ann-item{ border-top:1px solid #e5e7eb; margin-top:14px; padding-top:14px; }
+        .ann-item-title{ font-size:16px; font-weight:700; color:#1a1a2e; overflow-wrap:anywhere; }
+        .ann-item-meta{ font-size:12px; color:#6b7280; margin:2px 0 8px; }
+        .ann-item-text{ font-size:14px; color:#1f2937; line-height:1.55; overflow-wrap:anywhere; word-break:break-word; }
+        .ann-foot{ flex:0 0 auto; padding:10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top:1px solid #e5e7eb; background:#fff; }
+        .ann-foot .btn{ width:100%; min-height:48px; font-size:16px; }
+        body.ann-on{ overflow:hidden; }
+        .ann-row{ border:1px solid #e5e7eb; border-left:4px solid #f59e0b; border-radius:8px; padding:10px 12px; margin-bottom:10px; background:#fff; }
+        .ann-row.off{ border-left-color:#9ca3af; background:#f9fafb; }
+        .ann-row-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap; }
+        .ann-status{ font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; background:#dcfce7; color:#166534; white-space:nowrap; }
+        .ann-status.off{ background:#e5e7eb; color:#4b5563; }
+        .ann-row-meta{ font-size:12px; color:#6b7280; margin:2px 0 6px; }
+        .ann-row-text{ font-size:13px; color:#1f2937; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }
+        .ann-seen{ font-size:12px; font-weight:700; color:#1e293b; margin-top:8px; }
+        .ann-row details{ font-size:12px; color:#4b5563; }
+        .ann-row summary{ min-height:44px; display:flex; align-items:center; cursor:pointer; }
+        .ann-names{ padding:0 0 6px; overflow-wrap:anywhere; line-height:1.6; }
+        .ann-compose{ background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:4px 12px 12px; margin-bottom:12px; }
+        .ann-compose label{ display:block; font-size:12px; font-weight:700; color:#374151; margin:10px 0 4px; }
+        .ann-compose input, .ann-compose textarea, .ann-compose select{ width:100%; box-sizing:border-box; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:16px; font-family:inherit; background:#fff; }
+        .ann-compose textarea{ min-height:120px; resize:vertical; }
+        .ann-count{ font-size:11px; color:#6b7280; text-align:right; margin-top:2px; }
+        .ann-compose .btn{ width:100%; min-height:48px; margin-top:12px; }
         .msg-row{ display:flex; align-items:center; gap:10px; padding:10px; min-height:44px; box-sizing:border-box; background:#fff; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:6px; cursor:pointer; }
         .msg-row.unread{ border-left:4px solid #2563eb; }
         .msg-row-main{ flex:1 1 auto; min-width:0; }
@@ -637,7 +666,7 @@
             <div style="padding:12px 0;">
                 <div id="whats-new-banner" style="display:none;padding:12px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;cursor:pointer;" onclick="dismissWhatsNew()">
                     <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">What's New (v1.30)</div>
-                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Messages</strong>: tap the &#128172; button at the bottom right to message a colleague. New messages pop up while the app is open and the button shows how many are unread. Read messages clear at the 4am sweep; unread ones stay.<span class="admin-only"> Admins: send a <strong>Group message</strong> to everyone or the people you tick, and see every message in <strong>Message Log</strong> (Tools).</span><br>&bull; <strong>Also new (v1.29)</strong>: edit or delete your own job notes (open a job and tap &#9998; or &#128465; at the end of your note).</div>
+                    <div style="font-size:12px;color:#374151;line-height:1.5;"><strong style="color:#b45309;">This app does not replace APM.</strong> It is a personal tool to track your jobs during the shift - nothing you do here is sent to or recorded in APM.<br>&bull; <strong>Messages</strong>: tap the &#128172; button at the bottom right to message a colleague. New messages pop up while the app is open and the button shows how many are unread. Read messages clear at the 4am sweep; unread ones stay.<span class="admin-only"> Admins: send a <strong>Group message</strong> to everyone or the people you tick, and see every message in <strong>Message Log</strong> (Tools).</span><br>&bull; <strong>Announcements</strong>: an important notice from the admins pops up on screen the first time you open the app after it is sent. Tap <strong>Got it</strong> to close it; read active ones again under <strong>Announcements</strong> in the menu (Tools).<span class="admin-only"> Admins: send one from <strong>Announcements</strong> (Tools) and see who has seen it.</span><br>&bull; <strong>Also new (v1.29)</strong>: edit or delete your own job notes (open a job and tap &#9998; or &#128465; at the end of your note).</div>
                     <div style="font-size:11px;color:#6b7280;margin-top:4px;">Tap to dismiss</div>
                 </div>
                 <div class="admin-only" style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Add New</div>
@@ -648,6 +677,7 @@
                 <div style="padding:12px 20px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Tools</div>
                 <div role="button" tabindex="0" onclick="toggleBurgerMenu();openAlertsView();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#9888; Open Alerts <span id="burger-alerts-badge" style="display:none;background:#ef4444;color:white;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:4px;"></span></div>
                 <div role="button" tabindex="0" onclick="toggleBurgerMenu();openMessages();" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128172; Messages <span id="burger-msg-badge" style="display:none;background:#2563eb;color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;"></span></div>
+                <div role="button" tabindex="0" onclick="openAnnouncements()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128226; Announcements</div>
                 <div role="button" tabindex="0" class="admin-only" onclick="openManageInactive()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">Manage Inactive Items</div>
                 <div role="button" tabindex="0" onclick="downloadAllData()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#11015; Download Backup</div>
                 <div role="button" tabindex="0" class="admin-only" onclick="openRecentlyDeleted()" style="padding:10px 20px;font-size:14px;color:#374151;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">&#128465; Recently Deleted</div>
@@ -1012,6 +1042,13 @@
     <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
     <button type="button" id="msg-fab" class="msg-fab" aria-label="Messages" onclick="openMessages()"><span aria-hidden="true">&#128172;</span><span id="msg-fab-badge" class="msg-fab-badge"></span></button>
     <div id="msg-pop" class="msg-pop" role="status" aria-live="polite" onclick="_msgPopTap()"></div>
+    <div id="ann-overlay" class="ann-overlay" role="alertdialog" aria-modal="true" aria-labelledby="ann-head-text" aria-describedby="ann-body">
+        <div class="ann-card">
+            <div class="ann-head"><span aria-hidden="true">&#128226;</span> <span id="ann-head-text">Announcement</span></div>
+            <div class="ann-body" id="ann-body" tabindex="0"></div>
+            <div class="ann-foot"><button type="button" class="btn btn-primary" id="ann-ok" onclick="annAck()">Got it</button></div>
+        </div>
+    </div>
     <div id="msg-panel" class="msg-panel" role="dialog" aria-labelledby="msg-panel-title">
         <div class="msg-head"><button type="button" id="msg-back" onclick="msgBack()" aria-label="Back to all messages" style="visibility:hidden;">&#8249;</button><div id="msg-panel-title" class="msg-title">Messages</div><button type="button" onclick="closeMessages()" aria-label="Close messages">&#10005;</button></div>
         <div id="msg-body" class="msg-body"></div>
@@ -1389,6 +1426,7 @@
             } else {
                 currentUid = null; currentRole = 'technician'; currentReviewed = false; currentEmailVerified = false;
                 if (typeof _msgStop === 'function') _msgStop();
+                if (typeof _annStop === 'function') _annStop();
                 applyRoleVisibility();
                 initLogin();
             }
@@ -1419,8 +1457,9 @@
                 cleanupOldWork();
                 cleanupDuplicateEndpoints();
                 try{ _msgStart(); }catch(_me){ console.warn('Messages failed to start:', _me); }
+                try{ _annStart(); }catch(_ae){ console.warn('Announcements failed to start:', _ae); }
                 db.ref('.info/connected').on('value', function(cs){ _fbConnected = cs.val()===true; _updateOfflineBanner(); if(_fbConnected) flushPendingReadings(); });
-                setTimeout(function() { initJobPointerSort(); initWalkPointerSort(); updateWorkCount(); ensureChart().catch(function(){}); ensureXLSX().catch(function(){}); try{renderDashboard();}catch(e){} try{pruneAuditLog();}catch(e){} try{pruneMessageLog();}catch(e){} setTimeout(function(){ try{maybeAutoTour();}catch(e){} }, 900); }, 1000);
+                setTimeout(function() { initJobPointerSort(); initWalkPointerSort(); updateWorkCount(); ensureChart().catch(function(){}); ensureXLSX().catch(function(){}); try{renderDashboard();}catch(e){} try{pruneAuditLog();}catch(e){} try{pruneMessageLog();}catch(e){} try{pruneAnnouncements();}catch(e){} setTimeout(function(){ try{maybeAutoTour();}catch(e){} }, 900); }, 1000);
             } catch(e) { console.error('Init error:', e); showToast('Something failed to load — please refresh the page.', 'error'); }
         }
     }
@@ -1513,6 +1552,7 @@
     document.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { var t = e.target; if (t && t.getAttribute && (t.getAttribute('role') === 'button' || t.getAttribute('role') === 'tab') && t.tagName !== 'BUTTON') { e.preventDefault(); t.click(); } } });
     document.addEventListener('keydown', function(e){
         if(e.key!=='Escape'&&e.key!=='Esc')return;
+        if(document.body.classList.contains('ann-on'))return; // the announcement pop-up is closed with Got it only
         var iv=document.getElementById('img-viewer');
         if(iv&&iv.classList.contains('active')){iv.classList.remove('active');if(typeof _ivReset==='function'){try{_ivReset();}catch(_e){}}document.body.style.overflow='';return;}
         if(typeof _msgPanelOpen==='function'&&_msgPanelOpen()){var _mo=document.getElementById('modal');if(!(_mo&&_mo.classList.contains('active'))){closeMessages();return;}}
@@ -7322,7 +7362,7 @@ function liveSearchSuggest(query,scope){
         }
     }
     function burgerSwitchUser() { toggleBurgerMenu(); showNewLogin(); }
-    function burgerLogout() { toggleBurgerMenu(); try{_msgStop();}catch(_me){} try{if(db){db.ref('equipment').off();db.ref('parts').off();db.ref('routes').off();db.ref('workAssigned').off();}}catch(e){} currentUser=null; currentUid=null; currentReviewed=false; currentEmailVerified=false; _waData=null; currentRole = AUTH_ENABLED ? 'technician' : 'admin'; applyRoleVisibility(); if(!AUTH_ENABLED){ localStorage.removeItem('reliability_app_user'); initLogin(); return; } if(auth){ auth.signOut().catch(function(){}); } else { initLogin(); } }
+    function burgerLogout() { toggleBurgerMenu(); try{_msgStop();}catch(_me){} try{_annStop();}catch(_ae){} try{if(db){db.ref('equipment').off();db.ref('parts').off();db.ref('routes').off();db.ref('workAssigned').off();}}catch(e){} currentUser=null; currentUid=null; currentReviewed=false; currentEmailVerified=false; _waData=null; currentRole = AUTH_ENABLED ? 'technician' : 'admin'; applyRoleVisibility(); if(!AUTH_ENABLED){ localStorage.removeItem('reliability_app_user'); initLogin(); return; } if(auth){ auth.signOut().catch(function(){}); } else { initLogin(); } }
     
     // ============================================================
     // ADD FORM OVERLAY (from burger menu)
@@ -8805,6 +8845,14 @@ function liveSearchSuggest(query,scope){
         html += '<li>Admins keep a copy of every message for 12 months</li>';
         html += '</ul></div>';
 
+        // Announcements (v1.30)
+        html += '<div class="card"><h2>\uD83D\uDCE2 Announcements</h2>';
+        html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
+        html += '<li>An <strong>announcement</strong> is an important notice from the admins to everyone. It pops up on the screen the <strong>first time you open the app</strong> after it is sent</li>';
+        html += '<li>Read it, then tap <strong>Got it</strong>. It will not pop up for you again, and the admins can see that you have seen it</li>';
+        html += '<li>To read an active announcement again, open <strong>Announcements</strong> in the menu (Tools)</li>';
+        html += '</ul></div>';
+
         // Account
         html += '<div class="card"><h2>\uD83D\uDD10 Your account</h2>';
         html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
@@ -8836,6 +8884,7 @@ function liveSearchSuggest(query,scope){
             html += '<li><strong>Activity Log</strong> \u2014 a full record of who changed what and when</li>';
             html += '<li><strong>Group message</strong> \u2014 in Messages, send one message to everyone or to the people you tick. Replies come back to you only</li>';
             html += '<li><strong>Message Log</strong> \u2014 a copy of every message sent in the app, kept for 12 months</li>';
+            html += '<li><strong>Announcements</strong> \u2014 send a pop-up notice to everyone, see who has seen it, and end it early</li>';
             html += '<li><strong>Manage Inactive Items</strong> \u2014 find and reactivate decommissioned positions, parts and routes</li>';
             html += '<li><strong>Recently Deleted</strong> \u2014 restore items that were deleted</li>';
             html += '</ul></div>';
@@ -8868,6 +8917,7 @@ function liveSearchSuggest(query,scope){
             ['Something looks out of date.', 'Reload the page \u2014 the app updates live from the database. If a number looks stuck, a hard refresh clears it.'],
             ['Who can read my messages?', 'The person you send it to, and the app admins: a copy of every message is kept in an admin-only Message Log for 12 months. Messages stay inside the app; nothing is sent by email or to APM.'],
             ['Why did my messages disappear?', 'Read messages clear at the daily 4am sweep, the same as completed jobs. Unread messages stay until they are read.'],
+            ['A notice popped up when I opened the app. What is it?', 'An announcement from the app admins, for example about a change to the data. Read it and tap Got it; it will not come back for you. You can read active announcements again under Announcements in the menu (Tools).'],
             ['Who do I contact about the app?', 'The app admins \u2014 <span id="faq-admin-list">Tittus (strtt) or Alex (vladesca)</span>.']
         ];
         faq.forEach(function(qa){
@@ -9115,7 +9165,7 @@ function liveSearchSuggest(query,scope){
     }
     function _msgInboxFootHtml(){
         return '<div class="msg-actions"><button class="btn btn-primary" onclick="_msgOpenPick()">&#9998; New message</button>'
-            +(isAdmin() ? '<button class="btn btn-secondary" onclick="_msgOpenGroupNew()">&#128101; Group message</button>' : '')+'</div>';
+            +(isAdmin() ? '<button class="btn btn-secondary" onclick="_msgOpenGroupNew()">&#128101; Group message</button><button class="btn btn-secondary" onclick="openAnnouncements()">&#128226; Announcement</button>' : '')+'</div>';
     }
     function _msgThreadHtml(who){
         var arr=_msgThreadMsgs(who), h='';
@@ -9319,6 +9369,205 @@ function liveSearchSuggest(query,scope){
             return okU && okT;
         });
         tb.innerHTML=rows.length ? rows.map(_msgLogRowHtml).join('') : '<tr><td colspan="5" style="text-align:center;color:#9ca3af;font-size:13px;padding:12px;">No messages match</td></tr>';
+    }
+
+    // ============================================================
+    // ANNOUNCEMENTS (v1.30) - admin broadcast pop-ups
+    //   announcements/{k} = {title?, text, from, fromName, sentAt, expiresAt, active, ack:{login:ts}}
+    //   One record per announcement (not one per person). Everyone signed in reads it; only admins create / end it.
+    //   Each person writes only their own ack/{login}. The pop-up shows once per person for every live
+    //   announcement they have not acknowledged: at login, and live while the app is open / when it is reopened.
+    //   The acknowledgement is also kept on the device (localStorage, per login) so a failed write never re-pops it.
+    //   Kept 12 months (admins prune on login), like the Message Log.
+    // ============================================================
+    var ANN_MAX_LEN = 1000, ANN_TITLE_MAX = 80;
+    var _annRef = null, _ann = {}, _annLoaded = false, _annTimer = null, _annShown = [], _annSending = false;
+    function _annKeyMe(){ return sanitizeKey(_msgMe()); }
+    function _annSeenStoreKey(){ return 'annSeen_' + _annKeyMe(); }
+    function _annLocalSeen(){ try{ var a=JSON.parse(localStorage.getItem(_annSeenStoreKey()) || '[]'); return Array.isArray(a) ? a : []; }catch(_e){ return []; } }
+    function _annLocalMark(ids){ try{ var a=_annLocalSeen(); ids.forEach(function(i){ if(a.indexOf(i) < 0) a.push(i); }); localStorage.setItem(_annSeenStoreKey(), JSON.stringify(a.slice(-100))); }catch(_e){} }
+    function _annLive(a, now){ return !!(a && a.text && a.active !== false && !(typeof a.expiresAt === 'number' && a.expiresAt <= now)); }
+    // Live announcements this person has not acknowledged, oldest first (push keys sort by time).
+    function _annUnseen(){
+        var now=Date.now(), me=_annKeyMe(), local=_annLocalSeen();
+        return Object.keys(_ann).sort().filter(function(k){ var a=_ann[k]; return _annLive(a, now) && !(a.ack && a.ack[me]) && local.indexOf(k) < 0; })
+            .map(function(k){ return {k:k, a:_ann[k]}; });
+    }
+    function _annStart(){
+        _annStop();
+        if(!db || !currentUser || _isPreview) return;
+        _annRef = db.ref('announcements').orderByKey().limitToLast(30);
+        _annRef.on('value', function(s){
+            var v={}; s.forEach(function(c){ v[c.key]=c.val()||{}; });
+            _ann=v; _annLoaded=true; _annCheck(); _annRefreshScreen();
+        }, function(e){ console.warn('announcements:', e && e.message); });
+        _annTimer = setInterval(_annCheck, 10000); // also retries after the login screen / tour / a typing pause
+    }
+    function _annStop(){
+        try{ if(_annRef) _annRef.off(); }catch(_e){}
+        if(_annTimer){ clearInterval(_annTimer); _annTimer=null; }
+        _annRef=null; _ann={}; _annLoaded=false; _annShown=[];
+        var ov=document.getElementById('ann-overlay'); if(ov) ov.style.display='none';
+        document.body.classList.remove('ann-on'); // next login (maybe someone else on this phone) starts clean
+    }
+    // Never pop up behind the login screen, in the middle of the tour or a confirm box, or over a half-typed entry.
+    function _annCanShow(){
+        if(document.hidden) return false;
+        var lo=document.getElementById('login-overlay'); if(lo && getComputedStyle(lo).display !== 'none') return false;
+        var tr=document.getElementById('tour-overlay'); if(tr && tr.classList.contains('active')) return false;
+        var mo=document.getElementById('modal'); if(mo && mo.classList.contains('active')) return false;
+        var ae=document.activeElement;
+        if(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.offsetParent !== null && String(ae.value || '').length > 0) return false;
+        return true;
+    }
+    function _annCheck(){
+        if(!_annLoaded || !currentUser || document.body.classList.contains('ann-on')) return;
+        var list=_annUnseen(); if(!list.length || !_annCanShow()) return;
+        _annShow(list);
+    }
+    function _annShow(list){
+        var ov=document.getElementById('ann-overlay'), body=document.getElementById('ann-body'), head=document.getElementById('ann-head-text');
+        if(!ov || !body || !head) return;
+        _annShown=list.map(function(x){ return x.k; });
+        head.textContent = list.length > 1 ? (list.length + ' new announcements') : 'Announcement';
+        body.innerHTML = list.map(function(x){
+            var a=x.a;
+            return '<div class="ann-item"><div class="ann-item-title">'+escapeHtml(a.title || 'Announcement')+'</div>'
+                +'<div class="ann-item-meta">From '+escapeHtml(_msgName(a.from, a.fromName))+' &middot; '+escapeHtml(_msgTime(a.sentAt))+'</div>'
+                +'<div class="ann-item-text">'+_msgTextHtml(a.text)+'</div></div>';
+        }).join('');
+        ov.style.display='flex'; document.body.classList.add('ann-on'); body.scrollTop=0;
+        var b=document.getElementById('ann-ok'); if(b){ try{ b.focus(); }catch(_e){} }
+    }
+    // "Got it": hide, remember on this device, and tell the database who has seen it.
+    function annAck(){
+        var ids=_annShown.slice(); _annShown=[];
+        var ov=document.getElementById('ann-overlay'); if(ov) ov.style.display='none';
+        document.body.classList.remove('ann-on');
+        if(!ids.length) return;
+        _annLocalMark(ids);
+        if(db && currentUser){
+            var me=_annKeyMe(), ts=_msgTs(), upd={};
+            ids.forEach(function(k){ upd['announcements/'+k+'/ack/'+me]=ts; });
+            db.ref().update(upd).catch(function(e){ console.warn('announcement ack:', e && e.message); });
+        }
+        setTimeout(_annCheck, 300); // another one may have arrived while this was open
+    }
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden) _annCheck(); });
+    document.addEventListener('keydown', function(e){
+        if(e.key !== 'Tab' || !document.body.classList.contains('ann-on')) return;
+        e.preventDefault(); var b=document.getElementById('ann-ok'); if(b) b.focus(); // keep focus inside the pop-up
+    });
+
+    // ---- the Announcements screen (menu, Tools): everyone reads active ones; admins send, see who has seen, end ----
+    function _annWhen(ts){ return (typeof ts === 'number') ? new Date(ts).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : ''; }
+    function _annComposerHtml(){
+        return '<div class="ann-compose">'
+            +'<label for="ann-title">Title (optional)</label><input id="ann-title" maxlength="'+ANN_TITLE_MAX+'" placeholder="e.g. Database update" autocomplete="off">'
+            +'<label for="ann-text">Announcement</label><textarea id="ann-text" maxlength="'+ANN_MAX_LEN+'" placeholder="What does everyone need to know?" oninput="_annCount()"></textarea>'
+            +'<div class="ann-count" id="ann-count">0 / '+ANN_MAX_LEN+'</div>'
+            +'<label for="ann-days">Show for</label><select id="ann-days"><option value="7">7 days</option><option value="14">14 days</option><option value="30" selected>30 days</option><option value="90">90 days</option></select>'
+            +'<button type="button" class="btn btn-primary" id="ann-send" onclick="sendAnnouncement()">&#128226; Send to everyone</button>'
+            +'</div>';
+    }
+    function _annCount(){ var t=document.getElementById('ann-text'), c=document.getElementById('ann-count'); if(t && c) c.textContent=t.value.length+' / '+ANN_MAX_LEN; }
+    function _annListHtml(){
+        if(!_annLoaded) return '<div class="msg-empty">Loading\u2026</div>';
+        var now=Date.now(), adm=isAdmin(), h='', logins=[];
+        if(adm) logins=Object.keys(_msgUsers).filter(function(l){ return !_msgUsers[l].removed; });
+        Object.keys(_ann).sort().reverse().forEach(function(k){
+            var a=_ann[k]; if(!a || !a.text) return;
+            var live=_annLive(a, now);
+            if(!adm && !live) return;
+            var status = live ? (typeof a.expiresAt === 'number' ? 'Active until '+_annWhen(a.expiresAt) : 'Active') : (a.active === false ? 'Ended' : 'Expired');
+            h+='<div class="ann-row'+(live ? '' : ' off')+'"><div class="ann-row-top"><strong style="font-size:14px;color:#1a1a2e;overflow-wrap:anywhere;">'+escapeHtml(a.title || 'Announcement')+'</strong><span class="ann-status'+(live ? '' : ' off')+'">'+escapeHtml(status)+'</span></div>'
+                +'<div class="ann-row-meta">From '+escapeHtml(_msgName(a.from, a.fromName))+' &middot; '+escapeHtml(_msgTime(a.sentAt))+'</div>'
+                +'<div class="ann-row-text">'+_msgTextHtml(a.text)+'</div>';
+            if(adm){
+                var ack=a.ack || {}, seen=0, notSeen=[];
+                logins.forEach(function(l){ if(ack[sanitizeKey(l)]) seen++; else notSeen.push(l); });
+                notSeen.sort(function(x,y){ return String(_msgName(x)).localeCompare(String(_msgName(y))); });
+                h+='<div class="ann-seen">Seen by '+seen+' of '+logins.length+'</div>';
+                if(notSeen.length) h+='<details data-k="'+escapeHtml(k)+'"><summary>Not seen yet ('+notSeen.length+')</summary><div class="ann-names">'+notSeen.map(function(l){ return escapeHtml(_msgName(l)); }).join(', ')+'</div></details>';
+                if(live) h+='<button type="button" class="btn btn-secondary" style="min-height:44px;margin-top:8px;" onclick="endAnnouncement(\x27'+escapeAttrArg(k)+'\x27)">End now</button>';
+            }
+            h+='</div>';
+        });
+        return h || '<div class="msg-empty">'+(adm ? 'No announcements sent yet.' : 'No active announcements.')+'</div>';
+    }
+    // Re-draw only the list (keeps what the admin is typing in the box; keeps "Not seen yet" lists open).
+    function _annRefreshScreen(){
+        var el=document.getElementById('ann-list'), ov=document.getElementById('detail-overlay');
+        if(!el || !ov || !ov.classList.contains('active')) return;
+        var open={}; el.querySelectorAll('details[open]').forEach(function(d){ open[d.getAttribute('data-k')]=1; });
+        el.innerHTML=_annListHtml();
+        el.querySelectorAll('details').forEach(function(d){ if(open[d.getAttribute('data-k')]) d.open=true; });
+    }
+    function openAnnouncements(){
+        var bm=document.getElementById('burger-menu'); var bb=document.getElementById('burger-backdrop');
+        if(bm) bm.style.display='none'; if(bb) bb.style.display='none';
+        if(_msgPanelOpen()) _msgClosePanel();
+        var adm=isAdmin(), h='<div class="card"><h2>Announcements</h2>';
+        h+='<p style="font-size:13px;color:#6b7280;margin-bottom:12px;">'+(adm
+            ? 'An announcement pops up on every user\u2019s screen the first time they open the app after you send it, and stays until they tap <strong>Got it</strong>. Use it for things everyone needs to know.'
+            : 'Notices from the app admins. Active announcements are listed here so you can read them again.')+'</p>';
+        if(adm) h+=_annComposerHtml();
+        h+='<h3 style="font-size:14px;margin:14px 0 8px;color:#1e293b;">'+(adm ? 'Sent announcements' : 'Active announcements')+'</h3><div id="ann-list">'+_annListHtml()+'</div></div>';
+        document.getElementById('detail-content').innerHTML=h;
+        document.getElementById('detail-title').textContent='Announcements';
+        document.getElementById('detail-overlay').classList.add('active');
+        _msgLoadUsers(false).then(_annRefreshScreen); // names + "seen by" totals
+    }
+    async function sendAnnouncement(){
+        if(!requireAdmin()) return; if(!checkFirebase()) return;
+        if(_annSending) return;
+        var ti=document.getElementById('ann-title'), te=document.getElementById('ann-text'), de=document.getElementById('ann-days');
+        var title=(ti ? ti.value : '').trim().slice(0, ANN_TITLE_MAX), text=(te ? te.value : '').trim(), days=parseInt(de ? de.value : '30', 10) || 30;
+        if(!text){ showToast('Write the announcement first', 'error'); return; }
+        if(text.length > ANN_MAX_LEN){ showToast('Announcement is too long (max '+ANN_MAX_LEN+' characters)', 'error'); return; }
+        _annSending=true;
+        try{
+            await _msgLoadUsers(false);
+            var n=_msgRecipients().length;
+            var ok=await showCustomModal('Send to everyone?',
+                '<p style="font-size:13px;color:#374151;margin-bottom:10px;">This pops up on the screen of <strong>everyone</strong> ('+n+' other '+(n===1 ? 'person' : 'people')+') the next time they open the app, and stays until they tap Got it. You cannot edit it after sending, but you can end it.</p>'
+                +'<div style="border:1px solid #e5e7eb;border-left:4px solid #f59e0b;border-radius:8px;padding:10px;max-height:40vh;overflow:auto;margin-bottom:14px;"><div style="font-weight:700;color:#1a1a2e;">'+escapeHtml(title || 'Announcement')+'</div><div style="font-size:13px;color:#1f2937;margin-top:4px;overflow-wrap:anywhere;">'+_msgTextHtml(text)+'</div></div>',
+                [{label:'Cancel', class:'btn-secondary', value:false}, {label:'Send to everyone', class:'btn-primary', value:true}]);
+            if(!ok) return;
+            if(!requireAdmin()) return;
+            var k=db.ref('announcements').push().key, me=_msgMe(), ack={};
+            ack[sanitizeKey(me)]=_msgTs(); // the sender does not get their own pop-up
+            var rec={text:text, from:me, fromName:(currentName || me), sentAt:_msgTs(), expiresAt:Date.now()+days*86400000, active:true, ack:ack};
+            if(title) rec.title=title;
+            var upd={}; upd['announcements/'+k]=rec;
+            var clr=function(){ var t2=document.getElementById('ann-title'), x2=document.getElementById('ann-text'); if(t2) t2.value=''; if(x2) x2.value=''; _annCount(); };
+            clr(); // clear at once so it cannot be sent twice; put it back if the save fails
+            db.ref().update(upd).then(function(){ showToast('Announcement sent'); }).catch(function(e){
+                showToast('Announcement not sent: '+((e && e.message) || e), 'error');
+                var t3=document.getElementById('ann-title'), x3=document.getElementById('ann-text'); if(x3 && !x3.value){ x3.value=text; if(t3 && !t3.value) t3.value=title; _annCount(); }
+            });
+            logAudit('sendAnnouncement', 'announcement', k, {title:title, days:days, length:text.length});
+        } finally { _annSending=false; }
+    }
+    async function endAnnouncement(k){
+        if(!requireAdmin()) return; if(!checkFirebase()) return;
+        var a=_ann[k]; if(!a) return;
+        var ok=await showCustomModal('End this announcement?',
+            '<p style="font-size:13px;color:#374151;">People who have not seen <strong>'+escapeHtml(a.title || 'this announcement')+'</strong> yet will no longer get the pop-up. Anyone who has already seen it is not affected, and it stays in this list.</p>',
+            [{label:'Cancel', class:'btn-secondary', value:false}, {label:'End announcement', class:'btn-danger', value:true}]);
+        if(!ok) return;
+        db.ref('announcements/'+k+'/active').set(false).then(function(){ showToast('Announcement ended'); }).catch(function(e){ showToast('Could not end it: '+((e && e.message) || e), 'error'); });
+        logAudit('endAnnouncement', 'announcement', k, {title:a.title || ''});
+    }
+    async function pruneAnnouncements(){
+        if(!db || !isAdmin()) return 0;
+        try{
+            var cutoff=Date.now()-365*24*60*60*1000;
+            var snap=await db.ref('announcements').orderByChild('sentAt').endAt(cutoff).once('value');
+            var upd={}, n=0; snap.forEach(function(ch){ upd['announcements/'+ch.key]=null; n++; });
+            if(n > 0) await db.ref().update(upd);
+            return n;
+        }catch(_e){ return 0; }
     }
 
     // ============================================================
