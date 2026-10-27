@@ -43,6 +43,21 @@
 - **Links a technician adds by hand are never orange.**
 - **No migration and no new version number.** The weekly job writes two small fields on each link (`unconfirmed`, `woCount`) and flips them itself when the third work order arrives; the threshold of 3 is a setting in that job (`confirm_wos`), not in the app. Until this build is uploaded the old app simply ignores the two fields.
 
+### Last replaced: when each linked part was last booked - added 2026-10-26, still v1.30
+- **New "Last replaced" card directly under Linked Parts on a position's page.** One row per linked part: name (the comment, else the description) over its APN, the date it was last booked in APM with "x months ago" under it, and how many times it has been booked there. Newest first; parts with no booking are last.
+- **The date is the day the APM work order was completed.** Tap a row to see every date with its work order number (newest first).
+- **Hand-made links get the date too.** "No APM record" is shown only when no booking of that part on that position was found in APM (tap the row for the explanation). On 2026-10-26 that is 164 of the 493 hand-made links: no booking on an FWO, or only bookings that were returned to stock. Bookings on other kinds of work order (repair, PM) are not looked at.
+- **Only bookings that count for linking count here:** a work order where the part was returned to stock (any negative line) is ignored, the same as for linking.
+- **Orange links stay orange** in this card, with the same short key underneath.
+- **Plain table, fits a phone** (3 columns, rows at least 48px high). If the dates cannot be read the card is left out rather than showing a wrong "No APM record".
+- **No migration and no new version number.** The weekly job writes a new database node `replaced/{position}/{APN}` = `"2025-12-23:1050942308,..."` and keeps it up to date itself (every Wednesday run, or `run.py --replaced-only --go`). First fill 2026-10-26: 6,859 position + part pairs on 2,099 positions, read back with 0 differences; undo with `undo.py <run> --repl`. Until this build is uploaded the old app simply ignores the node. The app reads one small node when a position page opens.
+- Help (Linking parts) has one new line about it. Not shown on a part's page or on station (belt) positions yet.
+
+### Linked Parts: columns reordered for the phone - added 2026-10-26, still v1.30
+- **The Linked Parts table on a position's page now reads: Observations, Class, APN, Bin, Description, Qty, Criticality** (was APN, Class, Bin, Qty, Description, Criticality, Observations). The comment and the part identity come first, so on a phone they are on screen before any sideways scrolling; Qty and Criticality are now at the far right.
+- Sorting (tap a heading) and the filter boxes under the headings follow the new order. Bin still sorts as a bin code. Colours (orange links) and the APN link to the part page are unchanged.
+- Only this table changed. The Edit screen lists, the Parts Associated table and the station belts view keep their layout.
+
 ### Small fixes
 - Info messages (e.g. "You have been away for a while. Please re-enter your PIN.") were white text on no background, so they were unreadable. They now have a blue background.
 
@@ -51,6 +66,7 @@
 - Add `".indexOn": ["to", "from"]` on `messages` and `".indexOn": ["sentAt"]` on `messageLog`. Without the index the app still works but downloads the whole `messages` node and filters it on the phone (small, because read messages are cleared daily).
 - When locking down, also check the sender on write: `newData.child('from').val()` must equal the signed-in user's login, so nobody can send as someone else.
 - `announcements`: read for any signed-in user; create / set `active` for admins only; each person may write only their own `announcements/$id/ack/$login`. `orderByKey` needs no index; the 12-month clean-up uses `orderByChild('sentAt')`, so add `".indexOn": ["sentAt"]` on `announcements` too.
+- `replaced`: read for any signed-in user; written only by the weekly job (admin/REST). Reads are one conveyor at a time (`replaced/$conveyor`), so no index is needed.
 
 
 ## v1.29 — 2026-10-22

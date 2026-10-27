@@ -280,6 +280,17 @@
         .unconf-row, .unconf-row * { color:#c2410c !important; }
         .unconf-legend { font-size:12px; color:#c2410c; margin:6px 0 0; line-height:1.4; }
         .unconf-note { font-size:11px; margin-top:2px; }
+        /* v1.30: "Last replaced" card (dates written by the weekly APM job) */
+        .lr-table { display:table; width:100%; font-size:13px; margin-top:6px; }
+        .lr-table th { cursor:default; font-size:11px; text-transform:uppercase; letter-spacing:.3px; padding:6px; }
+        .lr-table th:hover { background:#f8fafc; }
+        .lr-table td { padding:8px 6px; vertical-align:top; white-space:normal; overflow-wrap:anywhere; }
+        .lr-table td.lr-date, .lr-table td.lr-times, .lr-table th.lr-date, .lr-table th.lr-times { white-space:nowrap; }
+        .lr-table td.lr-times, .lr-table th.lr-times { text-align:center; }
+        .lr-table tr.lr-tap { cursor:pointer; height:48px; }
+        .lr-sub { font-size:11px; color:#6b7280; font-weight:400; }
+        .lr-none { font-size:12px; color:#6b7280; font-style:italic; }
+        .lr-hist-row { display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:44px; padding:6px 0; border-bottom:1px solid #f1f5f9; }
         /* Announcements (v1.30): admin broadcast. Full-screen pop-up shown once per person; admin screen in the detail overlay */
         .ann-overlay{ display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:100000; background:rgba(15,23,42,0.74); align-items:center; justify-content:center; padding:16px; box-sizing:border-box; }
         .ann-card{ background:#fff; border-radius:14px; width:100%; max-width:480px; max-height:100%; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.4); }
@@ -3881,6 +3892,96 @@
     function _unconfLegend(){ return '<p class="unconf-legend">Orange = not yet confirmed: only a few APM work orders back this link. It turns black once enough bookings do.</p>'; }
 
     // ============================================================
+    // LAST REPLACED (v1.30): the weekly APM job writes replaced/{conveyor}/{APN} = "YYYY-MM-DD:WO,YYYY-MM-DD:WO" (ascending): the date each
+    // booking work order was completed. Hand-made links get dates too; a linked part with no booking has no entry and shows "No APM record".
+    // ============================================================
+    var _MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    function _replParse(v){
+        var out = [];
+        if (typeof v !== 'string') return out;
+        v.split(',').forEach(function(x){ var m = /^(\d{4})-(\d{2})-(\d{2}):([^,:\s]+)$/.exec(x.trim()); if (m) out.push({ d: m[1] + '-' + m[2] + '-' + m[3], wo: m[4] }); });
+        out.sort(function(a, b){ return a.d < b.d ? -1 : (a.d > b.d ? 1 : (a.wo < b.wo ? -1 : (a.wo > b.wo ? 1 : 0))); });
+        return out;
+    }
+    function _replDate(ymd){
+        var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd || ''); if (!m) return '\u2014';
+        var mo = parseInt(m[2], 10); if (mo < 1 || mo > 12) return '\u2014';
+        return parseInt(m[3], 10) + ' ' + _MON3[mo - 1] + ' ' + m[1];
+    }
+    function _replAgo(ymd, now){
+        var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd || ''); if (!m) return '';
+        now = now || new Date();
+        var days = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(+m[1], +m[2] - 1, +m[3])) / 86400000);
+        if (days <= 0) return 'today';
+        if (days === 1) return 'yesterday';
+        if (days < 14) return days + ' days ago';
+        if (days < 60) return Math.floor(days / 7) + ' weeks ago';
+        var months = Math.round(days / 30.4375);
+        if (months < 24) return months + ' months ago';
+        return Math.floor(months / 12) + ' years ago';
+    }
+    async function _replLoad(conv){
+        try {
+            var snap = await db.ref('replaced/' + sanitizeKey(conv)).once('value');
+            var v = snap.val();
+            return (v && typeof v === 'object') ? v : {};
+        } catch (e) { return null; }   // null = could not read: show nothing rather than a wrong "No APM record"
+    }
+    function _replRows(eqParts, conv, rep){
+        var rows = eqParts.map(function(e){
+            var p = e[1], apn = String(p.apn == null ? '' : p.apn).trim();
+            var cn = p.conveyorNotes && p.conveyorNotes[sanitizeKey(conv)];
+            return { apn: apn, name: (cn && cn.observations) || p.partDescription || p.notes || '', cn: cn, ev: _replParse(rep[sanitizeKey(apn.toUpperCase())]) };
+        });
+        rows.sort(function(a, b){
+            var la = a.ev.length ? a.ev[a.ev.length - 1].d : '', lb = b.ev.length ? b.ev[b.ev.length - 1].d : '';
+            if (la !== lb) return la < lb ? 1 : -1;   // newest first, parts with no record last
+            return a.apn < b.apn ? -1 : (a.apn > b.apn ? 1 : 0);
+        });
+        return rows;
+    }
+    function _replCardHtml(eqParts, conv, rep){
+        var rows = _replRows(eqParts, conv, rep), anyOrange = false, now = new Date();
+        window._replInfo = [];
+        var h = '<div class="card"><h2>Last replaced <span style="font-size:12px;font-weight:400;color:#6b7280;">from APM</span></h2>';
+        h += '<p style="font-size:12px;color:#6b7280;margin:0 0 6px;">The date the APM work order was completed. Tap a row to see every date and work order.</p>';
+        h += '<table class="lr-table" id="lr-table"><thead><tr><th>Part</th><th class="lr-date">Date</th><th class="lr-times">Times</th></tr></thead><tbody>';
+        rows.forEach(function(r, i){
+            var orange = _unconf(r.cn); if (orange) anyOrange = true;
+            window._replInfo[i] = r;
+            var last = r.ev.length ? r.ev[r.ev.length - 1] : null;
+            h += '<tr class="lr-tap' + (orange ? ' unconf-row' : '') + '"' + (orange ? ' title="' + escapeHtml(_unconfTip(r.cn)) + '"' : '') + ' onclick="openReplHistory(' + i + ')">';
+            h += '<td><a class="search-link" href="#" onclick="return false;">' + escapeHtml(r.name || r.apn) + '</a>' + (r.name ? '<div class="lr-sub">' + escapeHtml(r.apn) + '</div>' : '') + '</td>';
+            if (last) {
+                h += '<td class="lr-date"><div style="font-weight:600;">' + escapeHtml(_replDate(last.d)) + '</div><div class="lr-sub">' + escapeHtml(_replAgo(last.d, now)) + '</div></td>';
+                h += '<td class="lr-times">' + r.ev.length + '</td>';
+            } else {
+                h += '<td class="lr-date"><span class="lr-none">No APM record</span></td><td class="lr-times">\u2014</td>';
+            }
+            h += '</tr>';
+        });
+        h += '</tbody></table>';
+        if (anyOrange) h += _unconfLegend();
+        return h + '</div>';
+    }
+    function openReplHistory(i){
+        var r = window._replInfo && window._replInfo[i]; if (!r) return;
+        var body = (r.name ? '<div style="font-size:14px;font-weight:600;margin-bottom:6px;">' + escapeHtml(r.name) + '</div>' : '');
+        if (!r.ev.length) {
+            body += '<p style="font-size:14px;">No APM record.</p><p style="font-size:12px;color:#6b7280;">No booking of this part on this position was found in the APM floor work orders (FWOs). It may have been fitted on another type of work order, or not booked at all.</p>';
+        } else {
+            var now = new Date(), n = r.ev.length;
+            body += '<p style="font-size:12px;color:#6b7280;margin-bottom:6px;">Booked on ' + n + ' work order' + (n === 1 ? '' : 's') + '. Date = when the work order was completed.</p><div style="max-height:50vh;overflow-y:auto;">';
+            r.ev.slice().reverse().forEach(function(e){
+                body += '<div class="lr-hist-row"><span><strong>' + escapeHtml(_replDate(e.d)) + '</strong> <span class="lr-sub">' + escapeHtml(_replAgo(e.d, now)) + '</span></span><span style="font-size:12px;color:#6b7280;white-space:nowrap;">WO ' + escapeHtml(e.wo) + '</span></div>';
+            });
+            body += '</div>';
+        }
+        if (_unconf(r.cn)) body += '<p class="unconf-legend">' + escapeHtml(_unconfTip(r.cn)) + '.</p>';
+        showCustomModal('Replaced: ' + r.apn, body, [{label:'Close', class:'btn-primary', value:'ok'}]);
+    }
+
+    // ============================================================
     // WORK ASSIGNED
     // ============================================================
     function cleanupOldWork() {
@@ -5060,22 +5161,24 @@
                 var allParts=await _pParts;
                 var _apnIdx=getApnIndex(allParts);
                 var eqParts=Object.entries(allParts).filter(([k,p])=>p.conveyors&&p.conveyors.indexOf(data.conveyorNumber)>=0);
+                var _replP=eqParts.length>0?_replLoad(data.conveyorNumber):null;
                 html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Linked Parts <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkPartPopup(\x27'+escapeAttrArg(data.conveyorNumber)+'\x27)">+ Link Part</button></h2>';
                 if(eqParts.length>0){
-                    html+='<table id="lp-table"><thead><tr><th onclick="sortTable(\x27lp-table\x27,0)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">APN <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27lp-table\x27,1)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Class <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th data-sort="bin" onclick="sortTable(\x27lp-table\x27,2)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Bin <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27lp-table\x27,3)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Qty <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27lp-table\x27,4)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Description <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27lp-table\x27,5)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Criticality <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27lp-table\x27,6)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Observations <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th></tr><tr class="filter-row"><td><input class="col-filter" data-col="0" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by APN" placeholder="APN"></td><td><input class="col-filter" data-col="1" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Class" placeholder="Class"></td><td><input class="col-filter" data-col="2" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Bin" placeholder="Bin"></td><td><input class="col-filter" data-col="3" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Qty" placeholder="Qty"></td><td><input class="col-filter" data-col="4" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Description" placeholder="Description"></td><td><input class="col-filter" data-col="5" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Criticality" placeholder="Criticality"></td><td><input class="col-filter" data-col="6" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by Observations" placeholder="Observations"></td></tr></thead><tbody>';
+                    var _lpCols=['Observations','Class','APN','Bin','Description','Qty','Criticality'];
+                    html+='<table id="lp-table"><thead><tr>'+_lpCols.map(function(n,i){return '<th'+(n==='Bin'?' data-sort="bin"':'')+' onclick="sortTable(\x27lp-table\x27,'+i+')" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">'+n+' <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th>';}).join('')+'</tr><tr class="filter-row">'+_lpCols.map(function(n,i){return '<td><input class="col-filter" data-col="'+i+'" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by '+n+'" placeholder="'+n+'"></td>';}).join('')+'</tr></thead><tbody>';
                     var _ucAny2=false;
                     eqParts.forEach(([k,p])=>{
                         var cc=critFg(p.criticality);
                         var _cn0=p.conveyorNotes&&p.conveyorNotes[sanitizeKey(data.conveyorNumber)];
                         if(_unconf(_cn0))_ucAny2=true;
-                        html+='<tr'+_unconfAttr(_cn0)+'><td data-label="APN"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+k+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td>';
-                        html+='<td data-label="Class"><span style="font-size:11px;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:8px;">'+escapeHtml(p.partClass||p.partType||'')+'</span></td>';
-                        html+='<td data-label="Bin" style="font-weight:600;">'+escapeHtml(p.binLocation||p.location||'')+'</td>';
                         var _cn=p.conveyorNotes&&p.conveyorNotes[sanitizeKey(data.conveyorNumber)];
-                        html+='<td data-label="Qty" style="font-size:12px;text-align:center;">'+escapeHtml((_cn&&_cn.quantity)?_cn.quantity:'—')+'</td>';
+                        html+='<tr'+_unconfAttr(_cn0)+'><td data-label="Observations" style="font-size:12px;color:#4b5563;font-style:italic;max-width:140px;">'+escapeHtml((_cn&&_cn.observations)?_cn.observations:'—')+'</td>';
+                        html+='<td data-label="Class"><span style="font-size:11px;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:8px;">'+escapeHtml(p.partClass||p.partType||'')+'</span></td>';
+                        html+='<td data-label="APN"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+k+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td>';
+                        html+='<td data-label="Bin" style="font-weight:600;">'+escapeHtml(p.binLocation||p.location||'')+'</td>';
                         html+='<td data-label="Description" style="font-size:12px;color:#4b5563;">'+escapeHtml(p.partDescription||p.notes||'')+'</td>';
+                        html+='<td data-label="Qty" style="font-size:12px;text-align:center;">'+escapeHtml((_cn&&_cn.quantity)?_cn.quantity:'—')+'</td>';
                         html+='<td data-label="Criticality"><span style="color:'+cc+';font-weight:600;font-size:12px;">'+escapeHtml(p.criticality||'')+'</span></td>';
-                        html+='<td data-label="Observations" style="font-size:12px;color:#4b5563;font-style:italic;max-width:140px;">'+escapeHtml((_cn&&_cn.observations)?_cn.observations:'—')+'</td>';
                         html+='</tr>';
                     });
                     html+='</tbody></table>';
@@ -5084,6 +5187,8 @@
                     html+='<p class="empty-state">No parts linked</p>';
                 }
                 html+='</div>';
+                // Last replaced (from APM): one small read per position, shown only when it could be read
+                if(_replP){try{var _repl=await _replP;if(_repl!==null)html+=_replCardHtml(eqParts,data.conveyorNumber,_repl);}catch(_rle){console.error('Last replaced card failed',_rle);}}
                 // Parts Associated (imported reference, lazy-loaded per position)
                 try {
                     var _assnap = await db.ref('associatedParts/' + key).once('value');
@@ -8807,6 +8912,7 @@ function liveSearchSuggest(query,scope){
         html += '<li>Unlinking does NOT delete the part \u2014 it only removes the connection</li>';
         html += '<li>You can unlink parts you linked yourself; an admin can unlink any link</li>';
         html += '<li>"Linked Parts" are connections made in this app; "Parts Associated" is the reference list imported from APM \u2014 they are separate</li>';
+        html += '<li>Just below Linked Parts, <strong>Last replaced</strong> shows when each linked part was last booked in APM (the date the work order was completed). Tap a row to see every date and work order. <strong>No APM record</strong> means no booking was found for that part on that position</li>';
         html += '</ul></div>';
 
         // Parts
