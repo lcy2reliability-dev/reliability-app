@@ -295,6 +295,12 @@
         .carr-chip { display:inline-flex; align-items:center; justify-content:center; min-width:52px; min-height:44px; padding:0 8px; border:1px solid #cbd5e1; border-radius:8px; background:#f8fafc; color:#1d4ed8; font-size:14px; font-weight:600; text-decoration:none; cursor:pointer; box-sizing:border-box; }
         .carr-chip.carr-prim { border:2px solid #1d4ed8; background:#eff6ff; }
         .carr-chip.carr-miss { color:#9ca3af; cursor:default; }
+        button.carr-chip { font-family:inherit; line-height:1; }
+        .carr-chip.carr-sel { background:#1d4ed8; color:#fff; border-color:#1d4ed8; }
+        .carr-chip.carr-sel.carr-prim { border-color:#1e3a8a; }
+        .carr-chip.carr-all { min-width:60px; }
+        .tc-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin:2px 0 6px; }
+        .tc-head .btn { min-height:44px; }
         .carr-nav { display:flex; gap:8px; margin:10px 0 4px; }
         .carr-nav .btn { min-height:44px; flex:1 1 0; }
         /* Announcements (v1.30): admin broadcast. Full-screen pop-up shown once per person; admin screen in the detail overlay */
@@ -3975,7 +3981,10 @@
     function openReplHistory(i){
         var r = window._replInfo && window._replInfo[i]; if (!r) return;
         var body = (r.name ? '<div style="font-size:14px;font-weight:600;margin-bottom:6px;">' + escapeHtml(r.name) + '</div>' : '');
-        if (!r.ev.length) {
+        if (r.where) body += '<div class="lr-sub" style="margin:-4px 0 6px;">' + escapeHtml(r.where) + '</div>';
+        if (r.unread) {
+            body += '<p style="font-size:14px;">The dates could not be loaded.</p><p style="font-size:12px;color:#6b7280;">Check your connection and open the page again.</p>';
+        } else if (!r.ev.length) {
             body += '<p style="font-size:14px;">No APM record.</p><p style="font-size:12px;color:#6b7280;">No booking of this part on this position was found in the APM floor work orders (FWOs). It may have been fitted on another type of work order, or not booked at all.</p>';
         } else {
             var now = new Date(), n = r.ev.length;
@@ -4055,16 +4064,45 @@
             return a.apn < b.apn ? -1 : (a.apn > b.apn ? 1 : 0);
         });
         window._trainInfo = rows;
-        var now = new Date(), anyOrange = false;
+        var perC = {};
+        ids.forEach(function(id){ perC[id] = []; });
+        rows.forEach(function(r){ r.list.forEach(function(c){
+            perC[c.id].push({ apn: r.apn, name: (c.cn && c.cn.observations) || r.desc || '', cn: c.cn, ev: c.ev, unread: c.unread, where: 'Carrier ' + c.id.slice(-3) });
+        }); });
+        var tkey = sanitizeKey(String(data.conveyorNumber || '')), types = {};
+        ids.forEach(function(id){ var e = eqc[sanitizeKey(id)]; types[id] = e ? (e.carrierType || '') : null; });
+        var sel = _trainSel[tkey] || '';
+        if (sel && !types[sel] && types[sel] !== '') sel = '';
+        window._trainState = { key: tkey, ids: ids, perC: perC, types: types, unread: unread, rows: rows };
         var h = '<div class="card" id="train-carriers"><h2>Carriers in this train <span style="font-size:12px;font-weight:400;color:#6b7280;">(' + ids.length + ')</span></h2>';
-        h += '<p style="font-size:12px;color:#6b7280;margin:0 0 4px;">Carriers ' + _carrId(rg[0]).slice(-3) + ' to ' + _carrId(rg[1]).slice(-3) + '. Tap one to open it. Blue border = primary carrier.</p><div class="carr-chips">';
+        h += '<p style="font-size:12px;color:#6b7280;margin:0 0 4px;">Carriers ' + _carrId(rg[0]).slice(-3) + ' to ' + _carrId(rg[1]).slice(-3) + '. Tap a carrier to see its own parts and when each was last replaced; All = the whole train. Blue border = primary carrier.</p><div class="carr-chips">';
+        h += '<button type="button" class="carr-chip carr-all' + (sel ? '' : ' carr-sel') + '" data-carr="" aria-pressed="' + (sel ? 'false' : 'true') + '" onclick="trainPick(\x27\x27)">All</button>';
         ids.forEach(function(id){
-            var e = eqc[sanitizeKey(id)], lbl = id.slice(-3);
-            if (!e) { h += '<span class="carr-chip carr-miss" title="' + escapeHtml(id) + ' is not in the app">' + lbl + '</span>'; return; }
-            h += '<a class="carr-chip' + (e.carrierType === 'Primary' ? ' carr-prim' : '') + '" href="#" aria-label="' + escapeHtml(id) + '" title="' + escapeHtml(id) + '" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(id) + '\x27);return false;">' + lbl + '</a>';
+            var lbl = id.slice(-3);
+            if (types[id] === null) { h += '<span class="carr-chip carr-miss" title="' + escapeHtml(id) + ' is not in the app">' + lbl + '</span>'; return; }
+            var on = sel === id;
+            h += '<button type="button" class="carr-chip' + (types[id] === 'Primary' ? ' carr-prim' : '') + (on ? ' carr-sel' : '') + '" data-carr="' + escapeHtml(id) + '" aria-pressed="' + (on ? 'true' : 'false') + '" aria-label="' + escapeHtml(id) + '" title="' + escapeHtml(id) + '" onclick="trainPick(\x27' + escapeAttrArg(id) + '\x27)">' + lbl + '</button>';
         });
-        h += '</div><h2 style="font-size:16px;">Parts on these carriers <span style="font-size:12px;font-weight:400;color:#6b7280;">from APM</span></h2>';
-        if (!rows.length) return h + '<p class="empty-state">No parts linked to these carriers yet</p></div>';
+        h += '</div><div id="tc-body">' + (sel ? _trainCarrHtml(sel) : _trainAllHtml()) + '</div>';
+        return h + '</div>';
+    }
+    var _trainSel = {};   // last carrier picked per train (this session), so Back from a carrier keeps it
+    function trainPick(id){
+        var st = window._trainState; if (!st) return;
+        id = String(id || '');
+        if (id && !Object.prototype.hasOwnProperty.call(st.perC, id)) return;
+        _trainSel[st.key] = id;
+        Array.prototype.forEach.call(document.querySelectorAll('#train-carriers .carr-chips button.carr-chip'), function(b){
+            var on = (b.getAttribute('data-carr') || '') === id;
+            b.classList.toggle('carr-sel', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        var box = document.getElementById('tc-body'); if (box) box.innerHTML = id ? _trainCarrHtml(id) : _trainAllHtml();
+    }
+    // Whole train: one row per part, the most recent replacement on any of its carriers
+    function _trainAllHtml(){
+        var st = window._trainState, rows = (st && st.rows) || [], unread = st && st.unread, now = new Date(), anyOrange = false;
+        var h = '<h2 style="font-size:16px;">Parts on these carriers <span style="font-size:12px;font-weight:400;color:#6b7280;">from APM</span></h2>';
+        if (!rows.length) return h + '<p class="empty-state">No parts linked to these carriers yet</p>';
         h += '<p style="font-size:12px;color:#6b7280;margin:0 0 6px;">One row per part. Date = the latest replacement on any carrier in this train (carrier number underneath). Tap a row to see each carrier.</p>';
         h += '<table class="lr-table" id="tc-table"><thead><tr><th>Part</th><th class="lr-times">Carriers</th><th class="lr-date">Last replaced</th></tr></thead><tbody>';
         rows.forEach(function(r, i){
@@ -4079,7 +4117,39 @@
         });
         h += '</tbody></table>';
         if (anyOrange || rows.some(function(r){ return r.orange > 0; })) h += _unconfLegend();
-        return h + '</div>';
+        return h;
+    }
+    // One carrier: its own linked parts and when each was last replaced (same as the carrier's Last replaced card)
+    function _trainCarrHtml(id){
+        var st = window._trainState; if (!st) return '';
+        var list = (st.perC[id] || []).slice(), now = new Date(), anyOrange = false, lbl = id.slice(-3);
+        list.sort(function(a, b){
+            var la = a.ev.length ? a.ev[a.ev.length - 1].d : '', lb = b.ev.length ? b.ev[b.ev.length - 1].d : '';
+            if (la !== lb) return la < lb ? 1 : -1;   // newest first, parts with no record last
+            return a.apn < b.apn ? -1 : (a.apn > b.apn ? 1 : 0);
+        });
+        window._replInfo = list;
+        var h = '<div class="tc-head"><h2 style="font-size:16px;margin:0;">Carrier ' + escapeHtml(lbl) + (st.types[id] ? ' <span style="font-size:12px;font-weight:400;color:#6b7280;">' + escapeHtml(st.types[id]) + '</span>' : '') + '</h2>';
+        h += '<button type="button" class="btn btn-secondary btn-sm" onclick="openDetail(\x27equipment\x27,\x27' + escapeAttrArg(sanitizeKey(id)) + '\x27)">Open carrier ' + escapeHtml(lbl) + ' \u203a</button></div>';
+        if (!list.length) return h + '<p class="empty-state">No parts linked to this carrier yet</p>';
+        h += '<p style="font-size:12px;color:#6b7280;margin:0 0 6px;">Parts linked on this carrier only. Date = when the APM work order was completed. Tap a row to see every date and work order.</p>';
+        h += '<table class="lr-table" id="tcc-table"><thead><tr><th>Part</th><th class="lr-date">Last replaced</th><th class="lr-times">Times</th></tr></thead><tbody>';
+        list.forEach(function(r, i){
+            var orange = _unconf(r.cn); if (orange) anyOrange = true;
+            var last = r.ev.length ? r.ev[r.ev.length - 1] : null;
+            h += '<tr class="lr-tap' + (orange ? ' unconf-row' : '') + '"' + (orange ? ' title="' + escapeHtml(_unconfTip(r.cn)) + '"' : '') + ' onclick="openReplHistory(' + i + ')">';
+            h += '<td><a class="search-link" href="#" onclick="return false;">' + escapeHtml(r.name || r.apn) + '</a>' + (r.name ? '<div class="lr-sub">' + escapeHtml(r.apn) + '</div>' : '') + '</td>';
+            if (last) {
+                h += '<td class="lr-date"><div style="font-weight:600;">' + escapeHtml(_replDate(last.d)) + '</div><div class="lr-sub">' + escapeHtml(_replAgo(last.d, now)) + '</div></td>';
+                h += '<td class="lr-times">' + r.ev.length + '</td>';
+            } else {
+                h += '<td class="lr-date">' + (r.unread ? '\u2014' : '<span class="lr-none">No APM record</span>') + '</td><td class="lr-times">\u2014</td>';
+            }
+            h += '</tr>';
+        });
+        h += '</tbody></table>';
+        if (anyOrange) h += _unconfLegend();
+        return h;
     }
     function openTrainPart(i){
         var r = window._trainInfo && window._trainInfo[i]; if (!r) return;
@@ -5279,7 +5349,7 @@
                 var allParts=await _pParts;
                 var _apnIdx=getApnIndex(allParts);
                 var eqParts=Object.entries(allParts).filter(([k,p])=>p.conveyors&&p.conveyors.indexOf(data.conveyorNumber)>=0);
-                var _replP=eqParts.length>0?_replLoad(data.conveyorNumber):null;
+                var _replP=(eqParts.length>0&&!_carrRange(data))?_replLoad(data.conveyorNumber):null;   // trains: the Carriers card shows replacements per carrier instead
                 html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Linked Parts <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkPartPopup(\x27'+escapeAttrArg(data.conveyorNumber)+'\x27)">+ Link Part</button></h2>';
                 if(eqParts.length>0){
                     var _lpCols=['Observations','Class','APN','Bin','Description','Qty','Criticality'];
