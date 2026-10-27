@@ -58,7 +58,20 @@
 - Sorting (tap a heading) and the filter boxes under the headings follow the new order. Bin still sorts as a bin code. Colours (orange links) and the APN link to the part page are unchanged.
 - Only this table changed. The Edit screen lists, the Parts Associated table and the station belts view keep their layout.
 
+### Crossbelt carriers - added 2026-10-27, still v1.30
+- **258 carrier positions, CARRIER.SC.001 to CARRIER.SC.258,** taken from APM. A carrier's page shows its **Train** (tap to open), the carrier it **Joins** (odd carriers: swivel joint to the axle of the carrier before; even carriers: axle to the swivel joint of the carrier after; 1 and 258 join, so the loop closes) and **< Carrier / Carrier >** buttons to step along the sorter (258 goes on to 1). Notes say Primary or Secondary carrier (primaries: 1, 17, 33).
+- **Trains CB.SRT.01.CARR.01 to .16 hold 16 carriers each** (CARR.16 = 241 to 256). APM files carriers 257 and 258 under CARR.16 as well; the app puts them in a new app-only train **CB.SRT.01.CARR.17**, so every train page lists the right carriers. CARR.16's notes say so.
+- **New "Carriers" card on a train's page:** a numbered button per carrier (blue border = primary) and **"Parts on these carriers"**: one row per part, how many carriers in the train have it, and the latest replacement on any of them with the carrier number underneath. Tap a row to see every carrier with its own date, or open the part. The train's own Linked Parts are listed as before.
+- **Every carrier gets its standard parts:** 59584 Carrier body on all, 59997 Swivel joint on odd carriers, 84175 Axle connection on even carriers (516 links, black, "linked by Carrier pattern"). They follow the pattern even where APM booked one on the other carrier of the same joint.
+- **Any other part is linked only when it was booked on that carrier in APM,** the same rule as general equipment: any work order type except Internal Repair, orange until 3 different work orders back it, returns to stock ignored.
+- **APN 59584 (carrier body) now has a Repair Kit** built from the parts booked out on its Internal Repair work orders: 67890, 67889, 67929, 67522, 67496, 67980, 67524, 64091.
+- **Last replaced** works on carriers too (dates from the work orders booked on each carrier).
+- **Search shorthands:** "carrier 97" or "sc 97" finds CARRIER.SC.097; "train 7" or "carr 7" finds CB.SRT.01.CARR.07. Also in the live suggestions.
+- **Saving a position on the Positions form now keeps fields the form does not show** (Active, class, and the carrier details: train, joint, carrier number, range). Before, saving dropped them.
+- The weekly database update now also fetches carrier work orders and keeps carrier links, orange flags and Last replaced dates up to date. No new version number.
+
 ### Small fixes
+- **Position Type and Notes were being wiped.** An old one-off clean-up from v1.02 ran again whenever an admin signed in on a browser it had not run on before, and blanked Type and Notes on every position. On 2026-10-27 no position in the database had a Type or Notes left (the 22 and 23 Oct backups are the same). It is now switched off, so Type and Notes typed from now on are kept.
 - Info messages (e.g. "You have been away for a while. Please re-enter your PIN.") were white text on no background, so they were unreadable. They now have a blue background.
 
 ### For the Firebase rules (when they are published)

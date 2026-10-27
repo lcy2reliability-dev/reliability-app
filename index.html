@@ -291,6 +291,12 @@
         .lr-sub { font-size:11px; color:#6b7280; font-weight:400; }
         .lr-none { font-size:12px; color:#6b7280; font-style:italic; }
         .lr-hist-row { display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:44px; padding:6px 0; border-bottom:1px solid #f1f5f9; }
+        .carr-chips { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 14px; }
+        .carr-chip { display:inline-flex; align-items:center; justify-content:center; min-width:52px; min-height:44px; padding:0 8px; border:1px solid #cbd5e1; border-radius:8px; background:#f8fafc; color:#1d4ed8; font-size:14px; font-weight:600; text-decoration:none; cursor:pointer; box-sizing:border-box; }
+        .carr-chip.carr-prim { border:2px solid #1d4ed8; background:#eff6ff; }
+        .carr-chip.carr-miss { color:#9ca3af; cursor:default; }
+        .carr-nav { display:flex; gap:8px; margin:10px 0 4px; }
+        .carr-nav .btn { min-height:44px; flex:1 1 0; }
         /* Announcements (v1.30): admin broadcast. Full-screen pop-up shown once per person; admin screen in the detail overlay */
         .ann-overlay{ display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:100000; background:rgba(15,23,42,0.74); align-items:center; justify-content:center; padding:16px; box-sizing:border-box; }
         .ann-card{ background:#fff; border-radius:14px; width:100%; max-width:480px; max-height:100%; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.4); }
@@ -1467,7 +1473,6 @@
     function onLoginComplete() {
         if (firebaseReady) {
             try {
-                oneTimeCleanup();
                 loadWorkAssigned();
                 cleanupOldWork();
                 cleanupDuplicateEndpoints();
@@ -2196,6 +2201,7 @@
                     // Manual Induct mapping
                     var miPatterns=getManualInductQuery(queryLower);
                     if(miPatterns){queryWords=miPatterns;}
+                    var _cq=getCarrierQuery(queryLower);
                     var eqResults=[];
                     Object.entries(allEquipment).forEach(([key,eq])=>{
                         if(eq.active===false)return;
@@ -2207,6 +2213,7 @@
                         else if(queryWords.every(w=>combined.includes(w)||combinedStripped.includes(w)))score=50;
                         if(!score&&queryLower.length>=3){var sEq=cn.replace(/[^a-z0-9]/g,'');var qiE=0;for(var ciE=0;ciE<sEq.length&&qiE<queryLower.length;ciE++){if(sEq[ciE]===queryLower[qiE])qiE++;}if(qiE===queryLower.length)score=15;}
                         if(miPatterns&&eq.isStation&&score)score=97;
+                        if(_cq&&cn===_cq)score=100;
                         if(score)eqResults.push({key,data:eq,score});
                     });
                     eqResults.sort((a,b)=>b.score-a.score||naturalCompare(a.data.conveyorNumber||'',b.data.conveyorNumber||''));
@@ -2934,6 +2941,7 @@
                 if(old.positionName)updateObj.positionName=old.positionName;
                 if(old.isStation)updateObj.isStation=old.isStation;
                 if(old.stationBelts)updateObj.stationBelts=old.stationBelts;
+                ['active','eqClass','eqConfig','carrierRange','carrierNo','carrierType','carrierPair','carrierTrain','jointWith'].forEach(function(f){ if(old[f]!==undefined&&old[f]!==null)updateObj[f]=old[f]; });
             }
             await db.ref('equipment/'+key).set(updateObj);
             if(imageUrl)await db.ref('equipmentImages/'+key).set(imageUrl);
@@ -3979,6 +3987,115 @@
         }
         if (_unconf(r.cn)) body += '<p class="unconf-legend">' + escapeHtml(_unconfTip(r.cn)) + '.</p>';
         showCustomModal('Replaced: ' + r.apn, body, [{label:'Close', class:'btn-primary', value:'ok'}]);
+    }
+
+    // ============================================================
+    // CROSSBELT CARRIERS (v1.30, 2026-10-27): every carrier is a position CARRIER.SC.001-258 (key CARRIER_SC_NNN). A train
+    // (CB.SRT.01.CARR.NN) carries carrierRange [first, last]; its page rolls up the carriers' linked parts, one row per part,
+    // so a phone does not show 16 repeated tables. Fields come from the one-off carrier build (carrierTrain, jointWith, carrierType).
+    // ============================================================
+    function _carrId(n){ return 'CARRIER.SC.' + ('00' + n).slice(-3); }
+    function _carrNo(d){ var m = /^CARRIER\.SC\.(\d{1,3})$/i.exec(String((d && (d.conveyorNumber || d.positionName)) || '')); return m ? parseInt(m[1], 10) : null; }
+    function _carrRange(d){
+        var r = d && d.carrierRange;
+        if (r && !Array.isArray(r) && typeof r === 'object') r = Object.values(r);
+        if (!Array.isArray(r) || r.length < 2) return null;
+        var a = parseInt(r[0], 10), b = parseInt(r[1], 10);
+        return (a >= 1 && b >= a && b - a < 64) ? [a, b] : null;
+    }
+    function _carrMax(eqc){
+        var mx = 0;
+        Object.keys(eqc || {}).forEach(function(k){ var m = /^CARRIER_SC_(\d{3})$/.exec(k); if (m && eqc[k] && eqc[k].active !== false) mx = Math.max(mx, parseInt(m[1], 10)); });
+        return mx;
+    }
+    function _carrLink(id, label){ return '<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27' + escapeAttrArg(sanitizeKey(id)) + '\x27);return false;">' + escapeHtml(label || id) + '</a>'; }
+    // Carrier page: train link, which carrier it joins, previous / next carrier along the sorter (wraps last -> 1)
+    function _carrFieldsHtml(d, eqc){
+        var n = _carrNo(d); if (n === null) return '';
+        var h = '', j = parseInt(d.jointWith, 10), mx = _carrMax(eqc);
+        if (d.carrierTrain) h += '<div class="detail-field"><label>Train</label><div class="value">' + _carrLink(String(d.carrierTrain)) + '</div></div>';
+        if (j >= 1) h += '<div class="detail-field"><label>Joins</label><div class="value">' + (n % 2 ? 'Swivel joint connects to the axle of ' : 'Axle connects to the swivel joint of ') + _carrLink(_carrId(j)) + '</div></div>';
+        if (mx >= 2 && n <= mx) {
+            var pv = n > 1 ? n - 1 : mx, nx = n < mx ? n + 1 : 1;
+            h += '<div class="carr-nav"><button class="btn btn-secondary btn-sm" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(_carrId(pv)) + '\x27)">\u2039 Carrier ' + _carrId(pv).slice(-3) + '</button>';
+            h += '<button class="btn btn-secondary btn-sm" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(_carrId(nx)) + '\x27)">Carrier ' + _carrId(nx).slice(-3) + ' \u203a</button></div>';
+        }
+        return h;
+    }
+    // Train page: carrier chips + one row per part linked on any of its carriers, with the most recent replacement
+    async function renderTrainCarriers(data){
+        var rg = _carrRange(data); if (!rg) return '';
+        var ids = [], at = {};
+        for (var n = rg[0]; n <= rg[1]; n++) { at[_carrId(n)] = ids.length; ids.push(_carrId(n)); }
+        var res = await Promise.all([getPartsCache(), getEquipmentCache()].concat(ids.map(function(id){ return _replLoad(id); })));
+        var allParts = res[0] || {}, eqc = res[1] || {}, reps = res.slice(2), unread = reps.some(function(x){ return x === null; }), byPart = {};
+        Object.keys(allParts).forEach(function(k){
+            var p = allParts[k]; if (!p || !p.conveyors || p.active === false) return;
+            var conv = Array.isArray(p.conveyors) ? p.conveyors : Object.values(p.conveyors);
+            var apn = String(p.apn == null ? '' : p.apn).trim();
+            conv.forEach(function(c){
+                c = String(c); if (!Object.prototype.hasOwnProperty.call(at, c)) return;
+                var cn = p.conveyorNotes && p.conveyorNotes[sanitizeKey(c)], rep = reps[at[c]];
+                var ev = rep ? _replParse(rep[sanitizeKey(apn.toUpperCase())]) : [];
+                var r = byPart[k] || (byPart[k] = { k: k, apn: apn, name: '', desc: p.partDescription || p.notes || '', list: [], last: null, lastC: '', orange: 0, times: 0 });
+                if (r.list.some(function(x){ return x.id === c; })) return;
+                if (!r.name && cn && cn.observations) r.name = String(cn.observations);
+                r.list.push({ id: c, cn: cn, ev: ev, unread: rep === null });
+                if (_unconf(cn)) r.orange++;
+                r.times += ev.length;
+                if (ev.length) { var l = ev[ev.length - 1]; if (!r.last || l.d > r.last.d) { r.last = l; r.lastC = c; } }
+            });
+        });
+        var rows = Object.keys(byPart).map(function(k){ return byPart[k]; });
+        rows.forEach(function(r){ r.list.sort(function(a, b){ return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0); }); });
+        rows.sort(function(a, b){
+            var la = a.last ? a.last.d : '', lb = b.last ? b.last.d : '';
+            if (la !== lb) return la < lb ? 1 : -1;   // newest first, parts with no record last
+            if (a.list.length !== b.list.length) return b.list.length - a.list.length;
+            return a.apn < b.apn ? -1 : (a.apn > b.apn ? 1 : 0);
+        });
+        window._trainInfo = rows;
+        var now = new Date(), anyOrange = false;
+        var h = '<div class="card" id="train-carriers"><h2>Carriers in this train <span style="font-size:12px;font-weight:400;color:#6b7280;">(' + ids.length + ')</span></h2>';
+        h += '<p style="font-size:12px;color:#6b7280;margin:0 0 4px;">Carriers ' + _carrId(rg[0]).slice(-3) + ' to ' + _carrId(rg[1]).slice(-3) + '. Tap one to open it. Blue border = primary carrier.</p><div class="carr-chips">';
+        ids.forEach(function(id){
+            var e = eqc[sanitizeKey(id)], lbl = id.slice(-3);
+            if (!e) { h += '<span class="carr-chip carr-miss" title="' + escapeHtml(id) + ' is not in the app">' + lbl + '</span>'; return; }
+            h += '<a class="carr-chip' + (e.carrierType === 'Primary' ? ' carr-prim' : '') + '" href="#" aria-label="' + escapeHtml(id) + '" title="' + escapeHtml(id) + '" onclick="openDetail(\x27equipment\x27,\x27' + sanitizeKey(id) + '\x27);return false;">' + lbl + '</a>';
+        });
+        h += '</div><h2 style="font-size:16px;">Parts on these carriers <span style="font-size:12px;font-weight:400;color:#6b7280;">from APM</span></h2>';
+        if (!rows.length) return h + '<p class="empty-state">No parts linked to these carriers yet</p></div>';
+        h += '<p style="font-size:12px;color:#6b7280;margin:0 0 6px;">One row per part. Date = the latest replacement on any carrier in this train (carrier number underneath). Tap a row to see each carrier.</p>';
+        h += '<table class="lr-table" id="tc-table"><thead><tr><th>Part</th><th class="lr-times">Carriers</th><th class="lr-date">Last replaced</th></tr></thead><tbody>';
+        rows.forEach(function(r, i){
+            var orange = r.orange > 0 && r.orange === r.list.length; if (orange) anyOrange = true;
+            var main = r.name || r.desc || r.apn;
+            h += '<tr class="lr-tap' + (orange ? ' unconf-row' : '') + '"' + (orange ? ' title="Not yet confirmed on any carrier"' : '') + ' onclick="openTrainPart(' + i + ')">';
+            h += '<td><a class="search-link" href="#" onclick="return false;">' + escapeHtml(main) + '</a>' + (main !== r.apn ? '<div class="lr-sub">' + escapeHtml(r.apn) + '</div>' : '') + '</td>';
+            h += '<td class="lr-times">' + r.list.length + (r.orange && !orange ? '<div class="lr-sub" style="color:#c2410c;">' + r.orange + ' orange</div>' : '') + '</td>';
+            if (r.last) h += '<td class="lr-date"><div style="font-weight:600;">' + escapeHtml(_replDate(r.last.d)) + '</div><div class="lr-sub">' + escapeHtml(_replAgo(r.last.d, now)) + ', carrier ' + escapeHtml(r.lastC.slice(-3)) + '</div></td>';
+            else h += '<td class="lr-date">' + (unread ? '\u2014' : '<span class="lr-none">No APM record</span>') + '</td>';
+            h += '</tr>';
+        });
+        h += '</tbody></table>';
+        if (anyOrange || rows.some(function(r){ return r.orange > 0; })) h += _unconfLegend();
+        return h + '</div>';
+    }
+    function openTrainPart(i){
+        var r = window._trainInfo && window._trainInfo[i]; if (!r) return;
+        var now = new Date(), n = r.list.length, main = r.name || r.desc || r.apn;
+        var body = '<div style="font-size:14px;font-weight:600;">' + escapeHtml(main) + '</div>';
+        body += '<div class="lr-sub" style="margin-bottom:6px;">APN ' + escapeHtml(r.apn) + (r.name && r.desc ? ' \u00b7 ' + escapeHtml(r.desc) : '') + '</div>';
+        body += '<p style="font-size:12px;color:#6b7280;margin-bottom:6px;">Linked on ' + n + ' carrier' + (n === 1 ? '' : 's') + ' in this train' + (r.times ? ', booked ' + r.times + ' time' + (r.times === 1 ? '' : 's') : '') + '. Tap a carrier to open it.</p><div style="max-height:50vh;overflow-y:auto;padding-right:8px;">';
+        r.list.forEach(function(c){
+            var last = c.ev.length ? c.ev[c.ev.length - 1] : null, o = _unconf(c.cn);
+            body += '<div class="lr-hist-row' + (o ? ' unconf-row' : '') + '"' + (o ? ' title="' + escapeHtml(_unconfTip(c.cn)) + '"' : '') + '><span><a class="search-link" href="#" onclick="closeModal();openDetail(\x27equipment\x27,\x27' + escapeAttrArg(sanitizeKey(c.id)) + '\x27);return false;">Carrier ' + escapeHtml(c.id.slice(-3)) + '</a></span>';
+            body += '<span style="font-size:12px;text-align:right;min-width:0;">' + (last ? '<strong>' + escapeHtml(_replDate(last.d)) + '</strong><div class="lr-sub">' + escapeHtml(_replAgo(last.d, now)) + (c.ev.length > 1 ? ', ' + c.ev.length + ' times' : '') + '</div>' : (c.unread ? '\u2014' : '<span class="lr-none">No APM record</span>')) + '</span></div>';
+        });
+        body += '</div>';
+        if (r.orange) body += '<p class="unconf-legend">Orange = not yet confirmed on that carrier: only a few APM work orders back the link.</p>';
+        body += '<p style="margin-top:10px;"><a class="search-link" href="#" onclick="closeModal();openDetail(\x27part\x27,\x27' + escapeAttrArg(r.k) + '\x27);return false;">Open part ' + escapeHtml(r.apn) + '</a></p>';
+        showCustomModal('Carriers: ' + r.apn, body, [{label:'Close', class:'btn-primary', value:'ok'}]);
     }
 
     // ============================================================
@@ -5151,6 +5268,7 @@
                 if(data.serialNumber)html+='<div class="detail-field"><label>Serial Number</label><div class="value">'+escapeHtml(data.serialNumber)+'</div></div>';
                 if(data.criticality)html+='<div class="detail-field"><label>Criticality</label><div class="value">'+escapeHtml(data.criticality)+'</div></div>';
                 html+='<div class="detail-field"><label>Notes</label><div class="value">'+escapeHtml(data.notes||'None')+'</div></div>';
+                if(_carrNo(data)!==null){try{html+=_carrFieldsHtml(data,await getEquipmentCache());}catch(_cfe){console.error('Carrier fields failed',_cfe);}}
                 var _eqDetImg=await _pImg;if(_eqDetImg){html+='<div class="detail-field"><label>SCADA Location Screenshot</label><img src="'+_eqDetImg+'" alt="SCADA screenshot" class="img-preview" style="display:block;"></div>';}
                 else{html+='<div class="detail-field" id="quick-ss-container" data-type="equipment" data-key="'+key+'"><a class="search-link" href="#" onclick="quickUploadScreenshot(\x27equipment\x27,\x27'+key+'\x27);return false;" style="color:#f59e0b;">\u26A0 SCADA Location Screenshot missing \u2014 click to add</a></div>';}
                 html+='</div>';
@@ -5189,6 +5307,8 @@
                 html+='</div>';
                 // Last replaced (from APM): one small read per position, shown only when it could be read
                 if(_replP){try{var _repl=await _replP;if(_repl!==null)html+=_replCardHtml(eqParts,data.conveyorNumber,_repl);}catch(_rle){console.error('Last replaced card failed',_rle);}}
+                // Crossbelt train (CB.SRT.01.CARR.NN): roll-up of its carriers' parts
+                if(_carrRange(data)){try{html+=await renderTrainCarriers(data);}catch(_tce){console.error('Train carriers card failed',_tce);}}
                 // Parts Associated (imported reference, lazy-loaded per position)
                 try {
                     var _assnap = await db.ref('associatedParts/' + key).once('value');
@@ -5869,12 +5989,13 @@ function liveSearchSuggest(query,scope){
             try{
                 var results=[];
                 var[eq,pts,rts]=await Promise.all([getEquipmentCache(),getPartsCache(),getRoutesCache()]);
-                var _mi=getManualInductQuery(q);
+                var _mi=getManualInductQuery(q),_cq=getCarrierQuery(q);
                 // Collect ALL matches with relevance score — no early cutoff
                 Object.entries(eq).forEach(function([k,v]){
                     if(v.active===false)return;
                     var s=Math.max(scoreId(v.conveyorNumber),scoreId(v.positionName),scoreText(v.description),scoreText(v.notes));
                     if(_mi){var _cnl=(v.conveyorNumber||'').toLowerCase();if(_mi.some(function(p){return _cnl.indexOf(p)>=0;}))s=Math.max(s,v.isStation?95:70);}
+                    if(_cq&&(v.conveyorNumber||'').toLowerCase()===_cq)s=Math.max(s,100);
                     if(s>0)results.push({type:'equipment',key:k,label:(v.positionName||v.conveyorNumber),sub:v.description||v.notes||'',_score:s});
                 });
                 Object.entries(pts).forEach(function([k,v]){
@@ -6672,6 +6793,7 @@ function liveSearchSuggest(query,scope){
     async function oneTimeCleanup() {
         if (!firebaseReady) return;
         if (!isAdmin()) return;
+        return;   // RETIRED 2026-10-27: this v1.02 one-off ran again on every new browser an admin signed in on and wiped Type + Notes on every position (e.g. the crossbelt carrier notes). Kept only so old references still resolve.
         var cleanupDone = localStorage.getItem('reliability_cleanup_v102');
         if (cleanupDone) return;
         try {
@@ -6699,6 +6821,15 @@ function liveSearchSuggest(query,scope){
     var MI_REVERSE = {};
     Object.keys(MI_MAPPING).forEach(function(k) { MI_REVERSE[MI_MAPPING[k]] = k; });
 
+    // Crossbelt shorthands: "carrier 97", "sc 97", "carrier sc 97", "carrier.sc.97" -> carrier.sc.097; "train 7", "carr 7" -> cb.srt.01.carr.07
+    function getCarrierQuery(queryLower) {
+        var q = String(queryLower || '').trim().toLowerCase(), m;
+        m = /^(?:crossbelt\s*)?(?:carrier|sc)\s*[.#]?\s*(?:sc\s*[.#]?\s*)?(?:no\.?\s*)?(\d{1,3})$/.exec(q);
+        if (m) { var n = parseInt(m[1], 10); if (n >= 1) return 'carrier.sc.' + ('00' + n).slice(-3); }
+        m = /^(?:train|carr)\s*[.#]?\s*(?:no\.?\s*)?(\d{1,2})$/.exec(q);
+        if (m) { var t = parseInt(m[1], 10); if (t >= 1) return 'cb.srt.01.carr.' + ('0' + t).slice(-2); }
+        return null;
+    }
     function getManualInductQuery(queryLower) {
         // Returns an array of CB.SRT ID patterns to match, or null if not a Manual Induct search.
         // Accepts any combination of the words manual / induct(ion) / station + a number, e.g.
