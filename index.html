@@ -298,7 +298,6 @@
         button.carr-chip { font-family:inherit; line-height:1; }
         .carr-chip.carr-sel { background:#1d4ed8; color:#fff; border-color:#1d4ed8; }
         .carr-chip.carr-sel.carr-prim { border-color:#1e3a8a; }
-        .carr-chip.carr-all { min-width:60px; }
         .tc-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin:2px 0 6px; }
         .tc-head .btn { min-height:44px; }
         .carr-nav { display:flex; gap:8px; margin:10px 0 4px; }
@@ -2207,10 +2206,11 @@
                     // Manual Induct mapping
                     var miPatterns=getManualInductQuery(queryLower);
                     if(miPatterns){queryWords=miPatterns;}
-                    var _cq=getCarrierQuery(queryLower);
+                    var _cs=_carrSearch(queryLower,allEquipment);
                     var eqResults=[];
                     Object.entries(allEquipment).forEach(([key,eq])=>{
                         if(eq.active===false)return;
+                        if(_carrNo(eq)!==null)return;   // carriers are reached through their train
                         var combined=[eq.conveyorNumber,eq.positionName,eq.type,eq.notes,eq.description].filter(Boolean).join(' ').toLowerCase();var combinedStripped=combined.replace(/[^a-z0-9\s]/g,'');
                         var cn=(eq.conveyorNumber||'').toLowerCase();
                         var score=0;
@@ -2219,17 +2219,18 @@
                         else if(queryWords.every(w=>combined.includes(w)||combinedStripped.includes(w)))score=50;
                         if(!score&&queryLower.length>=3){var sEq=cn.replace(/[^a-z0-9]/g,'');var qiE=0;for(var ciE=0;ciE<sEq.length&&qiE<queryLower.length;ciE++){if(sEq[ciE]===queryLower[qiE])qiE++;}if(qiE===queryLower.length)score=15;}
                         if(miPatterns&&eq.isStation&&score)score=97;
-                        if(_cq&&cn===_cq)score=100;
+                        if(_cs&&cn===_cs.cn)score=100;
                         if(score)eqResults.push({key,data:eq,score});
                     });
                     eqResults.sort((a,b)=>b.score-a.score||naturalCompare(a.data.conveyorNumber||'',b.data.conveyorNumber||''));
+                    if(_cs&&_cs.carr&&eqResults.some(function(r){return (r.data.conveyorNumber||'').toLowerCase()===_cs.cn;}))eqResults=eqResults.filter(function(r){return (r.data.conveyorNumber||'').toLowerCase()===_cs.cn;});   // carrier search: just its train
                     if(eqResults.length>0){
                         hasResults=true;
                         html+='<div class="search-result-section"><h3>Positions ('+eqResults.length+' results)</h3>';
                         eqResults.slice(0,15).forEach(item=>{
                             var eq=item.data;
                             html+='<div style="padding:8px 0;border-bottom:1px solid #f1f5f9;">';
-                            html+='<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+item.key+'\x27);return false;">'+posDisp(eq)+'</a>';
+                            html+='<a class="search-link" href="#" onclick="'+_posSearchClick(item.key,eq,_cs)+';return false;">'+posDisp(eq)+'</a>';html+=_posHintHtml(eq,_cs);
                             html+=' | Type: '+escapeHtml(eq.type||'N/A');
                             if(eq.description)html+=' | <span class="notes-display">'+escapeHtml(eq.description)+'</span>';
                             html+='</div>';
@@ -2240,7 +2241,7 @@
                             eqResults.slice(15).forEach(item=>{
                                 var eq=item.data;
                                 html+='<div style="padding:8px 0;border-bottom:1px solid #f1f5f9;">';
-                                html+='<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+item.key+'\x27);return false;">'+posDisp(eq)+'</a>';
+                                html+='<a class="search-link" href="#" onclick="'+_posSearchClick(item.key,eq,_cs)+';return false;">'+posDisp(eq)+'</a>';html+=_posHintHtml(eq,_cs);
                                 html+=' | Type: '+escapeHtml(eq.type||'N/A');
                                 if(eq.description)html+=' | <span class="notes-display">'+escapeHtml(eq.description)+'</span>';
                                 html+='</div>';
@@ -4000,8 +4001,9 @@
 
     // ============================================================
     // CROSSBELT CARRIERS (v1.30, 2026-10-27): every carrier is a position CARRIER.SC.001-258 (key CARRIER_SC_NNN). A train
-    // (CB.SRT.01.CARR.NN) carries carrierRange [first, last]; its page rolls up the carriers' linked parts, one row per part,
-    // so a phone does not show 16 repeated tables. Fields come from the one-off carrier build (carrierTrain, jointWith, carrierType).
+    // (CB.SRT.01.CARR.NN) carries carrierRange [first, last]; its page shows one chip per carrier and the picked carrier's own
+    // parts underneath. Carriers never show in search: a carrier search opens its train with that carrier picked.
+    // Fields come from the one-off carrier build (carrierTrain, jointWith, carrierType).
     // ============================================================
     function _carrId(n){ return 'CARRIER.SC.' + ('00' + n).slice(-3); }
     function _carrNo(d){ var m = /^CARRIER\.SC\.(\d{1,3})$/i.exec(String((d && (d.conveyorNumber || d.positionName)) || '')); return m ? parseInt(m[1], 10) : null; }
@@ -4017,12 +4019,52 @@
         Object.keys(eqc || {}).forEach(function(k){ var m = /^CARRIER_SC_(\d{3})$/.exec(k); if (m && eqc[k] && eqc[k].active !== false) mx = Math.max(mx, parseInt(m[1], 10)); });
         return mx;
     }
+    // Train pages: ONE combined Linked Parts list = every part linked on any carrier (CARRIER.SC.NNN) or any train (has carrierRange).
+    // The trains are alike, so every CARR page shows the same list. Orange only if orange on every link.
+    function _fleetLinked(allParts, eqc, here){
+        var trains = {}, nCarr = 0, rows = [], byK = {}, actC = {};
+        Object.keys(eqc || {}).forEach(function(k){
+            var e = eqc[k]; if (!e || !e.conveyorNumber) return;
+            if (_carrRange(e)) trains[String(e.conveyorNumber)] = 1;
+            else if (_carrNo(e) !== null && e.active !== false) { nCarr++; actC[String(e.conveyorNumber)] = 1; }
+        });
+        function mode(m){ var best = '', bn = 0; Object.keys(m).forEach(function(x){ if (m[x] > bn) { best = x; bn = m[x]; } }); return best; }
+        Object.keys(allParts || {}).forEach(function(k){
+            var p = allParts[k]; if (!p || !p.conveyors) return;
+            var conv = Array.isArray(p.conveyors) ? p.conveyors : Object.values(p.conveyors);
+            var links = [], carrs = {}, seen = {}, onT = false;
+            conv.forEach(function(c){
+                c = String(c); if (seen[c]) return;
+                var isC = /^CARRIER\.SC\.\d{3}$/i.test(c); if (!isC && !trains[c]) return;
+                seen[c] = 1; if (isC) { if (actC[c]) carrs[c] = 1; } else onT = true;
+                links.push({ c: c, cn: p.conveyorNotes && p.conveyorNotes[sanitizeKey(c)] });
+            });
+            if (!links.length) return;
+            var own = null, obs = {}, qty = {}, allOr = true;
+            links.forEach(function(l){
+                var cn = l.cn; if (l.c === here) own = cn;
+                if (!_unconf(cn)) allOr = false;
+                if (cn && cn.observations) obs[cn.observations] = (obs[cn.observations] || 0) + 1;
+                if (cn && cn.quantity != null && cn.quantity !== '') { var q = String(cn.quantity); qty[q] = (qty[q] || 0) + 1; }
+            });
+            var flag = { unconfirmed: allOr };
+            if (links.length === 1 && links[0].cn && typeof links[0].cn.woCount === 'number') flag.woCount = links[0].cn.woCount;
+            var r = { k: k, p: p, nC: Object.keys(carrs).length, onT: onT, flag: flag,
+                note: { observations: (own && own.observations) || mode(obs), quantity: (own && own.quantity != null && own.quantity !== '') ? String(own.quantity) : mode(qty) } };
+            rows.push(r); byK[k] = r;
+        });
+        rows.sort(function(a, b){
+            if (a.nC !== b.nC) return b.nC - a.nC;   // on the most carriers first; train-only links last
+            return String(a.p.apn == null ? '' : a.p.apn).localeCompare(String(b.p.apn == null ? '' : b.p.apn), undefined, { numeric: true });
+        });
+        return { rows: rows, byK: byK, nCarr: nCarr };
+    }
     function _carrLink(id, label){ return '<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27' + escapeAttrArg(sanitizeKey(id)) + '\x27);return false;">' + escapeHtml(label || id) + '</a>'; }
     // Carrier page: train link, which carrier it joins, previous / next carrier along the sorter (wraps last -> 1)
     function _carrFieldsHtml(d, eqc){
         var n = _carrNo(d); if (n === null) return '';
         var h = '', j = parseInt(d.jointWith, 10), mx = _carrMax(eqc);
-        if (d.carrierTrain) h += '<div class="detail-field"><label>Train</label><div class="value">' + _carrLink(String(d.carrierTrain)) + '</div></div>';
+        if (d.carrierTrain) { var _tk = sanitizeKey(String(d.carrierTrain)); h += '<div class="detail-field"><label>Train</label><div class="value"><a class="search-link" href="#" onclick="openTrainAt(\x27' + escapeAttrArg(_tk) + '\x27,\x27' + escapeAttrArg(_tk) + '\x27,\x27' + escapeAttrArg(_carrId(n)) + '\x27);return false;">' + escapeHtml(String(d.carrierTrain)) + '</a></div></div>'; }
         if (j >= 1) h += '<div class="detail-field"><label>Joins</label><div class="value">' + (n % 2 ? 'Swivel joint connects to the axle of ' : 'Axle connects to the swivel joint of ') + _carrLink(_carrId(j)) + '</div></div>';
         if (mx >= 2 && n <= mx) {
             var pv = n > 1 ? n - 1 : mx, nx = n < mx ? n + 1 : 1;
@@ -4031,93 +4073,61 @@
         }
         return h;
     }
-    // Train page: carrier chips + one row per part linked on any of its carriers, with the most recent replacement
+    // Train page: one chip per carrier; the picked carrier's own parts and when each was last replaced show underneath
     async function renderTrainCarriers(data){
         var rg = _carrRange(data); if (!rg) return '';
         var ids = [], at = {};
         for (var n = rg[0]; n <= rg[1]; n++) { at[_carrId(n)] = ids.length; ids.push(_carrId(n)); }
         var res = await Promise.all([getPartsCache(), getEquipmentCache()].concat(ids.map(function(id){ return _replLoad(id); })));
-        var allParts = res[0] || {}, eqc = res[1] || {}, reps = res.slice(2), unread = reps.some(function(x){ return x === null; }), byPart = {};
+        var allParts = res[0] || {}, eqc = res[1] || {}, reps = res.slice(2), perC = {};
+        ids.forEach(function(id){ perC[id] = []; });
         Object.keys(allParts).forEach(function(k){
             var p = allParts[k]; if (!p || !p.conveyors || p.active === false) return;
             var conv = Array.isArray(p.conveyors) ? p.conveyors : Object.values(p.conveyors);
-            var apn = String(p.apn == null ? '' : p.apn).trim();
+            var apn = String(p.apn == null ? '' : p.apn).trim(), seen = {};
             conv.forEach(function(c){
-                c = String(c); if (!Object.prototype.hasOwnProperty.call(at, c)) return;
+                c = String(c); if (!Object.prototype.hasOwnProperty.call(at, c) || seen[c]) return;
+                seen[c] = 1;
                 var cn = p.conveyorNotes && p.conveyorNotes[sanitizeKey(c)], rep = reps[at[c]];
                 var ev = rep ? _replParse(rep[sanitizeKey(apn.toUpperCase())]) : [];
-                var r = byPart[k] || (byPart[k] = { k: k, apn: apn, name: '', desc: p.partDescription || p.notes || '', list: [], last: null, lastC: '', orange: 0, times: 0 });
-                if (r.list.some(function(x){ return x.id === c; })) return;
-                if (!r.name && cn && cn.observations) r.name = String(cn.observations);
-                r.list.push({ id: c, cn: cn, ev: ev, unread: rep === null });
-                if (_unconf(cn)) r.orange++;
-                r.times += ev.length;
-                if (ev.length) { var l = ev[ev.length - 1]; if (!r.last || l.d > r.last.d) { r.last = l; r.lastC = c; } }
+                perC[c].push({ apn: apn, name: (cn && cn.observations) || p.partDescription || p.notes || '', cn: cn, ev: ev, unread: rep === null, where: 'Carrier ' + c.slice(-3) });
             });
         });
-        var rows = Object.keys(byPart).map(function(k){ return byPart[k]; });
-        rows.forEach(function(r){ r.list.sort(function(a, b){ return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0); }); });
-        rows.sort(function(a, b){
-            var la = a.last ? a.last.d : '', lb = b.last ? b.last.d : '';
-            if (la !== lb) return la < lb ? 1 : -1;   // newest first, parts with no record last
-            if (a.list.length !== b.list.length) return b.list.length - a.list.length;
-            return a.apn < b.apn ? -1 : (a.apn > b.apn ? 1 : 0);
-        });
-        window._trainInfo = rows;
-        var perC = {};
-        ids.forEach(function(id){ perC[id] = []; });
-        rows.forEach(function(r){ r.list.forEach(function(c){
-            perC[c.id].push({ apn: r.apn, name: (c.cn && c.cn.observations) || r.desc || '', cn: c.cn, ev: c.ev, unread: c.unread, where: 'Carrier ' + c.id.slice(-3) });
-        }); });
-        var tkey = sanitizeKey(String(data.conveyorNumber || '')), types = {};
-        ids.forEach(function(id){ var e = eqc[sanitizeKey(id)]; types[id] = e ? (e.carrierType || '') : null; });
+        var tkey = sanitizeKey(String(data.conveyorNumber || '')), types = {}, first = '';
+        ids.forEach(function(id){ var e = eqc[sanitizeKey(id)]; types[id] = e ? (e.carrierType || '') : null; if (!first && types[id] !== null) first = id; });
         var sel = _trainSel[tkey] || '';
-        if (sel && !types[sel] && types[sel] !== '') sel = '';
-        window._trainState = { key: tkey, ids: ids, perC: perC, types: types, unread: unread, rows: rows };
+        if (!sel || types[sel] == null) sel = first;   // default: the first carrier of the train that is in the app
+        window._trainState = { key: tkey, ids: ids, perC: perC, types: types };
         var h = '<div class="card" id="train-carriers"><h2>Carriers in this train <span style="font-size:12px;font-weight:400;color:#6b7280;">(' + ids.length + ')</span></h2>';
-        h += '<p style="font-size:12px;color:#6b7280;margin:0 0 4px;">Carriers ' + _carrId(rg[0]).slice(-3) + ' to ' + _carrId(rg[1]).slice(-3) + '. Tap a carrier to see its own parts and when each was last replaced; All = the whole train. Blue border = primary carrier.</p><div class="carr-chips">';
-        h += '<button type="button" class="carr-chip carr-all' + (sel ? '' : ' carr-sel') + '" data-carr="" aria-pressed="' + (sel ? 'false' : 'true') + '" onclick="trainPick(\x27\x27)">All</button>';
+        h += '<p style="font-size:12px;color:#6b7280;margin:0 0 4px;">Carriers ' + _carrId(rg[0]).slice(-3) + ' to ' + _carrId(rg[1]).slice(-3) + '. Tap a carrier to see its own parts and when each was last replaced. Blue border = primary carrier.</p><div class="carr-chips">';
         ids.forEach(function(id){
             var lbl = id.slice(-3);
             if (types[id] === null) { h += '<span class="carr-chip carr-miss" title="' + escapeHtml(id) + ' is not in the app">' + lbl + '</span>'; return; }
             var on = sel === id;
             h += '<button type="button" class="carr-chip' + (types[id] === 'Primary' ? ' carr-prim' : '') + (on ? ' carr-sel' : '') + '" data-carr="' + escapeHtml(id) + '" aria-pressed="' + (on ? 'true' : 'false') + '" aria-label="' + escapeHtml(id) + '" title="' + escapeHtml(id) + '" onclick="trainPick(\x27' + escapeAttrArg(id) + '\x27)">' + lbl + '</button>';
         });
-        h += '</div><div id="tc-body">' + (sel ? _trainCarrHtml(sel) : _trainAllHtml()) + '</div>';
+        h += '</div><div id="tc-body">' + (sel ? _trainCarrHtml(sel) : '<p class="empty-state">None of these carriers are in the app yet</p>') + '</div>';
         return h + '</div>';
     }
     var _trainSel = {};   // last carrier picked per train (this session), so Back from a carrier keeps it
     function trainPick(id){
         var st = window._trainState; if (!st) return;
         id = String(id || '');
-        if (id && !Object.prototype.hasOwnProperty.call(st.perC, id)) return;
+        if (!id || !Object.prototype.hasOwnProperty.call(st.perC, id) || st.types[id] == null) return;
         _trainSel[st.key] = id;
+        try { var _ra = getRecents(), _ri = -1;
+            _ra.forEach(function(x, i){ if (_ri < 0 && x && x.type === 'equipment' && x.key === st.key) _ri = i; });
+            if (_ri >= 0 && _ra[_ri].carr !== id) { _ra[_ri].carr = id; localStorage.setItem('rmeRecent', JSON.stringify(_ra)); } } catch (e) {}
         Array.prototype.forEach.call(document.querySelectorAll('#train-carriers .carr-chips button.carr-chip'), function(b){
             var on = (b.getAttribute('data-carr') || '') === id;
             b.classList.toggle('carr-sel', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
-        var box = document.getElementById('tc-body'); if (box) box.innerHTML = id ? _trainCarrHtml(id) : _trainAllHtml();
+        var box = document.getElementById('tc-body'); if (box) box.innerHTML = _trainCarrHtml(id);
     }
-    // Whole train: one row per part, the most recent replacement on any of its carriers
-    function _trainAllHtml(){
-        var st = window._trainState, rows = (st && st.rows) || [], unread = st && st.unread, now = new Date(), anyOrange = false;
-        var h = '<h2 style="font-size:16px;">Parts on these carriers <span style="font-size:12px;font-weight:400;color:#6b7280;">from APM</span></h2>';
-        if (!rows.length) return h + '<p class="empty-state">No parts linked to these carriers yet</p>';
-        h += '<p style="font-size:12px;color:#6b7280;margin:0 0 6px;">One row per part. Date = the latest replacement on any carrier in this train (carrier number underneath). Tap a row to see each carrier.</p>';
-        h += '<table class="lr-table" id="tc-table"><thead><tr><th>Part</th><th class="lr-times">Carriers</th><th class="lr-date">Last replaced</th></tr></thead><tbody>';
-        rows.forEach(function(r, i){
-            var orange = r.orange > 0 && r.orange === r.list.length; if (orange) anyOrange = true;
-            var main = r.name || r.desc || r.apn;
-            h += '<tr class="lr-tap' + (orange ? ' unconf-row' : '') + '"' + (orange ? ' title="Not yet confirmed on any carrier"' : '') + ' onclick="openTrainPart(' + i + ')">';
-            h += '<td><a class="search-link" href="#" onclick="return false;">' + escapeHtml(main) + '</a>' + (main !== r.apn ? '<div class="lr-sub">' + escapeHtml(r.apn) + '</div>' : '') + '</td>';
-            h += '<td class="lr-times">' + r.list.length + (r.orange && !orange ? '<div class="lr-sub" style="color:#c2410c;">' + r.orange + ' orange</div>' : '') + '</td>';
-            if (r.last) h += '<td class="lr-date"><div style="font-weight:600;">' + escapeHtml(_replDate(r.last.d)) + '</div><div class="lr-sub">' + escapeHtml(_replAgo(r.last.d, now)) + ', carrier ' + escapeHtml(r.lastC.slice(-3)) + '</div></td>';
-            else h += '<td class="lr-date">' + (unread ? '\u2014' : '<span class="lr-none">No APM record</span>') + '</td>';
-            h += '</tr>';
-        });
-        h += '</tbody></table>';
-        if (anyOrange || rows.some(function(r){ return r.orange > 0; })) h += _unconfLegend();
-        return h;
+    // From search: open a train with one carrier already picked ("carrier 2" -> CB.SRT.01.CARR.01 showing carrier 002)
+    function openTrainAt(key, tkey, id){
+        if (tkey && id) _trainSel[String(tkey)] = String(id);
+        openDetail('equipment', key);
     }
     // One carrier: its own linked parts and when each was last replaced (same as the carrier's Last replaced card)
     function _trainCarrHtml(id){
@@ -4150,22 +4160,6 @@
         h += '</tbody></table>';
         if (anyOrange) h += _unconfLegend();
         return h;
-    }
-    function openTrainPart(i){
-        var r = window._trainInfo && window._trainInfo[i]; if (!r) return;
-        var now = new Date(), n = r.list.length, main = r.name || r.desc || r.apn;
-        var body = '<div style="font-size:14px;font-weight:600;">' + escapeHtml(main) + '</div>';
-        body += '<div class="lr-sub" style="margin-bottom:6px;">APN ' + escapeHtml(r.apn) + (r.name && r.desc ? ' \u00b7 ' + escapeHtml(r.desc) : '') + '</div>';
-        body += '<p style="font-size:12px;color:#6b7280;margin-bottom:6px;">Linked on ' + n + ' carrier' + (n === 1 ? '' : 's') + ' in this train' + (r.times ? ', booked ' + r.times + ' time' + (r.times === 1 ? '' : 's') : '') + '. Tap a carrier to open it.</p><div style="max-height:50vh;overflow-y:auto;padding-right:8px;">';
-        r.list.forEach(function(c){
-            var last = c.ev.length ? c.ev[c.ev.length - 1] : null, o = _unconf(c.cn);
-            body += '<div class="lr-hist-row' + (o ? ' unconf-row' : '') + '"' + (o ? ' title="' + escapeHtml(_unconfTip(c.cn)) + '"' : '') + '><span><a class="search-link" href="#" onclick="closeModal();openDetail(\x27equipment\x27,\x27' + escapeAttrArg(sanitizeKey(c.id)) + '\x27);return false;">Carrier ' + escapeHtml(c.id.slice(-3)) + '</a></span>';
-            body += '<span style="font-size:12px;text-align:right;min-width:0;">' + (last ? '<strong>' + escapeHtml(_replDate(last.d)) + '</strong><div class="lr-sub">' + escapeHtml(_replAgo(last.d, now)) + (c.ev.length > 1 ? ', ' + c.ev.length + ' times' : '') + '</div>' : (c.unread ? '\u2014' : '<span class="lr-none">No APM record</span>')) + '</span></div>';
-        });
-        body += '</div>';
-        if (r.orange) body += '<p class="unconf-legend">Orange = not yet confirmed on that carrier: only a few APM work orders back the link.</p>';
-        body += '<p style="margin-top:10px;"><a class="search-link" href="#" onclick="closeModal();openDetail(\x27part\x27,\x27' + escapeAttrArg(r.k) + '\x27);return false;">Open part ' + escapeHtml(r.apn) + '</a></p>';
-        showCustomModal('Carriers: ' + r.apn, body, [{label:'Close', class:'btn-primary', value:'ok'}]);
     }
 
     // ============================================================
@@ -5317,7 +5311,7 @@
             // Delete button moved to bottom of page
             var _waAll = await getWorkAssignedData();
             var _itemName = data.conveyorNumber||data.routeNumber||data.apn||'';
-            try{pushRecent(type,key,_itemName);}catch(e){}
+            try{var _rcN=type==='equipment'?_carrNo(data):null;if(_rcN===null)pushRecent(type,key,_itemName,(type==='equipment'&&_carrRange(data))?(_trainSel[sanitizeKey(String(data.conveyorNumber||''))]||''):'');else if(data.carrierTrain)pushRecent('equipment',sanitizeKey(String(data.carrierTrain)),String(data.carrierTrain),_carrId(_rcN));}catch(e){}
             var _isInWork = Object.values(_waAll).some(function(j){ return j && (j.assignedTo||'').toLowerCase()===currentUser.toLowerCase() && ((j.routeNumber&&j.routeNumber===_itemName)||(j.equipment&&j.equipment===_itemName)); });
             if(type!=='part'){
                 if(!_isInWork){if(type==='equipment'){html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="openJobWizard(\x27equipment\x27,\x27'+key+'\x27,\x27'+escapeAttrArg(_itemName)+'\x27)">+ Add to Job list</button>';}else{html+='<button class="btn btn-secondary btn-sm" style="background:#10b981;color:white;border:none;" onclick="addToWorkFromSearch(\x27'+type+'\x27,\x27'+key+'\x27,\x27'+escapeAttrArg(_itemName)+'\x27)">+ Add to Job list</button>';}}
@@ -5348,24 +5342,28 @@
                 // Linked Parts
                 var allParts=await _pParts;
                 var _apnIdx=getApnIndex(allParts);
-                var eqParts=Object.entries(allParts).filter(([k,p])=>p.conveyors&&p.conveyors.indexOf(data.conveyorNumber)>=0);
+                var _fleet=_carrRange(data)?_fleetLinked(allParts,await getEquipmentCache(),data.conveyorNumber):null;   // trains: one combined list of every carrier's and train's parts
+                var eqParts=_fleet?_fleet.rows.map(function(r){return [r.k,r.p];}):Object.entries(allParts).filter(([k,p])=>p.conveyors&&p.conveyors.indexOf(data.conveyorNumber)>=0);
                 var _replP=(eqParts.length>0&&!_carrRange(data))?_replLoad(data.conveyorNumber):null;   // trains: the Carriers card shows replacements per carrier instead
                 html+='<div class="card"><h2 style="display:flex;align-items:center;justify-content:space-between;">Linked Parts <button class="btn btn-sm" style="background:#2563eb;color:white;border:none;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openLinkPartPopup(\x27'+escapeAttrArg(data.conveyorNumber)+'\x27)">+ Link Part</button></h2>';
+                if(_fleet&&eqParts.length>0)html+='<p class="fleet-note" style="font-size:12px;color:#6b7280;margin:0 0 10px;">Every part booked on any carrier, on any train. Every CARR page shows this same list. Carriers = how many of the '+_fleet.nCarr+' carriers it is linked on. Tap a carrier below to see its own parts.</p>';
                 if(eqParts.length>0){
-                    var _lpCols=['Observations','Class','APN','Bin','Description','Qty','Criticality'];
+                    var _lpCols=_fleet?['Observations','Class','APN','Bin','Description','Qty','Carriers','Criticality']:['Observations','Class','APN','Bin','Description','Qty','Criticality'];
                     html+='<table id="lp-table"><thead><tr>'+_lpCols.map(function(n,i){return '<th'+(n==='Bin'?' data-sort="bin"':'')+' onclick="sortTable(\x27lp-table\x27,'+i+')" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">'+n+' <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th>';}).join('')+'</tr><tr class="filter-row">'+_lpCols.map(function(n,i){return '<td><input class="col-filter" data-col="'+i+'" oninput="filterPartsTable(\x27lp-table\x27)" aria-label="Filter by '+n+'" placeholder="'+n+'"></td>';}).join('')+'</tr></thead><tbody>';
                     var _ucAny2=false;
                     eqParts.forEach(([k,p])=>{
                         var cc=critFg(p.criticality);
-                        var _cn0=p.conveyorNotes&&p.conveyorNotes[sanitizeKey(data.conveyorNumber)];
+                        var _fr=_fleet?_fleet.byK[k]:null;
+                        var _cn0=_fr?_fr.flag:(p.conveyorNotes&&p.conveyorNotes[sanitizeKey(data.conveyorNumber)]);
                         if(_unconf(_cn0))_ucAny2=true;
-                        var _cn=p.conveyorNotes&&p.conveyorNotes[sanitizeKey(data.conveyorNumber)];
+                        var _cn=_fr?_fr.note:(p.conveyorNotes&&p.conveyorNotes[sanitizeKey(data.conveyorNumber)]);
                         html+='<tr'+_unconfAttr(_cn0)+'><td data-label="Observations" style="font-size:12px;color:#4b5563;font-style:italic;max-width:140px;">'+escapeHtml((_cn&&_cn.observations)?_cn.observations:'—')+'</td>';
                         html+='<td data-label="Class"><span style="font-size:11px;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:8px;">'+escapeHtml(p.partClass||p.partType||'')+'</span></td>';
                         html+='<td data-label="APN"><a class="search-link" href="#" onclick="openDetail(\x27part\x27,\x27'+k+'\x27);return false;">'+escapeHtml(p.apn)+'</a></td>';
                         html+='<td data-label="Bin" style="font-weight:600;">'+escapeHtml(p.binLocation||p.location||'')+'</td>';
                         html+='<td data-label="Description" style="font-size:12px;color:#4b5563;">'+escapeHtml(p.partDescription||p.notes||'')+'</td>';
                         html+='<td data-label="Qty" style="font-size:12px;text-align:center;">'+escapeHtml((_cn&&_cn.quantity)?_cn.quantity:'—')+'</td>';
+                        if(_fr)html+='<td data-label="Carriers" style="font-size:12px;text-align:center;white-space:nowrap;">'+escapeHtml(_fr.nC?(_fr.nC+' of '+_fleet.nCarr):(_fr.onT?'Train':('0 of '+_fleet.nCarr)))+'</td>';
                         html+='<td data-label="Criticality"><span style="color:'+cc+';font-weight:600;font-size:12px;">'+escapeHtml(p.criticality||'')+'</span></td>';
                         html+='</tr>';
                     });
@@ -5385,10 +5383,12 @@
                     var _assoc = _assnap.val();
                     if (_assoc && !Array.isArray(_assoc)) _assoc = Object.values(_assoc);
                     _assoc = _assoc || [];
+                    if (_fleet) { var _lkA = {}; eqParts.forEach(function(e){ _lkA[String(e[1].apn == null ? '' : e[1].apn).toLowerCase().trim()] = 1; }); _assoc = _assoc.filter(function(a){ return a && !_lkA[String(a.apn == null ? '' : a.apn).toLowerCase().trim()]; }); }
                     if (_assoc.length > 0) {
                         var _canL = canWrite(); var _isAdm = isAdmin();
                         html += '<div class="card assoc-card"><h2 style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>Parts Associated <span style="font-size:12px;font-weight:400;color:#6b7280;">' + _assoc.length + ' imported</span></span>' + (_isAdm ? '<button class="btn btn-sm" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;padding:3px 10px;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;" onclick="event.stopPropagation();var c=this.closest(\x27.assoc-card\x27);var on=c.classList.toggle(\x27assoc-editing\x27);this.textContent=on?\x27Done\x27:\x27Edit list\x27;">Edit list</button>' : '') + '</h2>';
-                        html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Imported catalogue reference \u2014 may be inaccurate. Link the ones that belong here and they move up to Linked Parts.</p>';
+                        if (_fleet) { var _frg = _carrRange(data); html += '<p class="fleet-note" style="font-size:12px;color:#6b7280;margin-bottom:10px;">From APM: every part listed against carriers ' + _carrId(_frg[0]).slice(-3) + ' to ' + _carrId(_frg[1]).slice(-3) + ', combined. Anything already in Linked Parts is left out. Link the ones that belong and they move up to Linked Parts.</p>'; }
+                        else html += '<p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Imported catalogue reference \u2014 may be inaccurate. Link the ones that belong here and they move up to Linked Parts.</p>';
                         html += '<table id="pa-table"><thead><tr><th onclick="sortTable(\x27pa-table\x27,0)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">APN <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27pa-table\x27,1)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Class <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th data-sort="bin" onclick="sortTable(\x27pa-table\x27,2)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Bin <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27pa-table\x27,3)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Qty <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th onclick="sortTable(\x27pa-table\x27,4)" style="cursor:pointer;user-select:none;" title="Sort" role="button" tabindex="0" aria-sort="none">Description <span class="sort-ind" aria-hidden="true" style="opacity:0.35;font-size:0.85em;margin-left:3px;">&#8645;</span></th><th></th></tr><tr class="filter-row"><td><input class="col-filter" data-col="0" oninput="filterPartsTable(\x27pa-table\x27)" aria-label="Filter by APN" placeholder="APN"></td><td><input class="col-filter" data-col="1" oninput="filterPartsTable(\x27pa-table\x27)" aria-label="Filter by Class" placeholder="Class"></td><td><input class="col-filter" data-col="2" oninput="filterPartsTable(\x27pa-table\x27)" aria-label="Filter by Bin" placeholder="Bin"></td><td><input class="col-filter" data-col="3" oninput="filterPartsTable(\x27pa-table\x27)" aria-label="Filter by Qty" placeholder="Qty"></td><td><input class="col-filter" data-col="4" oninput="filterPartsTable(\x27pa-table\x27)" aria-label="Filter by Description" placeholder="Description"></td><td></td></tr></thead><tbody>';
                         _assoc.forEach(function(a){
                             var _aApn=String(a.apn||'');var _aKey=_apnIdx[_aApn.toLowerCase().trim()];
@@ -6059,14 +6059,16 @@ function liveSearchSuggest(query,scope){
             try{
                 var results=[];
                 var[eq,pts,rts]=await Promise.all([getEquipmentCache(),getPartsCache(),getRoutesCache()]);
-                var _mi=getManualInductQuery(q),_cq=getCarrierQuery(q);
+                var _mi=getManualInductQuery(q),_cs=_carrSearch(q,eq);
                 // Collect ALL matches with relevance score — no early cutoff
                 Object.entries(eq).forEach(function([k,v]){
                     if(v.active===false)return;
+                    if(_carrNo(v)!==null)return;   // carriers are reached through their train
                     var s=Math.max(scoreId(v.conveyorNumber),scoreId(v.positionName),scoreText(v.description),scoreText(v.notes));
                     if(_mi){var _cnl=(v.conveyorNumber||'').toLowerCase();if(_mi.some(function(p){return _cnl.indexOf(p)>=0;}))s=Math.max(s,v.isStation?95:70);}
-                    if(_cq&&(v.conveyorNumber||'').toLowerCase()===_cq)s=Math.max(s,100);
-                    if(s>0)results.push({type:'equipment',key:k,label:(v.positionName||v.conveyorNumber),sub:v.description||v.notes||'',_score:s});
+                    if(_cs&&(v.conveyorNumber||'').toLowerCase()===_cs.cn)s=Math.max(s,100);
+                    var _hint=_posSearchHint(v,_cs);
+                    if(s>0)results.push({type:'equipment',key:k,label:(v.positionName||v.conveyorNumber),sub:_hint||v.description||v.notes||'',_score:s,click:_hint?_posSearchClick(k,v,_cs):'',tkey:_hint?sanitizeKey(v.conveyorNumber):'',carr:_hint?_cs.carr:''});
                 });
                 Object.entries(pts).forEach(function([k,v]){
                     if(v.active===false)return;
@@ -6085,17 +6087,18 @@ function liveSearchSuggest(query,scope){
                     }
                     if(s>0)results.push({type:'route',key:k,label:v.routeNumber,sub:(v.type||'')+(v.notes?' — '+v.notes.substring(0,40):''),_score:s});
                 });
+                if(_cs&&_cs.carr&&results.some(function(r){return r.carr;}))results=results.filter(function(r){return r.type!=='equipment'||r.carr;});   // carrier search: just its train
                 if(_cfg)results=results.filter(function(r){return (r.type==='equipment'&&_cfg.eq)||(r.type==='part'&&_cfg.pt)||(r.type==='route'&&_cfg.rt);});
                 if(!results.length){dd.style.display='none';return;}
                 // Sort by score descending, then show top 8
                 results.sort(function(a,b){return b._score-a._score||naturalCompare(a.label||'',b.label||'');});
                 results=results.slice(0,8);
-                _suggestList=results.map(function(r){return {type:r.type,key:r.key};});_suggestIndex=-1;
+                _suggestList=results.map(function(r){return {type:r.type,key:r.key,tkey:r.tkey||'',carr:r.carr||''};});_suggestIndex=-1;
                 var typeStyle={equipment:'background:#eff6ff;color:#1d4ed8;',part:'background:#f0fdf4;color:#15803d;',route:'background:#fff7ed;color:#c2410c;'};
                 var typeLabel={equipment:'Position',part:'Part',route:'Route'};
                 var html='';
                 results.forEach(function(r){
-                    html+='<div class="autocomplete-item" onclick="document.getElementById(\x27'+_ddId+'\x27).style.display=\x27none\x27;openDetail(\x27'+r.type+'\x27,\x27'+r.key+'\x27)">';
+                    html+='<div class="autocomplete-item" onclick="document.getElementById(\x27'+_ddId+'\x27).style.display=\x27none\x27;'+(r.click||'openDetail(\x27'+r.type+'\x27,\x27'+r.key+'\x27)')+'">';
                     html+='<span style="font-size:10px;padding:1px 6px;border-radius:8px;margin-right:6px;'+typeStyle[r.type]+'">'+typeLabel[r.type]+'</span>';
                     html+='<strong>'+escapeHtml(r.label)+'</strong>';
                     if(r.sub)html+=' <span style="color:#6b7280;font-size:12px;">— '+escapeHtml(r.sub.substring(0,50))+'</span>';
@@ -6166,13 +6169,13 @@ function liveSearchSuggest(query,scope){
         var it=_suggestList[idx];if(!it)return;
         var dd=document.getElementById(_activeDropdownId||'main-search-dropdown');if(dd)dd.style.display='none';
         var inp=document.getElementById(_activeInputId||'search-conveyor');if(inp)inp.blur();
-        openDetail(it.type,it.key);
+        if(it.carr)openTrainAt(it.key,it.tkey,it.carr);else openDetail(it.type,it.key);
     }
     function getRecents(){try{return JSON.parse(localStorage.getItem('rmeRecent')||'[]');}catch(e){return [];}}
-    function pushRecent(type,key,label){
+    function pushRecent(type,key,label,carr){
         try{
             var arr=getRecents().filter(function(x){return !(x.type===type&&x.key===key);});
-            arr.unshift({type:type,key:key,label:(label||'').toString()});
+            var _re={type:type,key:key,label:(label||'').toString()};if(carr)_re.carr=String(carr);arr.unshift(_re);
             if(arr.length>6)arr=arr.slice(0,6);
             localStorage.setItem('rmeRecent',JSON.stringify(arr));
         }catch(e){}
@@ -6184,19 +6187,19 @@ function liveSearchSuggest(query,scope){
     }
     function renderRecents(){
         var dd=document.getElementById('main-search-dropdown');if(!dd)return;
-        var recents=getRecents();
+        var recents=getRecents().filter(function(r){ return !(r&&r.type==='equipment'&&/^CARRIER\.SC\.\d{1,3}$/i.test(String(r.label||''))); });   // single carriers are never listed (entries saved before this build)
         if(!recents.length){dd.style.display='none';return;}
         var typeStyle={equipment:'background:#eff6ff;color:#1d4ed8;',part:'background:#f0fdf4;color:#15803d;',route:'background:#fff7ed;color:#c2410c;'};
         var typeLabel={equipment:'Position',part:'Part',route:'Route'};
         var html='<div style="padding:6px 14px;font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Recently viewed</div>';
         recents.forEach(function(r){
-            html+='<div class="autocomplete-item" onclick="document.getElementById(\x27main-search-dropdown\x27).style.display=\x27none\x27;openDetail(\x27'+r.type+'\x27,\x27'+r.key+'\x27)">';
+            html+='<div class="autocomplete-item" onclick="document.getElementById(\x27main-search-dropdown\x27).style.display=\x27none\x27;'+(r.carr?'openTrainAt(\x27'+escapeAttrArg(r.key)+'\x27,\x27'+escapeAttrArg(r.key)+'\x27,\x27'+escapeAttrArg(r.carr)+'\x27)':'openDetail(\x27'+r.type+'\x27,\x27'+r.key+'\x27)')+'">';
             html+='<span style="font-size:10px;padding:1px 6px;border-radius:8px;margin-right:6px;'+(typeStyle[r.type]||'')+'">'+(typeLabel[r.type]||'')+'</span>';
-            html+='<strong>'+escapeHtml(r.label||'')+'</strong>';
+            html+='<strong>'+escapeHtml(r.label||'')+'</strong>'+(r.carr?' <span style="font-size:12px;color:#6b7280;">Carrier '+escapeHtml(String(r.carr).slice(-3))+'</span>':'');
             html+='</div>';
         });
         dd.innerHTML=html;dd.style.display='block';
-        _suggestList=recents.map(function(r){return {type:r.type,key:r.key};});_suggestIndex=-1;
+        _suggestList=recents.map(function(r){return {type:r.type,key:r.key,tkey:r.carr?r.key:'',carr:r.carr||''};});_suggestIndex=-1;
     }
     function saveSearchFilters(){
         try{
@@ -6892,6 +6895,7 @@ function liveSearchSuggest(query,scope){
     Object.keys(MI_MAPPING).forEach(function(k) { MI_REVERSE[MI_MAPPING[k]] = k; });
 
     // Crossbelt shorthands: "carrier 97", "sc 97", "carrier sc 97", "carrier.sc.97" -> carrier.sc.097; "train 7", "carr 7" -> cb.srt.01.carr.07
+    // (search itself goes through _carrSearch, which swaps a carrier for its train)
     function getCarrierQuery(queryLower) {
         var q = String(queryLower || '').trim().toLowerCase(), m;
         m = /^(?:crossbelt\s*)?(?:carrier|sc)\s*[.#]?\s*(?:sc\s*[.#]?\s*)?(?:no\.?\s*)?(\d{1,3})$/.exec(q);
@@ -6900,6 +6904,28 @@ function liveSearchSuggest(query,scope){
         if (m) { var t = parseInt(m[1], 10); if (t >= 1) return 'cb.srt.01.carr.' + ('0' + t).slice(-2); }
         return null;
     }
+    // What a crossbelt search finds: a carrier query -> its train (carrier picked when the train opens), a train query -> that train.
+    // Returns { cn: lower-case train id, carr: 'CARRIER.SC.NNN' or '' } or null. Carriers themselves never show in search results.
+    function _carrSearch(queryLower, eqc){
+        var cq = getCarrierQuery(queryLower); if (!cq) return null;
+        var m = /^carrier\.sc\.(\d{3})$/.exec(cq);
+        if (!m) return { cn: cq, carr: '' };
+        var n = parseInt(m[1], 10), id = _carrId(n), c = eqc && eqc[sanitizeKey(id)], tr = (c && c.carrierTrain) ? String(c.carrierTrain) : '';
+        if (tr) { var te = eqc[sanitizeKey(tr)]; if (!te || te.active === false || !_carrRange(te)) tr = ''; }   // train missing or retired: use the range instead
+        if (!tr) Object.keys(eqc || {}).some(function(k){
+            var e = eqc[k], rg = e && e.active !== false ? _carrRange(e) : null;
+            if (rg && n >= rg[0] && n <= rg[1] && e.conveyorNumber) { tr = String(e.conveyorNumber); return true; }
+            return false;
+        });
+        return tr ? { cn: tr.toLowerCase(), carr: id } : null;
+    }
+    // Search result for a position: a train found by a carrier search opens with that carrier picked
+    function _posSearchHint(eq, cs){ return (cs && cs.carr && String((eq && eq.conveyorNumber) || '').toLowerCase() === cs.cn) ? 'Carrier ' + cs.carr.slice(-3) + ' is in this train' : ''; }
+    function _posSearchClick(key, eq, cs){
+        if (_posSearchHint(eq, cs)) return 'openTrainAt(\x27' + escapeAttrArg(key) + '\x27,\x27' + escapeAttrArg(sanitizeKey(eq.conveyorNumber)) + '\x27,\x27' + escapeAttrArg(cs.carr) + '\x27)';
+        return 'openDetail(\x27equipment\x27,\x27' + escapeAttrArg(key) + '\x27)';
+    }
+    function _posHintHtml(eq, cs){ var h = _posSearchHint(eq, cs); return h ? ' | <strong>' + escapeHtml(h) + '</strong>' : ''; }
     function getManualInductQuery(queryLower) {
         // Returns an array of CB.SRT ID patterns to match, or null if not a Manual Induct search.
         // Accepts any combination of the words manual / induct(ion) / station + a number, e.g.
