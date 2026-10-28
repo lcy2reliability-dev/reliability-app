@@ -148,6 +148,24 @@
         @media (max-width:640px){ .work-scada .work-scada-thumb { width:128px; height:72px; } }
         .rspark { display:inline-flex; align-items:center; min-height:18px; vertical-align:middle; }
         .spark-svg { display:block; }
+        .rspark-tap { cursor:pointer; min-height:44px; gap:6px; padding:0 6px; margin-left:-6px; border-radius:8px; }
+        .rspark-tap:hover { background:#eff6ff; }
+        .rspark-tap:focus-visible { outline:2px solid #2563eb; outline-offset:1px; }
+        .rspark-tap .spark-open { flex:none; }
+        .modal.modal-wide { max-width:760px; }
+        @media (max-width:480px) { .modal.modal-wide { width:96%; padding:14px; } }
+        .modal.modal-wide .modal-actions { position:sticky; bottom:-24px; background:#fff; padding:8px 0 24px; margin-top:8px; }
+        @media (max-width:480px) { .modal.modal-wide .modal-actions { bottom:-14px; padding-bottom:14px; } }
+        .trend-chartbox { position:relative; height:260px; margin-top:8px; }
+        @media (max-width:480px) { .trend-chartbox { height:230px; } }
+        .trend-tbl-box { max-height:180px; overflow-y:auto; border:1px solid #e5e7eb; border-radius:8px; margin-top:10px; }
+        table.trend-tbl { display:table; width:100%; margin:0; font-size:13px; }
+        table.trend-tbl th { position:sticky; top:0; background:#f9fafb; cursor:default; padding:6px 10px; border-bottom:1px solid #e5e7eb; font-weight:600; color:#374151; }
+        table.trend-tbl th:hover { background:#f9fafb; }
+        table.trend-tbl td { padding:6px 10px; border-bottom:1px solid #f3f4f6; white-space:normal; }
+        table.trend-tbl tr:last-child td { border-bottom:none; }
+        table.trend-tbl th.r, table.trend-tbl td.r { text-align:right; }
+        table.trend-tbl tr.hot { color:#b91c1c; font-weight:600; }
         .char-count { font-size:11px; color:#6b7280; text-align:right; margin-top:2px; }
         .thermal-history-reading { padding:8px 0; border-bottom:1px solid #f1f5f9; }
         .thermal-history-reading:last-child { border-bottom:none; }
@@ -1728,7 +1746,7 @@
             document.getElementById('modal').classList.add('active'); _openModalA11y();
         });
     }
-    function closeModal() { document.getElementById('modal').classList.remove('active'); _closeModalA11y(); }
+    function closeModal() { document.getElementById('modal').classList.remove('active'); _closeModalA11y(); _trendCleanup(); }
     function sanitizeKey(str) { return String(str==null?'':str).replace(/[.#$\/\[\]'"]/g, '_').trim(); }
     function fileToBase64(file) { return new Promise((resolve, reject) => {
         const _MAX_BYTES = 5 * 1024 * 1024; // 5 MB cap — protects Firebase storage quota
@@ -2190,7 +2208,7 @@
                     html+='<table id="sr-routes-table" class="rtable"><thead><tr>'+sortTh('sr-routes-table',0,'Route')+sortTh('sr-routes-table',1,'Type')+sortTh('sr-routes-table',2,'Equipment Description')+sortTh('sr-routes-table',3,'Start')+sortTh('sr-routes-table',4,'End')+'<th>Actions</th></tr></thead><tbody>';
                     _routeShown.forEach(item=>{
                         var r=item.data;
-                        html+='<tr><td data-label="Route"><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(r.routeNumber)+'</a>'+(routeReadingRequired(r)?' <span class="rspark" data-rk="'+item.key+'"></span>':'')+'</td><td data-label="Type">'+escapeHtml(r.type)+'</td><td data-label="Equipment">'+escapeHtml(r.notes||'\u2014')+'</td><td data-label="Start">'+escapeHtml(r.startPoint)+'</td><td data-label="End">'+escapeHtml(r.endPoint||'\u2014')+'</td>';
+                        html+='<tr><td data-label="Route"><a class="search-link" href="#" onclick="openDetail(\x27route\x27,\x27'+item.key+'\x27);return false;">'+escapeHtml(r.routeNumber)+'</a>'+(routeReadingRequired(r)?' <span class="rspark" data-rk="'+item.key+'" data-rn="'+escapeHtml(r.routeNumber)+'"></span>':'')+'</td><td data-label="Type">'+escapeHtml(r.type)+'</td><td data-label="Equipment">'+escapeHtml(r.notes||'\u2014')+'</td><td data-label="Start">'+escapeHtml(r.startPoint)+'</td><td data-label="End">'+escapeHtml(r.endPoint||'\u2014')+'</td>';
                         if(_myRoutes[r.routeNumber]){html+='<td data-label="Action"><a class="search-link" href="#" onclick="removeFromWorkFromSearch(\x27route\x27,\x27'+item.key+'\x27,\x27'+escapeAttrArg(r.routeNumber)+'\x27,true);return false;" style="font-size:12px;color:#ef4444;font-weight:600;">\u2212 Remove from Job list</a></td>';}
                         else{html+='<td data-label="Action"><a class="search-link" href="#" onclick="addToWorkFromSearch(\x27route\x27,\x27'+item.key+'\x27,\x27'+escapeAttrArg(r.routeNumber)+'\x27,null,true);return false;" style="font-size:12px;color:#10b981;font-weight:600;">+ Add to Job list</a></td>';}
                         html+='</tr>';
@@ -2640,10 +2658,225 @@
                 el.setAttribute('data-done', '1');
                 if (!rk || !firebaseReady) return;
                 _getSparkValues(rk).then(function(vals){
-                    if (vals && vals.length >= 2){ var svg = sparklineSvg(vals); if (svg){ el.innerHTML = svg; el.title = 'Last ' + vals.length + ' readings'; } }
+                    if (vals && vals.length >= 2){ var svg = sparklineSvg(vals); if (svg){ el.innerHTML = svg; el.title = 'Last ' + vals.length + ' readings. Tap for the chart.'; _wireTrendTap(el, rk); } }
                 }).catch(function(){});
             })(spots[i]);
         }
+    }
+
+    // ============================================================
+    // TREND POP-UP (added 2026-10-28, still v1.30): tap a sparkline to open a proper chart of the real
+    // temperatures against dates. Default view = average of all components (what the sparkline shows);
+    // pick one component to see its median and the +/-10 C limits. Uses the same Chart.js as the route page.
+    // ============================================================
+    var TREND_MAX = 60, _trendChart = null, _trendSeq = 0;
+    function _trendCleanup(){
+        _trendSeq++;
+        if (_trendChart){ try { _trendChart.destroy(); } catch(e){} _trendChart = null; }
+        var mi = document.getElementById('modal-inner'); if (mi) mi.classList.remove('modal-wide');
+    }
+    function _trendMedian(a){
+        if (!a || !a.length) return null;
+        var s = a.slice().sort(function(x, y){ return x - y; }), n = s.length;
+        return (n % 2) ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+    }
+    function _trendFmt(ms, withTime){
+        var o = { day: 'numeric', month: 'short', year: 'numeric' };
+        if (withTime){ o.hour = '2-digit'; o.minute = '2-digit'; }
+        try { return new Date(ms).toLocaleString('en-GB', o); } catch(e){ return new Date(ms).toLocaleString(); }
+    }
+    function _trendTick(v, span){
+        var d = new Date(v), o;
+        if (span < 2 * 86400000) o = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+        else if (span > 300 * 86400000) o = { day: 'numeric', month: 'short', year: '2-digit' };
+        else o = { day: 'numeric', month: 'short' };
+        try { return d.toLocaleString('en-GB', o); } catch(e){ return d.toLocaleDateString(); }
+    }
+    function _wireTrendTap(el, rk){
+        if (!el || el.getAttribute('data-trend')) return;
+        el.setAttribute('data-trend', '1');
+        var rn = el.getAttribute('data-rn') || rk.replace(/_/g, '.');
+        el.classList.add('rspark-tap');
+        el.setAttribute('role', 'button');
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('aria-label', 'Open temperature chart for route ' + rn);
+        el.insertAdjacentHTML('beforeend', '<svg class="spark-open" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>');
+        el.addEventListener('click', function(ev){ ev.stopPropagation(); ev.preventDefault(); openTrendPopup(rk, rn); });
+        el.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' || ev.key === ' '){ ev.stopPropagation(); ev.preventDefault(); openTrendPopup(rk, rn); } });
+    }
+    function openTrendPopup(rk, rn){
+        if (!rk || !firebaseReady) return;
+        rn = rn || rk.replace(/_/g, '.');
+        var seq = ++_trendSeq;
+        showCustomModal('Trend \u2014 ' + rn, '<div id="trend-wrap" style="font-size:13px;color:#6b7280;padding:12px 0;">Loading readings\u2026</div>', [{ label: 'Close', class: 'btn-secondary', value: true }]);
+        var mi = document.getElementById('modal-inner'); if (mi) mi.classList.add('modal-wide');
+        db.ref('readings/' + rk).limitToLast(TREND_MAX).once('value').then(function(snap){
+            if (seq !== _trendSeq) return;
+            _renderTrend(seq, snap.val() || {});
+        }).catch(function(){
+            if (seq !== _trendSeq) return;
+            var w = document.getElementById('trend-wrap');
+            if (w) w.textContent = 'Could not load the readings. Check your connection and try again.';
+        });
+    }
+    function _renderTrend(seq, raw){
+        var wrap = document.getElementById('trend-wrap'); if (!wrap) return;
+        var entries = [];
+        Object.keys(raw).forEach(function(id){
+            var e = raw[id]; if (!e || !e.readings) return;
+            var t = Date.parse(e.timestamp); if (isNaN(t)) return;
+            entries.push({ t: t, by: e.recordedBy || '', readings: e.readings, labels: e.labels || {} });
+        });
+        entries.sort(function(a, b){ return a.t - b.t; });
+        if (!entries.length){ wrap.style.cssText = 'font-size:14px;color:#374151;padding:12px 0;'; wrap.textContent = 'No readings recorded for this route yet.'; return; }
+        var names = {};
+        entries.forEach(function(e){ Object.keys(e.readings).forEach(function(k){ names[k] = (e.labels && e.labels[k]) || names[k] || k; }); });
+        var keys = Object.keys(names).sort(function(a, b){ return String(names[a]).localeCompare(String(names[b]), undefined, { numeric: true }); });
+        var multi = keys.length > 1;
+        // Same rule as Open Alerts: latest reading vs the median of the earlier readings (last 15 visits), 10 C limit.
+        var alerts = {}, nAl = 0;
+        if (entries.length >= 4){
+            var win = entries.slice(-ANOMALY_WINDOW), latestE = win[win.length - 1];
+            var prior = win.slice(0, -1).map(function(e){ return { readings: e.readings }; });
+            Object.keys(latestE.readings).forEach(function(k){ var a = _detectAnomaly(k, latestE.readings[k], prior, names[k]); if (a){ alerts[k] = a; nAl++; } });
+        }
+        function bandFor(k){
+            if (entries.length < 4) return null;
+            var v = [];
+            entries.slice(-ANOMALY_WINDOW, -1).forEach(function(e){ var x = parseFloat(e.readings[k]); if (isFinite(x) && x >= TEMP_MIN) v.push(x); });
+            return v.length >= 3 ? _trendMedian(v) : null;
+        }
+        function seriesFor(sel){
+            var pts = [];
+            entries.forEach(function(e){
+                var v;
+                if (sel === '__avg__'){
+                    var vs = Object.keys(e.readings).map(function(k){ return parseFloat(e.readings[k]); }).filter(function(x){ return isFinite(x); });
+                    if (!vs.length) return;
+                    v = vs.reduce(function(a, b){ return a + b; }, 0) / vs.length;
+                } else { v = parseFloat(e.readings[sel]); if (!isFinite(v)) return; }
+                pts.push({ x: e.t, y: v, by: e.by });
+            });
+            return pts;
+        }
+        var h = '';
+        if (multi) h += '<label for="trend-sel" style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;">Show</label><select id="trend-sel" style="width:100%;min-height:44px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;"></select>';
+        h += '<div id="trend-alerts"></div><div id="trend-sum" style="margin-top:10px;"></div><div id="trend-chartbox" class="trend-chartbox"></div><div id="trend-tbl"></div><div id="trend-note" style="font-size:11px;color:#6b7280;margin-top:8px;"></div>';
+        wrap.style.cssText = ''; wrap.innerHTML = h;
+        var sel = document.getElementById('trend-sel');
+        function addOpt(parent, val, text){ var o = document.createElement('option'); o.value = val; o.textContent = text; parent.appendChild(o); }
+        if (sel){
+            addOpt(sel, '__avg__', 'All components (average)');
+            var ak = keys.filter(function(k){ return alerts[k]; }), ok = keys.filter(function(k){ return !alerts[k]; });
+            var g1 = sel, g2 = sel;
+            if (ak.length){ g1 = document.createElement('optgroup'); g1.label = 'Over the 10\u00b0C limit on the latest reading'; sel.appendChild(g1); g2 = document.createElement('optgroup'); g2.label = 'Other components'; sel.appendChild(g2); }
+            ak.forEach(function(k){ addOpt(g1, k, names[k] + ' (' + alerts[k].dirSign + alerts[k].diff + '\u00b0C)'); });
+            ok.forEach(function(k){ addOpt(g2, k, names[k]); });
+        }
+        var drawN = 0;
+        function drawChart(pts, nm, band, flagLatest){
+            var box = document.getElementById('trend-chartbox'); if (!box) return;
+            var my = ++drawN;
+            if (_trendChart){ try { _trendChart.destroy(); } catch(e){} _trendChart = null; }
+            box.innerHTML = '<canvas id="trend-canvas" role="img" aria-label="Line chart of temperature readings against date"></canvas>';
+            ensureChart().then(function(){
+                if (seq !== _trendSeq || my !== drawN) return;
+                if (typeof Chart === 'undefined') throw new Error('no chart');
+                var cv = document.getElementById('trend-canvas'); if (!cv) return;
+                var xmin = pts[0].x, xmax = pts[pts.length - 1].x, one = (xmax === xmin);
+                if (one){ xmin -= 43200000; xmax += 43200000; }
+                var span = xmax - xmin, last = pts.length - 1;
+                var datasets = [{
+                    label: nm + ' (\u00b0C)', data: pts, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.10)', borderWidth: 2, tension: 0, fill: false, clip: 8,
+                    pointRadius: pts.map(function(p, i){ return i === last ? 6 : 4; }), pointHoverRadius: 7,
+                    pointBackgroundColor: pts.map(function(p, i){ return (i === last && flagLatest) ? '#ef4444' : '#2563eb'; }), pointBorderColor: '#ffffff', pointBorderWidth: 1.5
+                }];
+                if (band !== null){
+                    var ref = function(label, y, color, dash){ return { label: label, data: [{ x: xmin, y: y }, { x: xmax, y: y }], borderColor: color, borderDash: dash, borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0, clip: 0 }; };
+                    datasets.push(ref('Median ' + band.toFixed(1) + '\u00b0C', band, '#6b7280', [6, 4]), ref('Upper limit ' + (band + 10).toFixed(1) + '\u00b0C', band + 10, '#ef4444', [4, 4]), ref('Lower limit ' + (band - 10).toFixed(1) + '\u00b0C', band - 10, '#3b82f6', [4, 4]));
+                }
+                _trendChart = new Chart(cv.getContext('2d'), { type: 'line', data: { datasets: datasets }, options: {
+                    responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
+                    interaction: { mode: 'nearest', axis: 'x', intersect: false },
+                    layout: { padding: { left: 2, right: 10, top: 8 } },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 14, font: { size: 11 } } },
+                        tooltip: { filter: function(it){ return it.datasetIndex === 0; }, callbacks: {
+                            title: function(items){ return items.length ? _trendFmt(items[0].parsed.x, true) : ''; },
+                            label: function(c){ return c.parsed.y.toFixed(1) + '\u00b0C'; },
+                            afterLabel: function(c){ var by = c.raw && c.raw.by; return by ? 'Recorded by ' + by : ''; } } }
+                    },
+                    scales: {
+                        x: { type: 'linear', bounds: 'data', min: xmin, max: xmax, grid: { display: false },
+                            afterBuildTicks: function(sc){
+                                var n = one ? 1 : ((window.innerWidth < 480) ? 4 : 6), t = [];
+                                for (var i = 0; i < n; i++) t.push({ value: n === 1 ? (xmin + xmax) / 2 : xmin + (xmax - xmin) * i / (n - 1) });
+                                sc.ticks = t;
+                            },
+                            ticks: { autoSkip: false, maxRotation: 0, font: { size: 11 }, callback: function(v){ return _trendTick(v, span); } } },
+                        y: { title: { display: true, text: 'Temperature (\u00b0C)' }, grace: '5%' }
+                    }
+                } });
+            }).catch(function(){
+                if (seq !== _trendSeq || my !== drawN) return;
+                var b = document.getElementById('trend-chartbox');
+                if (b){ b.style.height = 'auto'; b.innerHTML = '<div style="padding:12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;color:#374151;">The chart could not load (are you offline?). The readings are listed below.</div>'; }
+            });
+        }
+        function draw(selVal){
+            var pts = seriesFor(selVal), isAvg = (selVal === '__avg__');
+            var nm = isAvg ? 'Average of all components' : names[selVal];
+            var sum = document.getElementById('trend-sum'), al = document.getElementById('trend-alerts'), tbl = document.getElementById('trend-tbl'), note = document.getElementById('trend-note');
+            if (!sum || !tbl) return;
+            if (!pts.length){
+                sum.innerHTML = '<div style="font-size:14px;color:#374151;">No readings for ' + escapeHtml(nm) + '.</div>';
+                tbl.innerHTML = ''; if (al) al.innerHTML = ''; var cb = document.getElementById('trend-chartbox'); if (cb) cb.innerHTML = '';
+                return;
+            }
+            var ys = pts.map(function(p){ return p.y; }), lastP = pts[pts.length - 1];
+            var mn = Math.min.apply(null, ys), mx = Math.max.apply(null, ys), md = _trendMedian(ys);
+            var a = isAvg ? null : alerts[selVal];
+            var band = isAvg ? null : bandFor(selVal);
+            var s = '<div style="font-size:13px;color:#374151;"><b style="font-size:22px;color:' + (a ? '#b91c1c' : '#111827') + ';">' + lastP.y.toFixed(1) + '\u00b0C</b> '
+                + (isAvg ? 'average on the latest visit, ' : 'latest, ') + escapeHtml(_trendFmt(lastP.x, true)) + (lastP.by ? ' by ' + escapeHtml(lastP.by) : '') + '</div>'
+                + '<div style="font-size:12px;color:#6b7280;margin-top:2px;">' + pts.length + ' reading' + (pts.length === 1 ? '' : 's') + ' \u00b7 lowest ' + mn.toFixed(1) + ' \u00b7 median ' + md.toFixed(1) + ' \u00b7 highest ' + mx.toFixed(1) + '</div>';
+            if (a) s += '<div style="font-size:12px;font-weight:600;color:#b91c1c;margin-top:4px;">' + a.diff + '\u00b0C ' + a.dirWord + ' its median (' + a.avg.toFixed(1) + '\u00b0C): over the 10\u00b0C limit.</div>';
+            else if (!isAvg && band === null) s += '<div style="font-size:12px;color:#6b7280;margin-top:4px;">The median and 10\u00b0C limit lines appear once there are 4 readings.</div>';
+            sum.innerHTML = s;
+            if (al){
+                al.innerHTML = '';
+                if (isAvg && nAl){
+                    var bx = document.createElement('div');
+                    bx.style.cssText = 'margin-top:10px;padding:8px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12px;color:#991b1b;';
+                    var b1 = document.createElement('b'); b1.textContent = nAl + ' component' + (nAl === 1 ? ' is' : 's are') + ' over the 10\u00b0C limit on the latest reading.';
+                    bx.appendChild(b1); bx.appendChild(document.createTextNode(' Tap one to see its chart:'));
+                    var cw = document.createElement('div'); cw.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;';
+                    var akeys = keys.filter(function(k){ return alerts[k]; });
+                    akeys.slice(0, 8).forEach(function(k){
+                        var bt = document.createElement('button'); bt.type = 'button';
+                        bt.style.cssText = 'min-height:44px;padding:6px 12px;border:1px solid #fca5a5;background:#fff;color:#991b1b;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;';
+                        bt.textContent = names[k] + ' ' + alerts[k].dirSign + alerts[k].diff + '\u00b0C';
+                        bt.addEventListener('click', function(){ if (sel){ sel.value = k; } draw(k); });
+                        cw.appendChild(bt);
+                    });
+                    bx.appendChild(cw);
+                    if (akeys.length > 8){ var mr = document.createElement('div'); mr.style.cssText = 'margin-top:6px;'; mr.textContent = '+ ' + (akeys.length - 8) + ' more: choose them from the list above.'; bx.appendChild(mr); }
+                    al.appendChild(bx);
+                }
+            }
+            drawChart(pts, nm, band, !!a);
+            var t = '<div class="trend-tbl-box"><table class="trend-tbl"><thead><tr><th>Date and time</th><th class="r">\u00b0C' + (isAvg ? ' (avg)' : '') + '</th><th>By</th></tr></thead><tbody>';
+            pts.slice().reverse().forEach(function(p, i){
+                t += '<tr' + ((i === 0 && a) ? ' class="hot"' : '') + '><td>' + escapeHtml(_trendFmt(p.x, true)) + '</td><td class="r">' + p.y.toFixed(1) + '</td><td>' + escapeHtml(p.by) + '</td></tr>';
+            });
+            tbl.innerHTML = t + '</tbody></table></div>';
+            var nt = 'Tap or drag across the chart to read each temperature and date. ';
+            if (isAvg && multi) nt += 'The average is the mean of every component recorded on that visit. Pick a component above to see its median and the \u00b110\u00b0C limits. ';
+            if (Object.keys(raw).length >= TREND_MAX) nt += 'Showing the latest ' + TREND_MAX + ' readings.';
+            if (note) note.textContent = nt;
+        }
+        if (sel) sel.addEventListener('change', function(){ draw(sel.value); });
+        draw(multi ? '__avg__' : keys[0]);
     }
 
     // ============================================================
@@ -4943,7 +5176,7 @@
                     html+='<a class="search-link" href="#" onclick="event.stopPropagation();openDetail(\x27equipment\x27,\x27'+_wek+'\x27);return false;">'+_wed+'</a>';
                 }
                 html+='</div>';
-                if(item.cbmType==='Thermal'&&item.routeNumber)html+='<div class="work-details" style="display:flex;align-items:center;gap:6px;margin-top:6px;"><span style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.3px;">trend</span><span class="rspark" data-rk="'+sanitizeKey(item.routeNumber)+'"></span></div>';
+                if(item.cbmType==='Thermal'&&item.routeNumber)html+='<div class="work-details" style="display:flex;align-items:center;gap:6px;margin-top:6px;"><span style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.3px;">trend</span><span class="rspark" data-rk="'+sanitizeKey(item.routeNumber)+'" data-rn="'+escapeHtml(item.routeNumber)+'"></span></div>';
                 if(item.details)html+='<div class="work-details" style="margin-top:6px;"><strong>Job details:</strong> <strong>'+escapeHtml(item.details)+'</strong></div>';if(item.parts&&item.parts.length>0){html+='<div class="work-details" style="margin-top:6px;"><strong>Parts:</strong></div>';item.parts.forEach(function(p){html+='<div class="work-details" style="margin-top:2px;"><strong>'+escapeHtml(p.apn||'')+'</strong>'+(p.description?' \u2014 <strong>'+escapeHtml(p.description)+'</strong>':'')+(p.location?' \u2014 <strong>Bin: '+escapeHtml(p.location)+'</strong>':'')+'</div>';});}
                 html+=_shareBadge(item,_amOwner);
                 html+='<div class="work-details" style="font-size:11px;color:#6b7280;">Added '+formatWorkTime(item.createdAt)+'</div>';

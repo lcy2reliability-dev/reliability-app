@@ -11,6 +11,7 @@
 
 **Status:** Built and verified in the working copy (clean bun build, LF-only, tested on a phone-sized screen with a stand-in database). Includes everything in v1.29, so upload this one file. No migration: messages use two new Firebase nodes, `messages` and `messageLog`, and announcements one more, `announcements`; nothing existing is changed.
 **Update 2026-10-23:** admin **Announcements** added to this same build. The version number stays 1.30 (see the Announcements section below).
+**Update 2026-10-28:** the small **trend line** on job cards and route search results is now tappable and opens a full chart with temperatures and dates (see the Trend pop-up section below). The version number stays 1.30.
 
 ### Messages between users
 - **New 💬 chat button at the bottom right** of the main screens (also **Messages** in the menu under Tools). A red number shows how many messages you have not read.
@@ -66,7 +67,7 @@
 - **No Last replaced card on a train page any more;** the Carriers card covers it.
 - **Every carrier gets its standard parts:** 59584 Carrier body on all, 59997 Swivel joint on odd carriers, 84175 Axle connection on even carriers (516 links, black, "linked by Carrier pattern"). They follow the pattern even where APM booked one on the other carrier of the same joint.
 - **Any other part is linked only when it was booked on that carrier in APM,** the same rule as general equipment: any work order type except Internal Repair, orange until 3 different work orders back it, returns to stock ignored.
-- **APN 59584 (carrier body) now has a Repair Kit** built from the parts booked out on its Internal Repair work orders: 67890, 67889, 67929, 67522, 67496, 67980, 67524, 64091.
+- **APN 59584 (carrier body) now has a Repair Kit** built from the parts booked out on its Internal Repair work orders: 67890, 67889, 67929, 67522, 67496, 67524, 64091. (67980 was taken out on 2026-10-28 because it had only been booked once.)
 - **Last replaced** works on carriers too (dates from the work orders booked on each carrier).
 - **Search finds trains, not single carriers:** carriers no longer show in search results or live suggestions. "carrier 2", "sc 2" or "CARRIER.SC.002" finds its train, CB.SRT.01.CARR.01, as the only position, marked "Carrier 002 is in this train"; tapping it opens the train with carrier 002 already picked. "train 7" or "carr 7" finds CB.SRT.01.CARR.07. A carrier's own page is still one tap away: **Open carrier 002 >** in the train's card.
 - **Linked Parts on a train page is one combined list (update 2026-10-27):** every part booked on any carrier, on any train, plus anything linked to a train itself. The trains are alike, so every CARR page shows the same list, each part once. A new **Carriers** column says how many carriers it is linked on (e.g. "9 of 258"; "Train" = linked to a train only), most carriers first. A part is orange only if it is orange on every carrier it is on. Qty and Observations are the train's own note if it has one, otherwise the most common one across its carriers. Each carrier's own parts are still in the Carriers card.
@@ -74,6 +75,14 @@
 - **A carrier's Train link opens the train with that carrier already picked.** Recently viewed shows a carrier as its train (e.g. "CB.SRT.01.CARR.01 Carrier 002"), never as a single carrier, and keeps the carrier you last picked on that train.
 - **Saving a position on the Positions form now keeps fields the form does not show** (Active, class, and the carrier details: train, joint, carrier number, range). Before, saving dropped them.
 - The weekly database update now also fetches carrier work orders and keeps carrier links, orange flags and Last replaced dates up to date. No new version number.
+
+### Trend pop-up: tap the trend line for a proper chart - added 2026-10-28, still v1.30
+- **The small green trend line is now a button.** On a job card (Home, Jobs) and on a route in the search results, tap it and a pop-up opens with a chart of the temperatures against their dates. A small bar-chart icon next to the line shows it can be tapped. Tapping it does not open or close the job card. The line itself (and so the pop-up) still appears from 2 readings.
+- **The chart has real dates along the bottom,** so a long gap between two visits looks like a long gap. Tap or drag across it to see the temperature, the date and time, and who recorded it. It shows up to the last 60 readings (the small line still shows the last 12).
+- **Choose what to show.** It opens on **All components (average)**, which is what the small line draws. Pick one component from the list to see just that one, with its **median** (grey) and the **+10°C** (red) and **-10°C** (blue) limit lines once it has 4 readings.
+- **Same alert rule as Open Alerts:** a component whose latest reading is more than 10°C from the median of its earlier readings (last 15 visits) is marked red. In the average view a red box lists those components; tap one to jump to its chart. They are also listed first in the drop-down.
+- **A table of the readings** (newest first, with who recorded each) sits under the chart. If the chart cannot load (for example no signal) the pop-up says so and the table is still there.
+- The pop-up only reads the existing `readings`; nothing is written to the database. No new version number.
 
 ### Small fixes
 - **Position Type and Notes were being wiped.** An old one-off clean-up from v1.02 ran again whenever an admin signed in on a browser it had not run on before, and blanked Type and Notes on every position. On 2026-10-27 no position in the database had a Type or Notes left (the 22 and 23 Oct backups are the same). It is now switched off, so Type and Notes typed from now on are kept.
