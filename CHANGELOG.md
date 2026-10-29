@@ -93,6 +93,7 @@
 - **Position and part pages** list their details like a specification sheet: the name of each detail on the left, its value on the right, with a thin line between rows (on a phone the name sits above the value).
 - **Home:** a large greeting, light grey number tiles, and simple lists for What's left and Needs attention.
 - **No coloured stripes down the left edge** of boxes any more (alerts, notes, announcements, messages); they use a light tint or a thin outline instead.
+- **The chat button** at the bottom right has a clean white speech-bubble icon (the old emoji looked faded on some screens). On a computer the page keeps a wider margin on each side, so numbers on the right are not hidden under it.
 - **Job cards and small items** are light grey rounded tiles. Buttons are rounded "pill" shapes with no shadows.
 - **Pop-ups** blur the screen behind them. On a phone they slide up from the bottom, with a small grab bar at the top and full-width buttons.
 - Respects the phone's **Reduce motion** setting.

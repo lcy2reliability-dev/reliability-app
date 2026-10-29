@@ -867,6 +867,11 @@
         /* Full width: content runs edge to edge (Tittus 2026-10-29), no centred column */
         .content, .detail-content, .dash2 { max-width:none; }
         .content, .detail-content { padding-left:clamp(20px,4vw,56px); padding-right:clamp(20px,4vw,56px); }
+        /* Chat button: crisp white icon instead of the pale emoji (Tittus 2026-10-29) */
+        .msg-fab > span[aria-hidden="true"] { display:none; }
+        .msg-fab::before { content:""; width:26px; height:26px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffffff' d='M12 3.5c-5 0-9 3.5-9 7.8 0 2.4 1.2 4.5 3.2 5.9-.2 1.2-.8 2.3-1.7 3.2 1.9.1 3.6-.5 4.9-1.5.8.2 1.7.3 2.6.3 5 0 9-3.5 9-7.9S17 3.5 12 3.5z'/%3E%3C/svg%3E") center/contain no-repeat; }
+        /* Wide screens: margin wide enough that right-hand numbers never sit under the chat button */
+        @media (min-width:1024px) { .content, .detail-content { padding-left:88px; padding-right:88px; } }
     </style>
 </head>
 <body>
