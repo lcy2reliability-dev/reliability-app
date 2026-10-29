@@ -12,6 +12,7 @@
 **Status:** Built and verified in the working copy (clean bun build, LF-only, tested on a phone-sized screen with a stand-in database). Includes everything in v1.29, so upload this one file. No migration: messages use two new Firebase nodes, `messages` and `messageLog`, and announcements one more, `announcements`; nothing existing is changed.
 **Update 2026-10-23:** admin **Announcements** added to this same build. The version number stays 1.30 (see the Announcements section below).
 **Update 2026-10-28:** the small **trend line** on job cards and route search results is now tappable and opens a full chart with temperatures and dates (see the Trend pop-up section below). The version number stays 1.30.
+**Update 2026-10-29:** a **design refresh** for the whole app, in the style of Apple's website. Same colours and the same Amazon RME logo (see the Design refresh section below). The version number stays 1.30.
 
 ### Messages between users
 - **New 💬 chat button at the bottom right** of the main screens (also **Messages** in the menu under Tools). A red number shows how many messages you have not read.
@@ -83,6 +84,19 @@
 - **Same alert rule as Open Alerts:** a component whose latest reading is more than 10°C from the median of its earlier readings (last 15 visits) is marked red. In the average view a red box lists those components; tap one to jump to its chart. They are also listed first in the drop-down.
 - **A table of the readings** (newest first, with who recorded each) sits under the chart. If the chart cannot load (for example no signal) the pop-up says so and the table is still there.
 - The pop-up only reads the existing `readings`; nothing is written to the database. No new version number.
+
+### Design refresh: an Apple-website look across the whole app - added 2026-10-29, still v1.30
+- **Same colours, same logo.** The navy header, cyan accents, Amazon orange and the red, amber and green warnings are unchanged. The Amazon RME logo is untouched.
+- **A plain white page.** Content uses the full width of the screen, without boxes around each section and without grey edges down the sides. Sections are separated by space and thin grey lines.
+- **Large, clean headings** and the phone's own system font everywhere (San Francisco on iPhone, Roboto on Android), including buttons and boxes you type in.
+- **Tabs** (Home, Positions, CBM, Parts) are plain text; the selected one is white with a cyan line under it. On a computer they sit in the middle.
+- **Position and part pages** list their details like a specification sheet: the name of each detail on the left, its value on the right, with a thin line between rows (on a phone the name sits above the value).
+- **Home:** a large greeting, light grey number tiles, and simple lists for What's left and Needs attention.
+- **No coloured stripes down the left edge** of boxes any more (alerts, notes, announcements, messages); they use a light tint or a thin outline instead.
+- **Job cards and small items** are light grey rounded tiles. Buttons are rounded "pill" shapes with no shadows.
+- **Pop-ups** blur the screen behind them. On a phone they slide up from the bottom, with a small grab bar at the top and full-width buttons.
+- Respects the phone's **Reduce motion** setting.
+- Look only: no buttons, screens or data were added, moved or removed, and nothing changes in the database. No new version number.
 
 ### Small fixes
 - **Position Type and Notes were being wiped.** An old one-off clean-up from v1.02 ran again whenever an admin signed in on a browser it had not run on before, and blanked Type and Notes on every position. On 2026-10-27 no position in the database had a Type or Notes left (the 22 and 23 Oct backups are the same). It is now switched off, so Type and Notes typed from now on are kept.
