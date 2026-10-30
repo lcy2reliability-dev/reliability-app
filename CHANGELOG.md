@@ -94,6 +94,7 @@
 - **Home:** a large greeting, light grey number tiles, and simple lists for What's left and Needs attention.
 - **No coloured stripes down the left edge** of boxes any more (alerts, notes, announcements, messages); they use a light tint or a thin outline instead.
 - **The chat button** at the bottom right has a clean white speech-bubble icon (the old emoji looked faded on some screens). On a computer the page keeps a wider margin on each side, so numbers on the right are not hidden under it.
+- **Screenshots open big.** Tapping or clicking a screenshot (job list, position, route) now opens it at the same standard size every time, as large as the screen allows, instead of at whatever size it was saved. Small screenshots are enlarged, so they can look a little soft. Pinch to zoom still works on a phone.
 - **Job cards and small items** are light grey rounded tiles. Buttons are rounded "pill" shapes with no shadows.
 - **Pop-ups** blur the screen behind them. On a phone they slide up from the bottom, with a small grab bar at the top and full-width buttons.
 - Respects the phone's **Reduce motion** setting.
