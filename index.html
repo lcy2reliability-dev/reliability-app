@@ -2652,6 +2652,38 @@
                 }
             }
 
+            // --- SAME MODEL (2026-11-02, Tittus): lowest priority, always listed after routes, positions and parts ---
+            var modelResults=[];
+            if(showEquipment&&!isTypeSearch&&!_wild&&queryLower.length>=2){
+                Object.entries(allEquipment).forEach(([key,eq])=>{
+                    if(!eq||eq.active===false||_carrNo(eq)!==null)return;   // carriers are reached through their train
+                    var md=String(eq.model||'').trim().toLowerCase();
+                    if(!md)return;
+                    var sc=md===queryLower?2:(queryLower.length>=3&&md.indexOf(queryLower)>=0?1:0);
+                    if(sc)modelResults.push({key,data:eq,score:sc});
+                });
+                modelResults.sort((a,b)=>b.score-a.score||naturalCompare(a.data.conveyorNumber||'',b.data.conveyorNumber||''));
+                if(modelResults.length>0){
+                    hasResults=true;
+                    var _mRow=function(item){var eq=item.data;var r='<div style="padding:8px 0;border-bottom:1px solid #f1f5f9;">';
+                        r+='<a class="search-link" href="#" onclick="openDetail(\x27equipment\x27,\x27'+escapeAttrArg(item.key)+'\x27);return false;">'+posDisp(eq)+'</a>';
+                        r+=' | Model: '+escapeHtml(eq.model||'');
+                        if(eq.manufacturer)r+=' | '+escapeHtml(eq.manufacturer);
+                        if(eq.description)r+=' | <span class="notes-display">'+escapeHtml(eq.description)+'</span>';
+                        return r+'</div>';};
+                    html+='<div class="search-result-section"><h3>Same model ('+modelResults.length+' position'+(modelResults.length===1?'':'s')+')</h3>';
+                    modelResults.slice(0,15).forEach(function(item){html+=_mRow(item);});
+                    if(modelResults.length>15){
+                        var mMoreId='model-more-'+Date.now();
+                        html+='<div id="'+mMoreId+'-items" style="display:none;">';
+                        modelResults.slice(15).forEach(function(item){html+=_mRow(item);});
+                        html+='</div>';
+                        html+='<a href="#" onclick="var el=document.getElementById(\x27'+mMoreId+'-items\x27);el.style.display=el.style.display===\x27none\x27?\x27block\x27:\x27none\x27;this.textContent=el.style.display===\x27none\x27?\x27+ '+(modelResults.length-15)+' more\x27:\x27Show less\x27;return false;" style="display:inline-block;padding:10px 0;min-height:44px;font-size:13px;font-weight:600;">+ '+(modelResults.length-15)+' more</a>';
+                    }
+                    html+='</div>';
+                }
+            }
+
             if(!hasResults){
                 // Check if this is a specific search (contains numbers or dots)
                 var isSpecific = /[0-9]/.test(query) || query.includes('.');
@@ -2686,6 +2718,7 @@
             if(typeof eqResults!=='undefined'&&eqResults.length)_sumParts.push(eqResults.length+' position'+(eqResults.length===1?'':'s'));
             if(typeof partResults!=='undefined'&&partResults.length)_sumParts.push(partResults.length+' part'+(partResults.length===1?'':'s'));
             if(typeof routeResults!=='undefined'&&routeResults.length)_sumParts.push(routeResults.length+' route'+(routeResults.length===1?'':'s'));
+            if(modelResults.length)_sumParts.push(modelResults.length+' by model');
             html=html.replace('__SUMMARY__', _sumParts.length?'<div style="font-size:13px;color:#6b7280;margin:-4px 0 14px;font-weight:600;">Found '+_sumParts.join(' &middot; ')+'</div>':'');
             lastSearchResultCount = (document.querySelectorAll ? html.split('onclick="openDetail').length - 1 : 0);
             container.innerHTML=html;

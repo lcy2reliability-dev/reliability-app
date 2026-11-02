@@ -13,6 +13,7 @@
 **Update 2026-10-23:** admin **Announcements** added to this same build. The version number stays 1.30 (see the Announcements section below).
 **Update 2026-10-28:** the small **trend line** on job cards and route search results is now tappable and opens a full chart with temperatures and dates (see the Trend pop-up section below). The version number stays 1.30.
 **Update 2026-10-29:** a **design refresh** for the whole app, in the style of Apple's website. Same colours and the same Amazon RME logo (see the Design refresh section below). The version number stays 1.30.
+**Update 2026-11-02:** **search by model**. Type an equipment model (for example 2325) in the search box to get every position with that model, listed last after routes, positions and parts (see the Search by model section below). The version number stays 1.30.
 
 ### Messages between users
 - **New 💬 chat button at the bottom right** of the main screens (also **Messages** in the menu under Tools). A red number shows how many messages you have not read.
@@ -99,6 +100,14 @@
 - **Pop-ups** blur the screen behind them. On a phone they slide up from the bottom, with a small grab bar at the top and full-width buttons.
 - Respects the phone's **Reduce motion** setting.
 - Look only: no buttons, screens or data were added, moved or removed, and nothing changes in the database. No new version number.
+
+### Search by model - added 2026-11-02, still v1.30
+- **The search box now also looks at the equipment model.** Type a model such as **2325** and a **Same model** section lists every position with that model, with its model, manufacturer and description. Tap a row to open the position.
+- **It always comes last**, after CBM Routes, Positions and Parts, so model matches never push the normal results down.
+- **Exact model matches come first**, then models that only contain what you typed (for example 2325 also finds X2325B). Two-letter searches only find an exact model.
+- Up to 15 rows show straight away; **+ N more** shows the rest. The results summary adds "N by model".
+- Inactive positions and individual crossbelt carriers are left out (carriers are reached through their train, as before). Type searches (Thermal, Ultrasound, CBM, Air leaks) and wildcard (*) searches do not show this section.
+- A position can appear under Positions and under Same model if both match.
 
 ### Small fixes
 - **Position Type and Notes were being wiped.** An old one-off clean-up from v1.02 ran again whenever an admin signed in on a browser it had not run on before, and blanked Type and Notes on every position. On 2026-10-27 no position in the database had a Type or Notes left (the 22 and 23 Oct backups are the same). It is now switched off, so Type and Notes typed from now on are kept.
