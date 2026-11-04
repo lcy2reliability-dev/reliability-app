@@ -14,6 +14,7 @@
 **Update 2026-10-28:** the small **trend line** on job cards and route search results is now tappable and opens a full chart with temperatures and dates (see the Trend pop-up section below). The version number stays 1.30.
 **Update 2026-10-29:** a **design refresh** for the whole app, in the style of Apple's website. Same colours and the same Amazon RME logo (see the Design refresh section below). The version number stays 1.30.
 **Update 2026-11-02:** **search by model**. Type an equipment model (for example 2325) in the search box to get every position with that model, listed last after routes, positions and parts (see the Search by model section below). The version number stays 1.30.
+**Update 2026-11-04:** **Ambient tick and blank readings**, **no duplicate jobs**, the **search suggestions close** when you tap elsewhere, and **photo zoom** follows your fingers (see the Ambient, blanks and duplicate jobs section below). The version number stays 1.30.
 
 ### Messages between users
 - **New 💬 chat button at the bottom right** of the main screens (also **Messages** in the menu under Tools). A red number shows how many messages you have not read.
@@ -108,6 +109,38 @@
 - Up to 15 rows show straight away; **+ N more** shows the rest. The results summary adds "N by model".
 - Inactive positions and individual crossbelt carriers are left out (carriers are reached through their train, as before). Type searches (Thermal, Ultrasound, CBM, Air leaks) and wildcard (*) searches do not show this section.
 - A position can appear under Positions and under Same model if both match.
+
+### Ambient, blanks and duplicate jobs - added 2026-11-04, still v1.30
+**Temperatures**
+- **0 is no longer accepted as a reading.** It was being typed when a true reading was not possible, and it caused errors when the numbers were copied into APM. Saving with a 0 shows a message: enter a real temperature, leave the box blank, or tick Ambient.
+- **New Ambient tick next to every temperature box** (on Record Readings and in Edit Reading). Tick it when you cannot get a true reading: the box empties and locks, and the point is saved as **Ambient**, never as a number. Untick it to type a value again. The tick is kept in the draft if you leave the page, and counts as "entered" in the counter.
+- **Ambient and blank points are left out of everything that uses numbers:** the median, the 10°C alarm, Open Alerts, the trend line, the trend pop-up and the charts. The median and the alarm also ignore any old 0 still stored.
+- **Thermal History now lists every point of the route in APM order**, including the ones left blank ("blank") or ticked Ambient ("Ambient"), with a line on each visit such as "2 blank · 1 Ambient". Before, blank points were skipped, so every value below them moved up a line and was easy to copy into the wrong APM field.
+- **Edit Reading** lists every point of the route, each with its own Ambient tick. Empty a box to make that point blank. Points left blank on that visit show as empty boxes: type a reading into one and Save Changes to fill it in (or tick Ambient). This works on any visit, old ones included, because Edit always loads the route's own point list.
+- The Excel export writes "Ambient" for those points; the report table shows "Amb".
+- The save message says how many points were left blank and how many were Ambient. The audit log records both counts.
+- **One rule for "the latest visit" everywhere:** a visit where every point is blank or Ambient is "no new data". Open Alerts, the trend pop-up and the route report all judge the alarm on the latest visit that has a real number, so the three screens always agree (before, an all-Ambient visit made a route's alert disappear from Open Alerts but not from the trend pop-up).
+- An old 0 still stored can never raise a "cold" alarm, and is left out of the small trend lines in search results, the trend pop-up and the Thermal History chart (and its median line).
+- Thermal History and Edit Reading only list the points that Record Readings asks for (names ending Motor or Gearbox), so a point with no box is not shown as "blank" on every visit. Record Readings no longer shows an empty heading for such a point.
+- **Edit Reading with an old 0:** the box loads empty with the hint "blank (was 0)", and saving removes the 0 (it used to block the save). Unticking Ambient in Edit puts the "blank" hint back.
+- On the step-by-step keypad, the delete key leaves an Ambient tick alone; typing a digit still unticks it.
+- **Data clean-up (2026-11-04):** the 42 stored 0 readings (8 visits on 7 routes) were removed, so they now show as blank. Backup and undo file: `Database backups\Zero readings 2026-11-04_1032\`.
+
+**Duplicate jobs**
+- **A route (CBM) or position (PM) can only be in your Job list once**, however it gets there: Add job, search results, a PM batch, recording readings, or accepting a share. Trying to add it again tells you it is already there (and, if it is, that it is shared by someone, ticked done, or inside a PM batch). Done jobs still count until the 4am sweep clears them.
+- **FWO jobs can still be added more than once** for the same position, as there can be more than one follow-up.
+- **A PM batch skips positions you already have** and says which were skipped.
+- **Accepting a shared job you already have merges them.** The shared job is kept, the notes from your own copy (and PM findings) move onto it with their original author and time, and your own copy is removed. If your copy was inside a PM batch, only that position comes out of the batch; the rest stay. The invite card warns you before you accept, and the share window shows "Has this job already" next to a person who has it.
+- **Accepting is blocked** (with the reason) if your copy was shared with you by someone else, or if you have shared your own copy with others. Leave or unshare that one first, or decline the invite.
+- Merges are written to the audit log (`mergeJob`). The invite card says up front that your own copy's planned date and done tick are not kept (the shared job's are).
+- The share window says when a person's copy is itself shared, so they must leave or unshare it before they can accept.
+- **Add job (PM)** checks for a duplicate before anything is saved. Before, a refused duplicate had already registered the position and uploaded its photo.
+- Recording readings auto-adds the route to your Job list unless a CBM job for it is already there; an FWO or PM on a position with the same name no longer counts.
+
+**Other fixes**
+- **Search suggestions close when you tap anywhere else** on the screen (on iPhones a tap on empty space sends no click, so the list used to stay open). This covers every suggestion list in the app.
+- **Photo zoom on the phone follows your fingers.** Pinching zooms in on the spot between your fingers (it used to zoom on the middle of the photo, so the part you wanted slid away), lifting one finger no longer makes the photo jump, panning stops at the edges of the photo, and double-tap zooms in on the spot you tapped (double-tap again to zoom back out).
+- **The X on a photo always closes it,** even when zoomed in (it could not be tapped while zoomed) or straight after tapping the photo. A second quick tap only counts as a double-tap when it lands near the first. Panning stops at the edges of the picture itself, not the black bars around a tall photo.
 
 ### Small fixes
 - **Position Type and Notes were being wiped.** An old one-off clean-up from v1.02 ran again whenever an admin signed in on a browser it had not run on before, and blanked Type and Notes on every position. On 2026-10-27 no position in the database had a Type or Notes left (the 22 and 23 Oct backups are the same). It is now switched off, so Type and Notes typed from now on are kept.

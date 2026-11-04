@@ -875,6 +875,17 @@
         /* Screenshot viewer: every screenshot opens at the same standard size, as big as the screen allows (Tittus 2026-10-29) */
         .img-viewer-overlay img { width:min(94vw, 1600px); height:auto; max-width:none; max-height:86vh; object-fit:contain; border-radius:10px; }
         @media (max-width:640px) { .img-viewer-overlay img { width:100vw; max-height:80vh; border-radius:0; } }
+        /* v1.30 (2026-11-04): Ambient tick + blank / Ambient chips in the history */
+        .rec-inwrap{ display:flex; align-items:center; gap:8px; }
+        .rec-amb, .form-group label.rec-amb{ display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:0 4px; margin:0; font-size:13px; font-weight:500; color:#6b7280; white-space:nowrap; cursor:pointer; user-select:none; -webkit-user-select:none; }
+        .rec-amb input[type=checkbox]{ width:22px !important; height:22px !important; min-height:0 !important; padding:0 !important; margin:0 !important; flex:none !important; accent-color:#d97706; }
+        .rec-amb input[type=checkbox]:checked + span{ color:#92400e; font-weight:600; }
+        input[type=number].rec-is-amb{ background:#fef3c7 !important; border-color:#f59e0b !important; color:#92400e; }
+        input[type=number].rec-is-amb::placeholder{ color:#92400e; opacity:1; }
+        .reading-chip.rc-amb{ background:#fef3c7; color:#92400e; }
+        .reading-chip.rc-blank{ background:#f3f4f6; color:#6b7280; border:1px dashed #cbd5e1; }
+        .th-sum{ font-size:12px; color:#92400e; font-weight:600; margin:2px 0 4px; }
+        @media (max-width:640px){ .rec-point-row .rec-inwrap{ width:100%; } .rec-point-row .rec-inwrap input[type=number]{ flex:1; min-width:0; width:auto; } }
     </style>
 </head>
 <body>
@@ -1498,7 +1509,14 @@
     // ============================================================
     // ---- Round 2 Security: HTML-escape helper (used everywhere we render user text) ----
     var TEMP_MIN = 0, TEMP_MAX = 300;
-    function validTemp(v){ var n = parseFloat(v); return (isFinite(n) && n >= TEMP_MIN && n <= TEMP_MAX) ? n : null; }
+    // v1.30 (2026-11-04): 0 is NOT a reading (it meant "couldn't read" and broke APM transfers). Leave blank or tick Ambient.
+    function validTemp(v){ var n = parseFloat(v); return (isFinite(n) && n > TEMP_MIN && n <= TEMP_MAX) ? n : null; }
+    // v1.30: a visit counts for alerts / trends only if it holds at least one real number (not all blank / Ambient / old 0)
+    function _hasTemp(e){ if (!e || !e.readings) return false; for (var k in e.readings){ var n = parseFloat(e.readings[k]); if (isFinite(n) && n > TEMP_MIN) return true; } return false; }
+    // v1.30: the route points Record Readings asks for (names ending " Motor" / " Gearbox"); others never get a box
+    function _recPts(list){ return (list || []).filter(function(m){ m = String(m || ''); return m.endsWith(' Motor') || m.endsWith(' Gearbox'); }); }
+    function _badTempMsg(c){ return 'Check ' + c + ': enter a temperature above 0 and up to ' + TEMP_MAX + ' \u00b0C. If you can\x27t get a true reading, leave it blank or tick Ambient.'; }
+    function _savedMsg(base, nb, na){ var p = []; if (nb) p.push(nb + ' left blank'); if (na) p.push(na + ' Ambient'); return p.length ? (base + ' ' + p.join(', ') + ' (shown as such in the history, never used for alarms or the median).') : base; }
     function escapeHtml(s){ if(s===null||s===undefined)return ''; return String(s).replace(/[&<>\"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch];}); }
     function escapeAttrArg(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,'\\x27').replace(/\r?\n/g,' ').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -1921,6 +1939,7 @@
     function saveDraft(routeKey){
         try{
             var d={}; document.querySelectorAll('#detail-content input[type=number]').forEach(function(inp){ if(inp.value!=='') d[inp.id]=inp.value; });
+            document.querySelectorAll('#detail-content .rec-amb input[type=checkbox]').forEach(function(cb){ if(cb.checked) d[cb.id]='1'; });
             var nn=document.getElementById('rec-note-input'); if(nn&&nn.value) d.__note=nn.value;
             if(Object.keys(d).length) localStorage.setItem(_draftKey(routeKey), JSON.stringify(d));
             else localStorage.removeItem(_draftKey(routeKey));
@@ -2829,6 +2848,7 @@
 
             apmOrderKeys(Object.keys(points), route.walkOrder).forEach(function(ptName) {
                 var pt = points[ptName];
+                if (!pt.motor && !pt.gearbox) return;
                 html += '<div class="rec-point-group"><div class="rec-point-title">' + posDisp(_eqc[sanitizeKey(ptName)],ptName) + '</div>';
                 if (pt.motor) html += _recFieldHtml(pt.motor, pt.motorIdx, 'Motor', histVal, key);
                 if (pt.gearbox) html += _recFieldHtml(pt.gearbox, pt.gbIdx, 'Gearbox', histVal, key);
@@ -2868,7 +2888,7 @@
                 var restored = 0;
                 Object.keys(d).forEach(function(fld){
                     if (fld === '__note') { var ni = document.getElementById('rec-note-input'); if (ni && d.__note) ni.value = d.__note; }
-                    else { var el = document.getElementById(fld); if (el && d[fld] != null && d[fld] !== '') { el.value = d[fld]; restored++; } }
+                    else { var el = document.getElementById(fld); if (el && d[fld] != null && d[fld] !== '') { if (el.type === 'checkbox'){ el.checked = true; recAmbToggle(parseInt(fld.slice(4), 10)); } else el.value = d[fld]; restored++; } }
                 });
                 document.querySelectorAll('#rec-points input[type="number"]').forEach(function(inp){ recTint(inp); });
                 if (restored > 0) showToast('Draft restored \u2014 ' + restored + ' reading' + (restored === 1 ? '' : 's'), 'success');
@@ -2887,7 +2907,7 @@
         if (!historyVal) return out;
         var entries = Object.keys(historyVal).map(function(k){ return historyVal[k]; });
         entries.sort(function(a, b){ var ta = (a && a.timestamp) ? a.timestamp : ''; var tb = (b && b.timestamp) ? b.timestamp : ''; return ta < tb ? -1 : (ta > tb ? 1 : 0); });
-        entries.forEach(function(e){ if (e && e.readings && e.readings[compKey] != null){ var v = parseFloat(e.readings[compKey]); if (!isNaN(v)) out.values.push(v); } });
+        entries.forEach(function(e){ if (e && e.readings && e.readings[compKey] != null){ var v = parseFloat(e.readings[compKey]); if (!isNaN(v) && v > TEMP_MIN) out.values.push(v); } });
         out.count = out.values.length;
         if (out.count){ out.last = out.values[out.values.length - 1]; var _sv = out.values.slice().sort(function(a, b){ return a - b; }); var _n = _sv.length; out.avg = (_n % 2) ? _sv[(_n - 1) / 2] : (_sv[_n / 2 - 1] + _sv[_n / 2]) / 2; } /* .avg = MEDIAN (robust to one-off spikes) since v1.18 */
         return out;
@@ -2905,11 +2925,19 @@
         } else { hint = 'no history yet'; }
         var h = '<div class="rec-point" data-idx="' + idx + '">';
         h += '<div class="rec-point-row"><span class="rec-label">' + label + '</span>';
-        h += '<input type="number" inputmode="decimal" id="rec-' + idx + '" data-component="' + escapeHtml(component) + '" placeholder="\u00b0C" step="0.1" oninput="recTint(this);saveDraft(\x27' + routeKey + '\x27);updateRecCounter();" onfocus="recFieldFocus(this)"></div>';
+        h += '<span class="rec-inwrap"><input type="number" inputmode="decimal" id="rec-' + idx + '" data-component="' + escapeHtml(component) + '" placeholder="\u00b0C" step="0.1" oninput="recTint(this);saveDraft(\x27' + routeKey + '\x27);updateRecCounter();" onfocus="recFieldFocus(this)">';
+        h += '<label class="rec-amb" title="Tick when you can\x27t get a true reading. Saved as Ambient, never as a number."><input type="checkbox" id="amb-' + idx + '" data-component="' + escapeHtml(component) + '" onchange="recAmbToggle(' + idx + ');saveDraft(\x27' + routeKey + '\x27);updateRecCounter();"><span>Ambient</span></label></span></div>';
         h += '<div class="rec-hint" id="hint-' + idx + '">' + hint + '</div>';
         h += '</div>';
         return h;
     }
+    // v1.30 (2026-11-04): Ambient tick clears + locks the number box (shows "Ambient"); untick to type again
+    function recAmbToggleEl(cb, inpId){
+        var inp = document.getElementById(inpId); if (!cb || !inp) return;
+        if (cb.checked){ inp.value = ''; inp.disabled = true; inp.placeholder = 'Ambient'; inp.classList.add('rec-is-amb'); inp.classList.remove('rec-ok', 'rec-warn', 'rec-alert'); }
+        else { inp.disabled = false; inp.placeholder = inp.getAttribute('data-ph') || '\u00b0C'; inp.classList.remove('rec-is-amb'); }
+    }
+    function recAmbToggle(idx){ recAmbToggleEl(document.getElementById('amb-' + idx), 'rec-' + idx); }
     function recTint(inp){
         var st = _recStats[inp.id];
         inp.classList.remove('rec-ok', 'rec-warn', 'rec-alert');
@@ -2923,7 +2951,7 @@
     }
     function updateRecCounter(){
         var filled = 0;
-        document.querySelectorAll('#rec-points input[type="number"]').forEach(function(inp){ if (inp.value && inp.value.trim() !== '') filled++; });
+        document.querySelectorAll('#rec-points input[type="number"]').forEach(function(inp){ if ((inp.value && inp.value.trim() !== '') || inp.classList.contains('rec-is-amb')) filled++; });
         var c = document.getElementById('rec-counter'); if (c) c.textContent = filled + ' of ' + _recTotal + ' reading' + (_recTotal === 1 ? '' : 's') + ' entered';
         var sc = document.getElementById('rec-step-counter'); if (sc) sc.textContent = filled + ' of ' + _recTotal + ' entered so far';
     }
@@ -2971,7 +2999,9 @@
     function recFieldFocus(inp){ if (_stepMode){ var i = _stepFields.indexOf(inp); if (i >= 0){ _stepIdx = i; _renderStep(); } } }
     function padKey(k){
         if (!_stepActiveField){ if (_stepFields && _stepFields.length) _stepActiveField = _stepFields[_stepIdx]; else return; }
-        var inp = _stepActiveField, v = inp.value || '';
+        var inp = _stepActiveField;
+        if (inp.classList.contains('rec-is-amb')){ if (k === 'del') return; var _ac = document.getElementById(inp.id.replace('rec-', 'amb-')); if (_ac){ _ac.checked = false; recAmbToggle(parseInt(inp.id.slice(4), 10)); } } // typing on the pad unticks Ambient
+        var v = inp.value || '';
         if (k === 'del') v = v.slice(0, -1);
         else if (k === '.'){ if (v.indexOf('.') === -1) v += (v === '' ? '0.' : '.'); }
         else v += k;
@@ -3012,7 +3042,7 @@
                 entries.sort(function(a, b){ var ta = (a && a.timestamp) ? a.timestamp : ''; var tb = (b && b.timestamp) ? b.timestamp : ''; return ta < tb ? -1 : (ta > tb ? 1 : 0); });
                 entries.forEach(function(e){
                     if (e && e.readings){
-                        var rs = Object.keys(e.readings).map(function(k){ return parseFloat(e.readings[k]); }).filter(function(x){ return !isNaN(x); });
+                        var rs = Object.keys(e.readings).map(function(k){ return parseFloat(e.readings[k]); }).filter(function(x){ return !isNaN(x) && x > TEMP_MIN; });
                         if (rs.length) vals.push(rs.reduce(function(a, b){ return a + b; }, 0) / rs.length);
                     }
                 });
@@ -3093,10 +3123,11 @@
     }
     function _renderTrend(seq, raw){
         var wrap = document.getElementById('trend-wrap'); if (!wrap) return;
-        var entries = [];
+        var entries = [], _allT = [];
         Object.keys(raw).forEach(function(id){
-            var e = raw[id]; if (!e || !e.readings) return;
+            var e = raw[id]; if (!e) return;
             var t = Date.parse(e.timestamp); if (isNaN(t)) return;
+            _allT.push(t); if (!_hasTemp(e)) return; // v1.30: all blank / Ambient = no new data (not plotted)
             entries.push({ t: t, by: e.recordedBy || '', readings: e.readings, labels: e.labels || {} });
         });
         entries.sort(function(a, b){ return a.t - b.t; });
@@ -3106,16 +3137,20 @@
         var keys = Object.keys(names).sort(function(a, b){ return String(names[a]).localeCompare(String(names[b]), undefined, { numeric: true }); });
         var multi = keys.length > 1;
         // Same rule as Open Alerts: latest reading vs the median of the earlier readings (last 15 visits), 10 C limit.
+        // v1.30: same window as Open Alerts and the report: the last 15 visits of any kind, then only those with a real number
+        _allT.sort(function(a, b){ return a - b; });
+        var _cutT = _allT.length > ANOMALY_WINDOW ? _allT[_allT.length - ANOMALY_WINDOW] : -Infinity;
+        var _winE = entries.filter(function(e){ return e.t >= _cutT; });
         var alerts = {}, nAl = 0;
-        if (entries.length >= 4){
-            var win = entries.slice(-ANOMALY_WINDOW), latestE = win[win.length - 1];
+        if (_winE.length >= 4){
+            var win = _winE, latestE = win[win.length - 1];
             var prior = win.slice(0, -1).map(function(e){ return { readings: e.readings }; });
             Object.keys(latestE.readings).forEach(function(k){ var a = _detectAnomaly(k, latestE.readings[k], prior, names[k]); if (a){ alerts[k] = a; nAl++; } });
         }
         function bandFor(k){
-            if (entries.length < 4) return null;
+            if (_winE.length < 4) return null;
             var v = [];
-            entries.slice(-ANOMALY_WINDOW, -1).forEach(function(e){ var x = parseFloat(e.readings[k]); if (isFinite(x) && x >= TEMP_MIN) v.push(x); });
+            _winE.slice(0, -1).forEach(function(e){ var x = parseFloat(e.readings[k]); if (isFinite(x) && x > TEMP_MIN) v.push(x); });
             return v.length >= 3 ? _trendMedian(v) : null;
         }
         function seriesFor(sel){
@@ -3123,10 +3158,10 @@
             entries.forEach(function(e){
                 var v;
                 if (sel === '__avg__'){
-                    var vs = Object.keys(e.readings).map(function(k){ return parseFloat(e.readings[k]); }).filter(function(x){ return isFinite(x); });
+                    var vs = Object.keys(e.readings).map(function(k){ return parseFloat(e.readings[k]); }).filter(function(x){ return isFinite(x) && x > TEMP_MIN; });
                     if (!vs.length) return;
                     v = vs.reduce(function(a, b){ return a + b; }, 0) / vs.length;
-                } else { v = parseFloat(e.readings[sel]); if (!isFinite(v)) return; }
+                } else { v = parseFloat(e.readings[sel]); if (!isFinite(v) || !(v > TEMP_MIN)) return; }
                 pts.push({ x: e.t, y: v, by: e.by });
             });
             return pts;
@@ -3277,6 +3312,7 @@
             var hv = pair.v;
             var entries = hv ? Object.keys(hv).map(function(id){ return hv[id]; }) : [];
             entries.sort(function(a, b){ var ta = (a && a.timestamp) ? a.timestamp : ''; var tb = (b && b.timestamp) ? b.timestamp : ''; return ta < tb ? -1 : (ta > tb ? 1 : 0); });
+            entries = entries.filter(_hasTemp); // v1.30: same rule as the trend pop-up: an all-Ambient visit keeps the earlier verdict
             var latest = entries.length ? entries[entries.length - 1] : null;
             var lastWhen = (latest && latest.timestamp) ? latest.timestamp : null;
             if (entries.length >= 4 && latest && latest.readings){
@@ -3480,7 +3516,7 @@
                     comps.forEach(function(c){
                         var sk = sanitizeKey(c);
                         h += '<tr><td>' + escapeHtml(c) + '</td>';
-                        recent.forEach(function(e){ var v = (e.readings && e.readings[sk] != null) ? parseFloat(e.readings[sk]) : null; h += '<td>' + ((v == null || isNaN(v)) ? '\u2014' : (v + '\u00b0')) + '</td>'; });
+                        recent.forEach(function(e){ var v = (e.readings && e.readings[sk] != null) ? parseFloat(e.readings[sk]) : null; h += '<td>' + ((v == null || isNaN(v)) ? ((e.ambient && e.ambient[sk]) ? 'Amb' : '\u2014') : (v + '\u00b0')) + '</td>'; });
                         var st = componentStats(histVal, sk);
                         h += '<td>' + (st.avg != null ? _rtemp(st.avg) + '\u00b0' : '\u2014') + '</td></tr>';
                     });
@@ -3488,8 +3524,9 @@
                 } else {
                     h += '<div class="pr-p">No readings recorded yet.</div>';
                 }
-                if (entries.length >= 4){
-                    var latest = entries[0], prior = entries.slice(1), al = [];
+                var _ve = entries.filter(_hasTemp); // v1.30: latest visit WITH a real number (same rule as Open Alerts + trend)
+                if (_ve.length >= 4){
+                    var latest = _ve[0], prior = _ve.slice(1), al = [];
                     comps.forEach(function(c){ var sk = sanitizeKey(c); var lv = latest.readings ? latest.readings[sk] : null; if (lv == null) return; var a = _detectAnomaly(sk, lv, prior, c); if (a) al.push(a); });
                     if (al.length){
                         h += '<div class="pr-alert"><strong>' + al.length + ' anomaly flag' + (al.length === 1 ? '' : 's') + ' on the latest reading (more than 10\u00b0C vs its median):</strong><ul>';
@@ -4433,28 +4470,29 @@
             entries.slice(0,20).forEach(function(entry){
                 const dateStr=formatNoteTimestamp(entry.timestamp);
                 html+='<div class="history-entry"><div class="timestamp">'+dateStr+(entry.recordedBy?' \u2014 <strong>'+escapeHtml(entry.recordedBy)+'</strong>':'')+'</div>';
-                if(entry.readings){
-                    const readingKeys=Object.keys(entry.readings);
-                    const points={};
-                    readingKeys.forEach(k=>{
-                        const _disp=(entry.labels&&entry.labels[k])?entry.labels[k]:k;
-                        const isMotor=_disp.endsWith(' Motor');
-                        const isGB=_disp.endsWith(' Gearbox');
-                        const ptName=isMotor?_disp.replace(' Motor',''):isGB?_disp.replace(' Gearbox',''):_disp;
-                        if(!points[ptName])points[ptName]={motor:null,gearbox:null};
-                        if(isMotor)points[ptName].motor=entry.readings[k];
-                        else if(isGB)points[ptName].gearbox=entry.readings[k];
-                        else points[ptName].motor=entry.readings[k];
-                    });
-                    apmOrderKeys(Object.keys(points), currentThermalApmOrder).forEach(function(name){
-                        var vals=points[name];
-                        html+='<div style="margin:6px 0 10px;">';
-                        html+='<div style="font-weight:700;color:#2563eb;font-size:13px;margin-bottom:3px;">'+posDisp(_eqc[sanitizeKey(name)],name)+'</div>';
-                        if(vals.motor!==null)html+='<div style="padding-left:8px;margin-bottom:2px;"><span class="reading-chip">Motor Temperature: '+escapeHtml(String(vals.motor))+'\u00B0C</span></div>';
-                        if(vals.gearbox!==null)html+='<div style="padding-left:8px;"><span class="reading-chip">Gearbox Temperature: '+escapeHtml(String(vals.gearbox))+'\u00B0C</span></div>';
-                        html+='</div>';
-                    });
-                }
+                // v1.30 (2026-11-04): EVERY route point in APM order, blank and Ambient ones too, so the lines
+                // match APM when copied across (a skipped blank used to shift every value below it)
+                var _rd=entry.readings||{}, _am=entry.ambient||{}, _lb=entry.labels||{};
+                var points={}, _seen={}, _nb=0, _na=0;
+                var _put=function(disp,k){ var isMotor=disp.endsWith(' Motor'), isGB=disp.endsWith(' Gearbox'); var pt=isMotor?disp.replace(' Motor',''):isGB?disp.replace(' Gearbox',''):disp; if(!points[pt])points[pt]={motor:null,gearbox:null}; if(isGB)points[pt].gearbox=k; else points[pt].motor=k; _seen[k]=1; };
+                _recPts(currentThermalItems).forEach(function(m){ _put(m, sanitizeKey(m)); });
+                Object.keys(_rd).concat(Object.keys(_am)).forEach(function(k){ if(!_seen[k]) _put(_lb[k]||k, k); });
+                var _chip=function(what,k){
+                    if(_rd[k]!=null&&validTemp(_rd[k])!==null) return '<span class="reading-chip">'+what+' Temperature: '+escapeHtml(String(_rd[k]))+'\u00B0C</span>';
+                    if(_am[k]){ _na++; return '<span class="reading-chip rc-amb">'+what+' Temperature: Ambient</span>'; }
+                    _nb++; return '<span class="reading-chip rc-blank">'+what+' Temperature: blank</span>';
+                };
+                var _ph='';
+                apmOrderKeys(Object.keys(points), currentThermalApmOrder).forEach(function(name){
+                    var vals=points[name];
+                    _ph+='<div style="margin:6px 0 10px;">';
+                    _ph+='<div style="font-weight:700;color:#2563eb;font-size:13px;margin-bottom:3px;">'+posDisp(_eqc[sanitizeKey(name)],name)+'</div>';
+                    if(vals.motor!==null)_ph+='<div style="padding-left:8px;margin-bottom:2px;">'+_chip('Motor',vals.motor)+'</div>';
+                    if(vals.gearbox!==null)_ph+='<div style="padding-left:8px;">'+_chip('Gearbox',vals.gearbox)+'</div>';
+                    _ph+='</div>';
+                });
+                if(_nb||_na) html+='<div class="th-sum">'+[_nb?_nb+' blank':'',_na?_na+' Ambient':''].filter(Boolean).join(' \u00b7 ')+'</div>';
+                html+=_ph;
                 // Edit/Delete buttons (only for author)
                 if(entry.recordedBy && entry.recordedBy.toLowerCase()===currentUser){
                     html+='<div style="margin-top:6px;"><button class="btn btn-secondary btn-sm" onclick="editThermalReading(\x27'+routeKey+'\x27,\x27'+entry._key+'\x27)">Edit</button></div>';
@@ -4470,7 +4508,7 @@
         const rows=[['Date','Recorded By',...currentThermalItems]];
         thermalHistoryData.forEach(entry=>{
             const row=[new Date(entry.timestamp).toLocaleString(),entry.recordedBy||''];
-            currentThermalItems.forEach(m=>{row.push(entry.readings?entry.readings[sanitizeKey(m)]||'':'');});
+            currentThermalItems.forEach(m=>{var _k=sanitizeKey(m),_v=entry.readings?entry.readings[_k]:null;row.push((_v!=null&&_v!=='')?_v:((entry.ambient&&entry.ambient[_k])?'Ambient':''));});
             rows.push(row);
         });
         try{await ensureXLSX();}catch(e){showToast('Excel export unavailable','error');return;}
@@ -4483,7 +4521,7 @@
         const component=document.getElementById('chart-component')?.value;
         if(!component||thermalHistoryData.length===0)return;
         const labels=[],values=[];
-        thermalHistoryData.forEach(entry=>{var _ck=sanitizeKey(component);if(entry.readings&&entry.readings[_ck]!==undefined){labels.push(new Date(entry.timestamp).toLocaleDateString());values.push(entry.readings[_ck]);}});
+        thermalHistoryData.forEach(entry=>{var _ck=sanitizeKey(component);var _cv=entry.readings?parseFloat(entry.readings[_ck]):NaN;if(isFinite(_cv)&&_cv>TEMP_MIN){labels.push(new Date(entry.timestamp).toLocaleDateString());values.push(_cv);}});
         try{await ensureChart();}catch(e){showToast('Chart library unavailable','error');return;}
         if(typeof Chart === 'undefined') return;
         if(thermalChart)thermalChart.destroy();
@@ -5165,6 +5203,12 @@
         document.querySelectorAll('#pmb-list .pmb-note').forEach(function(inp){var idx=parseInt(inp.getAttribute('data-idx'),10);if(!isNaN(idx)&&_pmb[idx])_pmb[idx].note=(inp.value||'');});
         try{
             var now=new Date().toISOString();
+            // v1.30 (2026-11-04): skip positions already in my Job list (a PM job, or inside any PM batch, this one too)
+            var _wdP=await getWorkAssignedData(), _keepP=[], _skipP=[], _seenP={};
+            _pmb.forEach(function(pp){ var sg='pm:'+_sigNorm(pp.equipment); if(_seenP[sg]||_findMyDupJob([sg],null,_wdP)){ _skipP.push(pp.equipment); return; } _seenP[sg]=1; _keepP.push(pp); });
+            if(!_keepP.length){ showToast((_skipP.length===1?_skipP[0]+' is':'All '+_skipP.length+' positions are')+' already in your Job list','error'); return; }
+            _pmb=_keepP;
+            var _skipMsg=_skipP.length?(' Skipped '+_skipP.length+' already in your list: '+_skipP.join(', ')):'';
             if(_pmbTarget){
                 var _tk=_pmbTarget;
                 var _snap=await db.ref('workAssigned/'+_tk+'/items').once('value');
@@ -5191,7 +5235,7 @@
                 _pmb=[];_pmbTarget=null;_pmbExisting={};
                 updateWorkCount();
                 closeModal();
-                showToast(_n===1?'Position added to batch!':_n+' positions added to batch!','success');
+                showToast((_n===1?'Position added to batch!':_n+' positions added to batch!')+_skipMsg,'success');
                 loadWorkAssigned();
                 return;
             }
@@ -5209,7 +5253,7 @@
             _pmb=[];
             updateWorkCount();
             closeModal();
-            showToast('PM batch added to your Job list!','success');
+            showToast('PM batch added to your Job list!'+_skipMsg,'success');
             loadWorkAssigned();
         }catch(e){showToast('Error saving batch: '+(e.message||e),'error');}
     }
@@ -5241,13 +5285,14 @@
                 var k=g[0][0],v=g[0][1];
                 h+='<div style="font-size:13px;color:#92400e;"><strong>'+escapeHtml(v.assignedTo||'A colleague')+'</strong> wants to share a job with you:</div>';
                 h+='<div style="font-size:14px;font-weight:600;color:#1a1a2e;margin:4px 0 8px;">'+escapeHtml(_jobLabel(v))+' <span style="font-size:11px;font-weight:400;color:#6b7280;">('+escapeHtml(v.workType||'')+')</span></div>';
+                h+=_inviteDupHint(k,data,me);
                 h+='<div style="display:flex;gap:8px;"><button class="btn btn-primary btn-sm" onclick="acceptJobShare(\x27'+k+'\x27)">Accept</button><button class="btn btn-secondary btn-sm" onclick="declineJobShare(\x27'+k+'\x27)">Decline</button></div>';
             } else {
                 h+='<div style="font-size:13px;color:#92400e;"><strong>'+escapeHtml(g[0][1].assignedTo||'A colleague')+'</strong> wants to share '+g.length+' jobs with you:</div>';
                 h+='<div style="margin:6px 0 10px;">';
                 g.forEach(function(e){
                     var k=e[0],v=e[1];
-                    h+='<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px solid #fde68a;"><div style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#1a1a2e;">'+escapeHtml(_jobLabel(v))+' <span style="font-size:11px;font-weight:400;color:#6b7280;">('+escapeHtml(v.workType||'')+')</span></div>';
+                    h+='<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px solid #fde68a;"><div style="flex:1;min-width:0;font-size:13px;font-weight:600;color:#1a1a2e;">'+escapeHtml(_jobLabel(v))+' <span style="font-size:11px;font-weight:400;color:#6b7280;">('+escapeHtml(v.workType||'')+')</span>'+_inviteDupHint(k,data,me)+'</div>';
                     h+='<button class="btn btn-secondary btn-sm" onclick="acceptJobShare(\x27'+k+'\x27)">Accept</button><button class="btn btn-secondary btn-sm" onclick="declineJobShare(\x27'+k+'\x27)">Decline</button></div>';
                 });
                 h+='</div>';
@@ -5270,9 +5315,22 @@
         if(!checkFirebase())return;
         var me=currentUser.toLowerCase(), keys=_pendingFrom(sender);
         if(!keys.length){showToast('No invites left to accept');loadWorkAssigned();return;}
-        var upd={}; keys.forEach(function(k){upd['workAssigned/'+k+'/sharedWith/'+me]=true;});
-        try{await db.ref().update(upd);keys.forEach(function(k){logAudit('acceptShare','job',k,{bulk:true});});showToast(keys.length+' jobs accepted - they\x27re now in your list','success');loadWorkAssigned();}
-        catch(e){showToast('Error: '+(e.message||e),'error');}
+        try{
+            // v1.30: one write per job; each is planned against the list as it stands after the previous one
+            var data=JSON.parse(JSON.stringify((await getWorkAssignedData())||{}));
+            var ok=0, mergedN=0, moved=0, blocked=[];
+            for(var i=0;i<keys.length;i++){
+                var k=keys[i], p=_acceptPlan(k,data,me);
+                if(p.error){ blocked.push(p.error); continue; }
+                await db.ref().update(p.upd); _applyUpd(data,p.upd);
+                ok++; mergedN+=p.merged.length; moved+=p.moved;
+                logAudit('acceptShare','job',k,{bulk:true}); _logMerges(k,p);
+            }
+            var msg=ok+' job'+(ok===1?'':'s')+' accepted - '+(ok===1?'it\x27s':'they\x27re')+' now in your list';
+            if(mergedN)msg+='. '+mergedN+' merged with your own cop'+(mergedN===1?'y':'ies')+(moved?(' ('+moved+' note'+(moved===1?'':'s')+' moved across)'):'');
+            if(blocked.length)msg+='. Not accepted: '+blocked.join(' ');
+            showToast(msg,blocked.length?'error':'success');loadWorkAssigned();
+        }catch(e){showToast('Error: '+(e.message||e),'error');loadWorkAssigned();}
     }
     async function declineAllShares(sender){
         if(!requireWrite())return;
@@ -5288,7 +5346,16 @@
     async function acceptJobShare(key){
         if(!requireWrite())return;
         if(!checkFirebase())return;
-        try{await db.ref('workAssigned/'+key+'/sharedWith/'+currentUser.toLowerCase()).set(true);logAudit('acceptShare','job',key,null);showToast('Job accepted - it\x27s now in your list','success');loadWorkAssigned();}
+        var me=currentUser.toLowerCase();
+        try{
+            var data=JSON.parse(JSON.stringify((await getWorkAssignedData())||{}));
+            var _js=await db.ref('workAssigned/'+key).once('value'); if(_js.val())data[key]=_js.val(); else delete data[key];
+            var p=_acceptPlan(key,data,me);
+            if(p.error){showToast(p.error,'error');return;}
+            await db.ref().update(p.upd);
+            logAudit('acceptShare','job',key,null); _logMerges(key,p);
+            showToast(_acceptMsg(p),'success');loadWorkAssigned();
+        }
         catch(e){showToast('Error: '+(e.message||e),'error');}
     }
     async function declineJobShare(key){
@@ -5437,7 +5504,7 @@
         var me=currentUser.toLowerCase();
         var shared=job.sharedWith||{};
         var rows=[];
-        Object.keys(users).forEach(function(uid){var u=users[uid]||{};var login=(u.loginId||u.login||'').toLowerCase();if(!login||login===me)return;rows.push({login:login,name:u.name||u.loginId||login,state:shared[login]});});
+        Object.keys(users).forEach(function(uid){var u=users[uid]||{};var login=(u.loginId||u.login||'').toLowerCase();if(!login||login===me)return;var _hasJ=!!_findDupJob(_jobSigs(job),key,_waData||{},login), _blk=false; if(_hasJ){ try{ var _pd=Object.assign({},_waData||{}); _pd[key]=job; _blk=!!_acceptPlan(key,_pd,login).error; }catch(_pe){} } rows.push({login:login,name:u.name||u.loginId||login,state:shared[login],has:_hasJ,blk:_blk});});
         rows.sort(function(a,b){return String(a.name).localeCompare(String(b.name));});
         var body='<div style="font-size:13px;color:#374151;margin-bottom:6px;">Share <strong>'+escapeHtml(_jobLabel(job))+'</strong> live with a colleague. They see and update the same job; ticking syncs both ways. They must Accept the invite first.</div>';
         if(!rows.length){body+='<div style="font-size:13px;color:#9ca3af;padding:8px 0;">No other users found.</div>';}
@@ -5447,7 +5514,7 @@
             rows.forEach(function(r){
                 var st=r.state===true?'<span style="font-size:11px;color:#059669;font-weight:600;">Accepted</span>':(r.state==='pending'?'<span style="font-size:11px;color:#b45309;font-weight:600;">Pending</span>':'');
                 body+='<div class="share-user-row" data-search="'+escapeHtml((r.name+' '+r.login).toLowerCase())+'" style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f1f5f9;">';
-                body+='<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">'+escapeHtml(r.name)+'</div><div style="font-size:11px;color:#9ca3af;">'+escapeHtml(r.login)+' '+st+'</div></div>';
+                body+='<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">'+escapeHtml(r.name)+'</div><div style="font-size:11px;color:#9ca3af;">'+escapeHtml(r.login)+' '+st+((r.has&&!r.state)?' <span style="font-size:11px;color:#92400e;font-weight:600;">'+(r.blk?'Has this job already in a shared copy (they must leave or unshare it before they can accept)':'Has this job already (their notes merge in if they accept)')+'</span>':'')+'</div></div>';
                 if(r.state){body+='<button class="btn btn-secondary btn-sm" onclick="unshareJobWith(\x27'+escapeAttrArg(key)+'\x27,\x27'+escapeAttrArg(r.login)+'\x27)">Unshare</button>';}
                 else{body+='<button class="btn btn-primary btn-sm" onclick="shareJobWith(\x27'+escapeAttrArg(key)+'\x27,\x27'+escapeAttrArg(r.login)+'\x27)">Share</button>';}
                 body+='</div>';
@@ -5475,6 +5542,83 @@
     // v1.27: a job is "in my list" if I own it OR I accepted a share of it (same rule the Job list uses).
     // Duplicate checks must use this, or recording on a shared route adds a second copy of the job.
     function _jobIsMine(j){ var me=(currentUser||'').toLowerCase(); if(!j||!me)return false; if((j.assignedTo||'').toLowerCase()===me)return true; return !!(j.sharedWith&&j.sharedWith[me]===true); }
+    // v1.30 (2026-11-04): ONE job per route (CBM) and per position (PM, including positions inside a PM batch) in each
+    // person's Job list, however it got there: added by hand, from search, by recording, or accepted as a share.
+    // FWO may repeat on purpose (more than one follow-up on the same position).
+    function _sigNorm(x){ return sanitizeKey(String(x==null?'':x).trim()).toLowerCase(); }
+    function _jobSigs(j){
+        var out=[]; if(!j)return out;
+        if(j.workType==='CBM'){ var r=_sigNorm(j.routeNumber||j.equipment); if(r)out.push('cbm:'+r); }
+        else if(j.workType==='PM'){
+            if(j.pmGroup&&j.items&&typeof j.items==='object'){ Object.keys(j.items).forEach(function(ik){ var it=j.items[ik]; if(it&&it.equipment){ var s='pm:'+_sigNorm(it.equipment); if(out.indexOf(s)<0)out.push(s); } }); }
+            else if(j.equipment) out.push('pm:'+_sigNorm(j.equipment));
+        }
+        return out;
+    }
+    function _sigName(j,sig){
+        if(!j)return ''; if(sig.indexOf('cbm:')===0)return String(j.routeNumber||j.equipment||'');
+        if(j.pmGroup&&j.items){ var ks=Object.keys(j.items); for(var i=0;i<ks.length;i++){ var it=j.items[ks[i]]; if(it&&it.equipment&&('pm:'+_sigNorm(it.equipment))===sig)return String(it.equipment); } }
+        return String(j.equipment||'');
+    }
+    function _sigWhat(sig,name){ return (sig.indexOf('cbm:')===0?'Route ':'Position ')+name; }
+    function _isMineFor(j,login){ if(!j||!login)return false; if((j.assignedTo||'').toLowerCase()===login)return true; return !!(j.sharedWith&&j.sharedWith[login]===true); }
+    // first job already in <login>'s list (default: me) covering any of sigs; exceptKey is ignored
+    function _findDupJob(sigs,exceptKey,data,login){
+        login=String(login||currentUser||'').toLowerCase(); data=data||_waData||{};
+        if(!sigs||!sigs.length||!login)return null;
+        var ks=Object.keys(data);
+        for(var i=0;i<ks.length;i++){ var k=ks[i]; if(k===exceptKey)continue; var j=data[k]; if(!_isMineFor(j,login))continue;
+            var js=_jobSigs(j); for(var s=0;s<sigs.length;s++){ if(js.indexOf(sigs[s])>=0)return {key:k,job:j,sig:sigs[s],name:_sigName(j,sigs[s])}; } }
+        return null;
+    }
+    function _findMyDupJob(sigs,exceptKey,data){ return _findDupJob(sigs,exceptKey,data,null); }
+    function _dupMsg(d){
+        var me=(currentUser||'').toLowerCase(), j=d.job||{}, by=(j.assignedTo||'').toLowerCase();
+        var m=_sigWhat(d.sig,d.name)+' is already in your Job list';
+        if(by&&by!==me)m+=' (shared by '+by+')';
+        if(j.status==='done')m+=' (ticked done)';
+        else if(j.pmGroup&&j.batchLabel)m+=' (in PM batch '+j.batchLabel+')';
+        return m;
+    }
+    function _wipeUnder(upd,p){ Object.keys(upd).forEach(function(x){ if(x.indexOf(p+'/')===0)delete upd[x]; }); }
+    // Accepting a share when I already have the same route / position: the shared job wins, my own copy's notes
+    // (and PM findings) are copied onto it with their original author + time, then my copy is removed.
+    // Pure: works on a snapshot `data`, returns {upd, merged, moved} or {error}.
+    function _acceptPlan(key,data,me){
+        var job=data&&data[key]; if(!job)return {error:'This job no longer exists'};
+        var upd={}, merged=[], moved=0; upd['workAssigned/'+key+'/sharedWith/'+me]=true;
+        var sigs=_jobSigs(job); if(!sigs.length)return {upd:upd,merged:merged,moved:0};
+        var tgtItem={};
+        if(job.pmGroup&&job.items){ Object.keys(job.items).forEach(function(ik){ var it=job.items[ik]; if(it&&it.equipment){ var s='pm:'+_sigNorm(it.equipment); if(!tgtItem[s])tgtItem[s]=ik; } }); }
+        function dest(sig){ var ik=tgtItem[sig]; return ik?('workAssigned/'+key+'/items/'+ik+'/findings/'):('workAssigned/'+key+'/jobNotes/'); }
+        function copy(notes,sig){ if(!notes||typeof notes!=='object')return; Object.keys(notes).forEach(function(nk){ var n=notes[nk]; if(!n||typeof n!=='object'||!n.text)return; var p=dest(sig)+nk; if(!upd[p]){upd[p]=n;moved++;} }); }
+        var ks=Object.keys(data);
+        for(var i=0;i<ks.length;i++){
+            var k=ks[i]; if(k===key)continue; var j=data[k]; if(!_isMineFor(j,me))continue;
+            var over=_jobSigs(j).filter(function(s){return sigs.indexOf(s)>=0;}); if(!over.length)continue;
+            var by=(j.assignedTo||'').toLowerCase(), what=_sigWhat(over[0],_sigName(j,over[0]));
+            if(by!==me)return {error:what+' is already in your Job list, shared by '+(by||'someone')+'. Leave that job first, or decline this invite.',blocked:true};
+            var sw=j.sharedWith?Object.keys(j.sharedWith):[];
+            if(sw.length)return {error:what+' is already in your Job list and you shared it with '+sw.join(', ')+'. Unshare it first, or decline this invite.',blocked:true};
+            if(j.pmGroup&&j.items){
+                var left=[], removed=0;
+                Object.keys(j.items).forEach(function(ik){ var it=j.items[ik]; if(!it)return; var s='pm:'+_sigNorm(it.equipment||''); if(sigs.indexOf(s)>=0){ copy(it.findings,s); upd['workAssigned/'+k+'/items/'+ik]=null; removed++; } else left.push(it); });
+                if(!left.length){ copy(j.jobNotes,over[0]); _wipeUnder(upd,'workAssigned/'+k); upd['workAssigned/'+k]=null; merged.push({key:k,whole:true,items:removed}); }
+                else { left.sort(function(a,b){ var sa=(typeof a.sortIndex==='number')?a.sortIndex:0, sb=(typeof b.sortIndex==='number')?b.sortIndex:0; return sa-sb; }); var f=left[0].equipment||''; upd['workAssigned/'+k+'/batchLabel']=(left.length===1?f:(f+' + '+(left.length-1)+' more')); merged.push({key:k,whole:false,items:removed}); }
+            } else { copy(j.jobNotes,over[0]); upd['workAssigned/'+k]=null; merged.push({key:k,whole:true}); }
+        }
+        return {upd:upd,merged:merged,moved:moved};
+    }
+    function _applyUpd(data,upd){ Object.keys(upd).forEach(function(p){ var a=p.split('/'); if(a[0]!=='workAssigned')return; a.shift(); var o=data; for(var i=0;i<a.length-1;i++){ if(o[a[i]]==null||typeof o[a[i]]!=='object'){ if(upd[p]===null)return; o[a[i]]={}; } o=o[a[i]]; } if(upd[p]===null)delete o[a[a.length-1]]; else o[a[a.length-1]]=JSON.parse(JSON.stringify(upd[p])); }); }
+    function _logMerges(key,p){ (p.merged||[]).forEach(function(m){ logAudit('mergeJob','job',key,{from:m.key,whole:!!m.whole,items:m.items||null,notesMoved:p.moved}); }); }
+    function _acceptMsg(p){ if(!p.merged.length)return 'Job accepted - it\x27s now in your list'; return 'Job accepted and merged with your own copy'+(p.moved?(' ('+p.moved+' note'+(p.moved===1?'':'s')+' moved across)'):''); }
+    function _inviteDupHint(k,data,me){
+        var p; try{ p=_acceptPlan(k,data,me); }catch(e){ return ''; }
+        var st='font-size:12px;font-weight:500;margin:2px 0 6px;line-height:1.4;';
+        if(p.error)return '<div style="'+st+'color:#b91c1c;">'+escapeHtml(p.error)+'</div>';
+        if(p.merged.length)return '<div style="'+st+'color:#92400e;">You already have this job. Accepting merges your notes into it and removes your own copy (its planned date and done tick are not kept).</div>';
+        return '';
+    }
     // v1.27: show Record on a thermal job unless it is explicitly marked no-reading. Older jobs (auto-added
     // after a recording, or from the Add job form) never stored readingRequired, so fall back to the route itself.
     function _jobNeedsReading(item){ if(!item)return false; if(item.readingRequired!==undefined)return item.readingRequired===true; var r=routesCache&&item.routeNumber?routesCache[sanitizeKey(item.routeNumber)]:null; return r?routeReadingRequired(r):true; }
@@ -5705,6 +5849,8 @@
             const eq=document.getElementById('work-equipment').value.trim();
             if(!eq){showToast('Position number required','error');return;}
             workData.equipment=eq;
+            var _dP=_findMyDupJob(_jobSigs(workData),_editWorkKey,await getWorkAssignedData()); // v1.30: before anything is written
+            if(_dP){showToast(_dupMsg(_dP),'error');return;}
             // Auto-register equipment
             const eqKey=sanitizeKey(eq);const eqSnap=await db.ref('equipment/'+eqKey).once('value');
             if(!eqSnap.val()){
@@ -5763,6 +5909,10 @@
                 const addRoute=await showModal('Route not found','Route '+route+' is not registered. Would you like to add it now?');
                 if(addRoute){closeModal();openAddForm('route');var _rn=document.getElementById('new-route-num');if(_rn)_rn.value=route;return;}
             }
+        }
+        if(type==='CBM'){ // v1.30: one job per route (PM is checked above, before any write; FWO may repeat)
+            var _dW=_findMyDupJob(_jobSigs(workData),_editWorkKey,await getWorkAssignedData());
+            if(_dW){showToast(_dupMsg(_dW),'error');return;}
         }
         if(_editWorkKey){
             delete workData.createdAt;
@@ -6713,10 +6863,19 @@ function liveSearchSuggest(query,scope){
             }catch(e){dd.style.display='none';}
         },300);
     }
-    document.addEventListener('click',function(e){
-        var dd=document.getElementById('main-search-dropdown');var inp=document.getElementById('search-conveyor');
-        if(dd&&inp&&!dd.contains(e.target)&&e.target!==inp)dd.style.display='none';
-    });
+    // v1.30 (2026-11-04): close ANY open suggestion list when you tap outside it. iOS Safari sends no click for a tap
+    // on empty page, so this listens to pointerdown/touchstart (capture phase) as well as click.
+    var _DD_INPUTS={'main-search-dropdown':'search-conveyor','pos-search-dd':'pos-search','cbm-search-dd':'cbm-search','eq-autocomplete':'eq-conveyor','part-autocomplete':'part-conveyor','pmb-dd':'','jw-parts-dd':'','link-pos-dropdown':''};
+    function _closeDropdownsOutside(e){
+        var t=e&&e.target; if(!t||!t.nodeType)return;
+        Object.keys(_DD_INPUTS).forEach(function(id){
+            var dd=document.getElementById(id); if(!dd||dd.style.display==='none'||dd.contains(t))return;
+            var inp=_DD_INPUTS[id]?document.getElementById(_DD_INPUTS[id]):null; if(inp&&(t===inp||inp.contains(t)))return;
+            if(t.tagName==='INPUT'&&dd.parentElement&&dd.parentElement.contains(t))return; // its own search box
+            dd.style.display='none';
+        });
+    }
+    ['pointerdown','touchstart','click'].forEach(function(ev){ document.addEventListener(ev,_closeDropdownsOutside,{capture:true,passive:true}); });
 
     // ============================================================
     // SEARCH INPUT UX: clear button, keyboard nav, recently-viewed
@@ -7694,10 +7853,11 @@ function liveSearchSuggest(query,scope){
     function _detectAnomaly(component, currentValue, sharedHistory, displayLabel){
         if (currentValue === null || currentValue === undefined || currentValue === '' || isNaN(parseFloat(currentValue))) return null;
         var val = parseFloat(currentValue);
+        if (!(val > TEMP_MIN)) return null; // v1.30: an old stored 0 is a blank, never a "cold" alarm
         var readings = sharedHistory;
         if (!readings) return null;
         var hv = [];
-        Object.values(readings).forEach(function(entry){ if (entry.readings && entry.readings[component] != null){ var v = parseFloat(entry.readings[component]); if (!isNaN(v) && v >= TEMP_MIN) hv.push(v); } });
+        Object.values(readings).forEach(function(entry){ if (entry.readings && entry.readings[component] != null){ var v = parseFloat(entry.readings[component]); if (!isNaN(v) && v > TEMP_MIN) hv.push(v); } });
         if (hv.length < 3) return null;
         var _hs = hv.slice().sort(function(a, b){ return a - b; }); var _hn = _hs.length;
         var avg = (_hn % 2) ? _hs[(_hn - 1) / 2] : (_hs[_hn / 2 - 1] + _hs[_hn / 2]) / 2; /* MEDIAN (robust to spikes); var kept .avg for compatibility */
@@ -7889,8 +8049,8 @@ function liveSearchSuggest(query,scope){
         var key=_jwKey,name=_jwName,type=(_jwType==='FWO')?'FWO':'PM';
         try{
             var waAll=await getWorkAssignedData();
-            var dup=Object.values(waAll).some(function(j){return j&&(j.assignedTo||'').toLowerCase()===currentUser.toLowerCase()&&j.equipment===name;});
-            if(dup){showToast('Already in Job list!','error');closeModal();return;}
+            var _dJ=(type==='PM')?_findMyDupJob(['pm:'+_sigNorm(name)],null,waAll):null; // v1.30: FWO may repeat; PM counts shared jobs + batches
+            if(_dJ){showToast(_dupMsg(_dJ),'error');closeModal();return;}
             var imgEl=document.getElementById('jw-img-file');
             if(imgEl&&imgEl.files&&imgEl.files[0]){
                 try{var b64=await fileToBase64(imgEl.files[0]);await db.ref('equipmentImages/'+sanitizeKey(key)).set(b64);await db.ref('equipmentImageMeta/'+sanitizeKey(key)).set({ addedBy: currentUser, addedAt: new Date().toISOString() });invalidateEquipmentCache();}
@@ -7925,14 +8085,8 @@ function liveSearchSuggest(query,scope){
             // Check for duplicates
             var waAll = await getWorkAssignedData();
             var itemName = title || key;
-            var isDuplicate = Object.values(waAll).some(function(j) {
-                return _jobIsMine(j) &&
-                       ((j.routeNumber && j.routeNumber === itemName) || (j.equipment && j.equipment === itemName));
-            });
-            if (isDuplicate) {
-                showToast('Already in Job list!', 'error');
-                return;
-            }
+            var _dS = _findMyDupJob([(type === 'route' ? 'cbm:' : 'pm:') + _sigNorm(itemName)], null, waAll); // v1.30
+            if (_dS) { showToast(_dupMsg(_dS), 'error'); return; }
             var jobData = {
                 workType: type === 'route' ? 'CBM' : 'PM',
                 equipment: itemName,
@@ -8103,15 +8257,28 @@ function liveSearchSuggest(query,scope){
         var snap = await db.ref('readings/' + routeKey + '/' + readingKey).once('value');
         hideLoading();
         var entry = snap.val();
-        if (!entry || !entry.readings) { showToast('Reading not found', 'error'); return; }
-        var components = Object.keys(entry.readings);
+        if (!entry || (!entry.readings && !entry.ambient)) { showToast('Reading not found', 'error'); return; }
+        // v1.30 (2026-11-04): list every route point (APM order) with an Ambient tick; an empty box = blank
+        var _rd0 = entry.readings || {}, _am0 = entry.ambient || {}, _lb0 = entry.labels || {};
+        var components = [], _dispOf = {};
+        var _inRoute = (currentThermalItems && currentThermalItems.length && sanitizeKey(String(currentThermalRoute || '')) === routeKey) ? currentThermalItems : [];
+        if (!_inRoute.length) { showLoading(); try { var _rs = await db.ref('routes/' + routeKey).once('value'); var _rv = _rs.val() || {}; _inRoute = apmOrderComponents(_rv.motors || [], _rv.apmOrder); } catch (_re) { console.warn('edit: route points not loaded', _re); } hideLoading(); }
+        _recPts(_inRoute).forEach(function(m){ var k = sanitizeKey(m); if (components.indexOf(k) < 0){ components.push(k); _dispOf[k] = m; } });
+        Object.keys(_rd0).concat(Object.keys(_am0)).forEach(function(k){ if (components.indexOf(k) < 0){ components.push(k); _dispOf[k] = _lb0[k] || k; } });
         var recordedDate = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '';
-        var bodyHtml = '<p style="font-size:12px;color:#6b7280;margin-bottom:14px;">Recorded: ' + recordedDate + (entry.recordedBy ? ' by ' + escapeHtml(entry.recordedBy) : '') + '</p>';
-        components.forEach(function(c) {
-            var inputId = 'tr-edit-' + c.replace(/[^a-z0-9]/gi, '_');
-            var _dispC = (entry.labels && entry.labels[c]) ? entry.labels[c] : c;
-            bodyHtml += '<div class="form-group"><label>' + _dispC + ' (°C)</label>';
-            bodyHtml += '<input type="number" id="' + inputId + '" value="' + escapeHtml(String(entry.readings[c]!=null?entry.readings[c]:'')) + '" step="0.1" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;"></div>';
+        var bodyHtml = '<p style="font-size:12px;color:#6b7280;margin-bottom:8px;">Recorded: ' + recordedDate + (entry.recordedBy ? ' by ' + escapeHtml(entry.recordedBy) : '') + '</p>';
+        bodyHtml += '<p style="font-size:12px;color:#6b7280;margin-bottom:14px;">Empty boxes are points left blank on this visit: type a reading to fill one in. No true reading? Leave it empty, or tick Ambient.</p>';
+        if (components.some(function(c){ return _rd0[c] != null && validTemp(_rd0[c]) === null; })){
+            var _onlyBad = !Object.keys(_am0).length && Object.keys(_rd0).every(function(k){ return validTemp(_rd0[k]) === null; });
+            bodyHtml += '<p class="tr-old0" style="font-size:12px;color:#92400e;margin:-8px 0 14px;">A stored value that is not a real reading (0 or out of range) is shown as blank. ' + (_onlyBad ? 'This visit has no real readings: enter one, tick Ambient, or use Delete This Reading.' : 'Saving removes it.') + '</p>';
+        }
+        components.forEach(function(c, ci) {
+            var inputId = 'tr-edit-' + ci, ambId = 'tr-amb-' + ci;
+            var _isAmb = !!_am0[c] && _rd0[c] == null;
+            var _bad0 = _rd0[c] != null && validTemp(_rd0[c]) === null, _ph0 = _bad0 ? escapeHtml('blank (was ' + String(_rd0[c]) + ')') : 'blank';
+            bodyHtml += '<div class="form-group"><label for="' + inputId + '">' + escapeHtml(_dispOf[c]) + ' (\u00b0C)</label><div class="rec-inwrap">';
+            bodyHtml += '<input type="number" inputmode="decimal" id="' + inputId + '" value="' + ((_rd0[c] != null && !_bad0) ? escapeHtml(String(_rd0[c])) : '') + '" step="0.1" data-ph="' + _ph0 + '"' + (_isAmb ? ' disabled placeholder="Ambient" class="rec-is-amb"' : ' placeholder="' + _ph0 + '"') + ' style="flex:1;min-width:0;">';
+            bodyHtml += '<label class="rec-amb"><input type="checkbox" id="' + ambId + '"' + (_isAmb ? ' checked' : '') + ' onchange="recAmbToggleEl(this,\x27' + inputId + '\x27)"><span>Ambient</span></label></div></div>';
         });
         bodyHtml += '<div style="margin-top:16px;padding:12px;border:1px solid #fca5a5;border-radius:8px;background:#fef2f2;">';
         bodyHtml += '<p style="font-size:12px;color:#dc2626;font-weight:600;margin-bottom:8px;">⚠️ Danger Zone</p>';
@@ -8123,28 +8290,22 @@ function liveSearchSuggest(query,scope){
             {label:'Save Changes', class:'btn-primary', value:'save'}
         ]);
         if (result !== 'save') return;
-        var newValues = {};
-        var changed = false;
+        var newValues = {}, newAmb = {}, newLabels = Object.assign({}, _lb0);
         var _editBad = null;
-        components.forEach(function(c) {
-            var inputId = 'tr-edit-' + c.replace(/[^a-z0-9]/gi, '_');
-            var el = document.getElementById(inputId);
-            var _v = el ? el.value : '';
-            if (_v !== '' && _v != null) {
-                var _n = validTemp(_v);
-                if (_n === null) { if(!_editBad) _editBad = c; newValues[c] = entry.readings[c]; }
-                else { newValues[c] = _n; if (_n !== entry.readings[c]) changed = true; }
-            } else {
-                newValues[c] = entry.readings[c];
-            }
+        components.forEach(function(c, ci) {
+            var el = document.getElementById('tr-edit-' + ci), cb = document.getElementById('tr-amb-' + ci);
+            var _v = el ? String(el.value == null ? '' : el.value).trim() : '';
+            if (cb && cb.checked) { newAmb[c] = true; newLabels[c] = _dispOf[c]; return; }
+            if (_v !== '') { var _n = validTemp(_v); if (_n === null) { if (!_editBad) _editBad = _dispOf[c]; } else { newValues[c] = _n; newLabels[c] = _dispOf[c]; } }
         });
-        if (_editBad) { showToast('Invalid reading for ' + _editBad + '. Enter a number between ' + TEMP_MIN + ' and ' + TEMP_MAX + ' \u00b0C.', 'error'); return; }
-        if (!changed) { showToast('No changes made'); return; }
+        if (_editBad) { showToast(_badTempMsg(_editBad), 'error'); return; }
+        var _same = function(a, b){ var ka = Object.keys(a).sort(), kb = Object.keys(b).sort(); if (ka.join('|') !== kb.join('|')) return false; return ka.every(function(k){ return a[k] === b[k]; }); };
+        if (_same(newValues, _rd0) && _same(newAmb, _am0)) { showToast('No changes made'); return; }
+        if (!Object.keys(newValues).length && !Object.keys(newAmb).length) { showToast('Enter at least one reading (or tick Ambient). To remove the whole visit, use Delete This Reading.', 'error'); return; }
+        Object.keys(newLabels).forEach(function(k){ if (newValues[k] == null && !newAmb[k]) delete newLabels[k]; });
         showLoading();
         try {
-            await db.ref('readings/' + routeKey + '/' + readingKey + '/readings').set(newValues);
-            await db.ref('readings/' + routeKey + '/' + readingKey + '/editedAt').set(new Date().toISOString());
-            await db.ref('readings/' + routeKey + '/' + readingKey + '/editedBy').set(currentUser);
+            await db.ref('readings/' + routeKey + '/' + readingKey).update({ readings: Object.keys(newValues).length ? newValues : null, ambient: Object.keys(newAmb).length ? newAmb : null, labels: newLabels, editedAt: new Date().toISOString(), editedBy: currentUser });
             logAudit('editReading','route',routeKey,{reading:readingKey});showToast('Reading updated!', 'success');
             invalidateAlertsCache(); if (typeof _sparkCache !== 'undefined') delete _sparkCache[routeKey];
             var histContainer = document.getElementById('detail-thermal-history');
@@ -8222,19 +8383,29 @@ function liveSearchSuggest(query,scope){
         var _labels = {};
         var hasData = false;
         var _badTemp = null;
+        var _ambient = {}, _blanks = [];
         document.querySelectorAll('#detail-content input[type="number"]').forEach(function(inp) {
+            var component = inp.dataset.component || inp.id;
             if (inp.value && inp.value.trim() !== '') {
-                var component = inp.dataset.component || inp.id;
                 var _n = validTemp(inp.value);
                 if (_n === null) { if(!_badTemp) _badTemp = component; }
                 else { readings[sanitizeKey(component)] = _n; _labels[sanitizeKey(component)] = component; hasData = true; }
-            }
+            } else if (!inp.classList.contains('rec-is-amb')) _blanks.push(component);
         });
-        if (_badTemp) { showToast('Invalid reading for ' + _badTemp + '. Enter a number between ' + TEMP_MIN + ' and ' + TEMP_MAX + ' \u00b0C.', 'error'); return; }
-        if (!hasData) { showToast('Enter at least one reading', 'error'); return; }
+        // v1.30 (2026-11-04): Ambient = no true reading possible. Kept in its own map, never as a number, so the
+        // median, alarms, Open Alerts, charts and trend lines (they only read `readings`) all leave it out.
+        document.querySelectorAll('#detail-content .rec-amb input[type="checkbox"]').forEach(function(cb) {
+            if (!cb.checked) return; var c = cb.dataset.component; if (!c) return; var sk = sanitizeKey(c);
+            if (readings[sk] != null) return; _ambient[sk] = true; _labels[sk] = c; hasData = true;
+        });
+        var _nAmb = Object.keys(_ambient).length;
+        if (_badTemp) { showToast(_badTempMsg(_badTemp), 'error'); return; }
+        if (!hasData) { showToast('Enter at least one reading (or tick Ambient)', 'error'); return; }
+        var _payload = {readings: readings, labels: _labels, timestamp: new Date().toISOString(), recordedBy: currentUser || 'Unknown'};
+        if (_nAmb) _payload.ambient = _ambient;
         if(!_fbConnected || !navigator.onLine){
             var _n0=document.getElementById('rec-note-input'); var _note0=(_n0&&_n0.value)?_n0.value.trim():'';
-            bufferReading({routeKey:routeKey, routeNum:routeNum, payload:{readings:readings, labels:_labels, timestamp:new Date().toISOString(), recordedBy: currentUser||'Unknown'}, note:_note0});
+            bufferReading({routeKey:routeKey, routeNum:routeNum, payload:_payload, note:_note0});
             clearDraft(routeKey);
             _saveReadingsCooldown=true; setTimeout(function(){_saveReadingsCooldown=false;},5000);
             showToast('Saved offline \u2014 will sync when you\x27re back online','success');
@@ -8255,13 +8426,9 @@ function liveSearchSuggest(query,scope){
             var _recNoteEl = document.getElementById('rec-note-input');
             var _recNotePre = (_recNoteEl && _recNoteEl.value) ? _recNoteEl.value.trim() : '';
             if (_anoms.length) await showAnomalySummary(routeKey, _anoms, _recNotePre);
-            await db.ref('readings/' + routeKey).push({
-                readings: readings,
-                labels: _labels,
-                timestamp: new Date().toISOString(),
-                recordedBy: currentUser || 'Unknown'
-            });
-            logAudit('addReading','route',routeNum,{points:Object.keys(readings).length});showToast('Readings saved!', 'success');
+            _payload.timestamp = new Date().toISOString();
+            await db.ref('readings/' + routeKey).push(_payload);
+            logAudit('addReading','route',routeNum,{points:Object.keys(readings).length, ambient:_nAmb, blank:_blanks.length});showToast(_savedMsg('Readings saved!', _blanks.length, _nAmb), 'success');
             invalidateAlertsCache(); if (typeof _sparkCache !== 'undefined') delete _sparkCache[routeKey];
             clearDraft(routeKey);
             _saveReadingsCooldown=true; setTimeout(function(){_saveReadingsCooldown=false;},5000);
@@ -8271,8 +8438,9 @@ function liveSearchSuggest(query,scope){
             var waAll = await getWorkAssignedData();
             var alreadyExists = false;
             Object.values(waAll).forEach(function(j) {
-                if ((j.routeNumber === _routeDisplay || j.equipment === _routeDisplay) && _jobIsMine(j)) alreadyExists = true; // v1.27: a job shared with me counts too
+                if ((!j.workType || j.workType === 'CBM') && (j.routeNumber === _routeDisplay || j.equipment === _routeDisplay) && _jobIsMine(j)) alreadyExists = true; // v1.27: a job shared with me counts too
             });
+            if (!alreadyExists && _findMyDupJob(['cbm:' + _sigNorm(_routeDisplay)], null, waAll)) alreadyExists = true; // v1.30: same rule as every other add path
             if (!alreadyExists && currentUser) {
                 await db.ref('workAssigned').push({
                     workType: 'CBM', cbmType: 'Thermal', readingRequired: true,
@@ -8896,31 +9064,80 @@ function liveSearchSuggest(query,scope){
     });
     // Custom pinch-zoom + pan for the fullscreen image viewer
     // (native touch-action zoom is unreliable inside a fixed overlay on iOS Safari)
-    var _ivScale=1,_ivTx=0,_ivTy=0,_ivStartDist=0,_ivStartScale=1,_ivStartX=0,_ivStartY=0,_ivStartTx=0,_ivStartTy=0,_ivLastTap=0;
+    // v1.30 (2026-11-04): zoom follows your fingers. Pinch zooms about the point between them (it used to zoom
+    // about the photo centre, so the bit you wanted slid away), lifting one finger re-anchors the pan (no jump),
+    // panning stops at the photo edges, and double-tap zooms in on the spot you tapped.
+    var _ivScale=1,_ivTx=0,_ivTy=0,_ivG=null,_ivLastTap=0,_ivLastTapX=0,_ivLastTapY=0,_ivMoved=false,_ivPinched=false,_ivTouchT=0,_ivTouchX=0,_ivTouchY=0;
     function _ivImgEl(){return document.getElementById('img-viewer-src');}
-    function _ivApply(){var i=_ivImgEl();if(i)i.style.transform='translate('+_ivTx+'px,'+_ivTy+'px) scale('+_ivScale+')';}
-    function _ivReset(){_ivScale=1;_ivTx=0;_ivTy=0;var i=_ivImgEl();if(i)i.style.transform='';}
+    function _ivApply(){var i=_ivImgEl();if(i)i.style.transform=(_ivScale===1&&!_ivTx&&!_ivTy)?'':'translate('+_ivTx+'px,'+_ivTy+'px) scale('+_ivScale+')';}
+    function _ivReset(){_ivScale=1;_ivTx=0;_ivTy=0;_ivG=null;var i=_ivImgEl();if(i)i.style.transform='';}
     function _ivDist(t){var dx=t[0].clientX-t[1].clientX,dy=t[0].clientY-t[1].clientY;return Math.sqrt(dx*dx+dy*dy);}
+    function _ivMid(t){return {x:(t[0].clientX+t[1].clientX)/2,y:(t[0].clientY+t[1].clientY)/2};}
+    // untransformed centre + size of the photo (transform-origin is its centre)
+    function _ivBase(){var i=_ivImgEl();if(!i)return null;var r=i.getBoundingClientRect();var w=i.offsetWidth||r.width/_ivScale,h=i.offsetHeight||r.height/_ivScale;if(i.naturalWidth&&i.naturalHeight&&w&&h){var f=Math.min(w/i.naturalWidth,h/i.naturalHeight);w=i.naturalWidth*f;h=i.naturalHeight*f;}return {cx:(r.left+r.right)/2-_ivTx,cy:(r.top+r.bottom)/2-_ivTy,w:w,h:h};}
+    function _ivClamp(g){
+        if(!g)return; var vw=window.innerWidth||document.documentElement.clientWidth, vh=window.innerHeight||document.documentElement.clientHeight;
+        var sw=g.w*_ivScale, sh=g.h*_ivScale;
+        if(sw<=vw)_ivTx=vw/2-g.cx; else _ivTx=Math.min(sw/2-g.cx,Math.max(vw-g.cx-sw/2,_ivTx));
+        if(sh<=vh)_ivTy=vh/2-g.cy; else _ivTy=Math.min(sh/2-g.cy,Math.max(vh-g.cy-sh/2,_ivTy));
+        if(_ivScale<=1){_ivTx=0;_ivTy=0;}
+    }
+    // keep the photo point under (fx,fy) fixed while changing scale to ns
+    function _ivZoomAt(g,fx,fy,ns,s0,tx0,ty0){var px=(fx-g.cx-tx0)/s0,py=(fy-g.cy-ty0)/s0;_ivScale=ns;_ivTx=fx-g.cx-ns*px;_ivTy=fy-g.cy-ns*py;}
+    function _ivPanStart(t){_ivG={mode:'pan',g:_ivBase(),x0:t.clientX,y0:t.clientY,tx0:_ivTx,ty0:_ivTy};}
     (function(){
         var ov=document.getElementById('img-viewer');
         if(!ov)return;
         ov.addEventListener('touchstart',function(e){
-            if(e.touches.length===2){_ivStartDist=_ivDist(e.touches);_ivStartScale=_ivScale;e.preventDefault();return;}
+            if(e.target&&e.target.closest&&e.target.closest('.img-viewer-close'))return; // v1.30: the X always closes, even zoomed in
+            if(e.touches.length>=2){
+                var g=_ivBase(); if(!g)return; var m=_ivMid(e.touches);
+                _ivG={mode:'pinch',g:g,d0:_ivDist(e.touches)||1,s0:_ivScale,m0x:m.x,m0y:m.y,tx0:_ivTx,ty0:_ivTy};
+                _ivPinched=true; e.preventDefault(); return;
+            }
             if(e.touches.length===1){
-                var now=Date.now();
-                if(now-_ivLastTap<300){if(_ivScale>1){_ivReset();}else{_ivScale=2.5;_ivApply();}e.preventDefault();_ivLastTap=0;return;}
-                _ivLastTap=now;
-                if(_ivScale>1){_ivStartX=e.touches[0].clientX;_ivStartY=e.touches[0].clientY;_ivStartTx=_ivTx;_ivStartTy=_ivTy;e.preventDefault();}
+                var t=e.touches[0]; _ivMoved=false; _ivPinched=false; _ivTouchT=Date.now(); _ivTouchX=t.clientX; _ivTouchY=t.clientY;
+                _ivPanStart(t);
+                if(_ivScale>1||(Date.now()-_ivLastTap<300&&Math.abs(t.clientX-_ivLastTapX)<40&&Math.abs(t.clientY-_ivLastTapY)<40))e.preventDefault();
             }
         },{passive:false});
         ov.addEventListener('touchmove',function(e){
-            if(e.touches.length===2&&_ivStartDist>0){_ivScale=Math.min(5,Math.max(1,_ivStartScale*(_ivDist(e.touches)/_ivStartDist)));_ivApply();e.preventDefault();return;}
-            if(e.touches.length===1&&_ivScale>1){_ivTx=_ivStartTx+(e.touches[0].clientX-_ivStartX);_ivTy=_ivStartTy+(e.touches[0].clientY-_ivStartY);_ivApply();e.preventDefault();}
+            if(e.target&&e.target.closest&&e.target.closest('.img-viewer-close'))return; // v1.30: the X always closes, even zoomed in
+            if(!_ivG)return;
+            if(e.touches.length>=2&&_ivG.mode==='pinch'){
+                var G=_ivG, m=_ivMid(e.touches), ns=Math.min(5,Math.max(1,G.s0*(_ivDist(e.touches)/G.d0)));
+                // photo point that was under the starting midpoint follows the current midpoint (zoom + two-finger pan)
+                var px=(G.m0x-G.g.cx-G.tx0)/G.s0, py=(G.m0y-G.g.cy-G.ty0)/G.s0;
+                _ivScale=ns; _ivTx=m.x-G.g.cx-ns*px; _ivTy=m.y-G.g.cy-ns*py;
+                _ivClamp(G.g); _ivApply(); e.preventDefault(); return;
+            }
+            if(e.touches.length===1&&_ivG.mode==='pan'){
+                var t=e.touches[0];
+                if(Math.abs(t.clientX-_ivTouchX)>8||Math.abs(t.clientY-_ivTouchY)>8)_ivMoved=true;
+                if(_ivScale>1){_ivTx=_ivG.tx0+(t.clientX-_ivG.x0);_ivTy=_ivG.ty0+(t.clientY-_ivG.y0);_ivClamp(_ivG.g);_ivApply();e.preventDefault();}
+            }
         },{passive:false});
-        ov.addEventListener('touchend',function(e){
-            if(e.touches.length<2)_ivStartDist=0;
-            if(_ivScale<=1){_ivScale=1;_ivTx=0;_ivTy=0;_ivApply();}
-        },{passive:false});
+        function _end(e){
+            if(e.target&&e.target.closest&&e.target.closest('.img-viewer-close'))return; // v1.30: the X always closes, even zoomed in
+            if(e.touches.length>=2){ // one of three fingers lifted: restart the pinch from here
+                var g=_ivBase(); if(!g){_ivG=null;return;} var m=_ivMid(e.touches); _ivG={mode:'pinch',g:g,d0:_ivDist(e.touches)||1,s0:_ivScale,m0x:m.x,m0y:m.y,tx0:_ivTx,ty0:_ivTy}; return;
+            }
+            if(e.touches.length===1){ _ivPanStart(e.touches[0]); if(_ivScale>1)e.preventDefault(); return; } // re-anchor: no jump
+            _ivG=null;
+            if(e.type==='touchend'&&!_ivPinched&&!_ivMoved&&Date.now()-_ivTouchT<300&&e.changedTouches&&e.changedTouches[0]){
+                var ct=e.changedTouches[0], now=Date.now();
+                if(now-_ivLastTap<300&&Math.abs(ct.clientX-_ivLastTapX)<40&&Math.abs(ct.clientY-_ivLastTapY)<40){
+                    _ivLastTap=0;
+                    if(_ivScale>1){_ivReset();}
+                    else{var g2=_ivBase(); if(g2){_ivZoomAt(g2,ct.clientX,ct.clientY,2.5,_ivScale,_ivTx,_ivTy);_ivClamp(g2);_ivApply();}}
+                    e.preventDefault(); return;
+                }
+                _ivLastTap=now; _ivLastTapX=ct.clientX; _ivLastTapY=ct.clientY;
+            } else _ivLastTap=0;
+            if(_ivScale<=1.02){_ivScale=1;_ivTx=0;_ivTy=0;_ivApply();}
+        }
+        ov.addEventListener('touchend',_end,{passive:false});
+        ov.addEventListener('touchcancel',_end,{passive:false});
     })();
     function closeImageViewer(e) {
         if (e.target.id === 'img-viewer' || e.target.classList.contains('img-viewer-close') || e.target.parentElement.classList.contains('img-viewer-close')) {
@@ -9774,6 +9991,7 @@ function liveSearchSuggest(query,scope){
         html += '<li>On the CBM tab, open a thermal route and tap <strong>Record New Readings</strong></li>';
         html += '<li>Enter the <strong>Motor</strong> and <strong>Gearbox</strong> temperature at each point; use <strong>Step-by-step</strong> mode to go one field at a time. A counter shows how many you have entered.</li>';
         html += '<li>As you type, the field tints green / amber / red so you can see at a glance if a value is drifting</li>';
+        html += '<li><strong>Can\'t get a true reading?</strong> Leave the box empty, or tick <strong>Ambient</strong> next to it. Never type 0 or an estimate. Blank and Ambient points are never used for the median, alarms or charts. The saved reading lists every point in APM order, showing <em>blank</em> or <em>Ambient</em> where there was no reading, so the lines match APM when you copy them across.</li>';
         html += '<li><strong>Anomaly flags:</strong> when you save a reading more than <strong>10\u00b0C</strong> above or below that component\'s own <strong>median</strong> (its typical reading, worked out from the last few, ISO 13373 \u2014 needs at least 3 past readings), the app flags it and asks you to note what you saw</li>';
         html += '<li><strong>Open Alerts:</strong> every open flag collects in the menu under Open Alerts and on your dashboard, with a red count</li>';
         html += '<li>Median is used (not a plain average) so a single freak reading in the history cannot hide the next real fault</li>';
