@@ -15,6 +15,7 @@
 **Update 2026-10-29:** a **design refresh** for the whole app, in the style of Apple's website. Same colours and the same Amazon RME logo (see the Design refresh section below). The version number stays 1.30.
 **Update 2026-11-02:** **search by model**. Type an equipment model (for example 2325) in the search box to get every position with that model, listed last after routes, positions and parts (see the Search by model section below). The version number stays 1.30.
 **Update 2026-11-04:** **Ambient tick and blank readings**, **no duplicate jobs**, the **search suggestions close** when you tap elsewhere, and **photo zoom** follows your fingers (see the Ambient, blanks and duplicate jobs section below). The version number stays 1.30.
+**Update 2026-11-04 (later):** a **full code audit**: fixes for offline readings, editing and removing jobs, PM batches, admin renames that could overwrite another record, part lookup by APN, and sign-in, plus unused code removed (see the Full code audit fixes section below). The version number stays 1.30.
 
 ### Messages between users
 - **New 💬 chat button at the bottom right** of the main screens (also **Messages** in the menu under Tools). A red number shows how many messages you have not read.
@@ -109,6 +110,49 @@
 - Up to 15 rows show straight away; **+ N more** shows the rest. The results summary adds "N by model".
 - Inactive positions and individual crossbelt carriers are left out (carriers are reached through their train, as before). Type searches (Thermal, Ultrasound, CBM, Air leaks) and wildcard (*) searches do not show this section.
 - A position can appear under Positions and under Same model if both match.
+
+### Full code audit fixes - added 2026-11-04, still v1.30
+A full check of the app and its code. Screens look the same; the changes are fixes, plus some unused code taken out (the file is about 5 KB smaller).
+
+**Readings**
+- **Offline readings are no longer lost during a sync.** A reading saved while the phone was still sending older offline readings used to be wiped when the sync finished. The phone now removes only what it sent, and sends the newer one a second later.
+- **Offline readings can no longer be saved twice.** Each reading waiting to be sent now gets its own fixed ID first. If the phone closes after the database saved a reading but before the phone ticked it off, sending it again overwrites that same reading instead of adding a second visit.
+- **The Record Readings box colour matches the alarm.** Red now means more than 10°C from the median (exactly 10 was red but raised no alarm). Amber means more than 7°C.
+- The Thermal History chart's median line uses the same last-15-visits window as the alarm, so the line and the alarm always agree.
+- Thermal History says "Could not load the reading history" if it fails, instead of staying empty. A slow load for a route you have already left no longer draws over the page you are on.
+- The Excel export leaves out a stored 0 or an out-of-range value, the same as the screens do.
+- Each sign-in (including re-entering your PIN after being away) used to add one more connection watcher behind the scenes. There is now only ever one.
+
+**Jobs**
+- **Editing an FWO job keeps all its parts.** The Edit form only shows the first part, and saving used to drop the others.
+- Changing a job's type in Edit clears the fields that no longer apply (for example a route number left behind on a job changed from CBM to PM).
+- **"Remove from Job list" on a search result or position page only removes your own single job** for that route or position. It used to delete a whole PM batch that held the position, and any FWO with the same name. For a batch, or a job shared with you, it now tells you to use the Jobs page.
+- A position inside one of your PM batches now shows "Remove from Job list" on its page, not "Add to Job list".
+- **Removing a position from a PM batch:** if every position left is done, the batch is ticked done (with who and when, and logged). A batch that was already done keeps its original done date.
+- Adding positions to an existing PM batch saves in one write, so a dropped connection cannot leave a done batch holding new open positions.
+- The "a batch needs at least one position" rule is checked again at the moment of saving, so two quick taps (or two people at once) cannot empty a batch.
+- Saving a job now shows a message if it fails, instead of nothing happening.
+- Add job (PM) with a new photo records who uploaded it, so that person can replace it later. A position auto-added by an FWO job shows up in search straight away.
+
+**Admin edit and add**
+- **Renaming a position or route to an ID that already exists is refused.** It used to overwrite the other record.
+- **Add Position refuses an ID that already exists** (it used to overwrite it). Its photo records who uploaded it.
+- Edit Position keeps a saved Type that is not in the list, and "Select type..." saves as blank.
+- **Linking a part by APN finds that exact part first,** not an older part that lists the APN as its previous number.
+- Adding or removing an Associated Part is safe when two people do it at the same time (no lost or doubled entries), and the database re-checks a part the phone thinks is already linked.
+- Delete on a record that has just been removed by someone else no longer errors.
+
+**Search, sign-in and screen**
+- **Route search:** the loose match (characters in order, dots ignored) was dropping the letters of the route name and comparing only the digits, and a search containing a dot never matched. It now compares the full name, ignores case, and needs at least 3 letters or numbers.
+- Sign-up and sign-in: a new account is no longer caught by the "away for a while" check, and the app waits for the account record to be saved before deciding the user's role (up to 10 seconds).
+- Screenshots: anyone can now replace a SCADA or route screenshot (before, only an admin or whoever added it). This covers the Edit form, the quick screenshot link and the PM batch button. Who added it last is still recorded, and the job list shows the new screenshot straight away.
+- Search suggestion lists: a short query no longer leaves an old pending search running.
+- Pop-ups: opening one pop-up from another no longer stacks keyboard handlers or loses where focus goes back to.
+- Names with quotes or other odd characters can no longer break buttons on Open Alerts, the dashboard, Record Readings (boxes, Ambient ticks, note, Cancel), Thermal History, Linked Parts, the Edit screens (Save Changes, Cancel, Delete Permanently) and Save Screenshot.
+
+**Unused code removed (no change to what you see)**
+- Old functions with no callers: the old edit screens for positions, parts and routes, the old v1.02 one-off clean-up, an old thermal check, an old "add thermal note to job" helper, the old returning-user login screen and switch-user, and a duplicate-endpoint clean-up that no longer had anything to clean.
+- Styles no longer used by any screen (the old dashboard hero tiles, old thermal history rows, old filter and sort styles and a few more).
 
 ### Ambient, blanks and duplicate jobs - added 2026-11-04, still v1.30
 **Temperatures**
