@@ -16,6 +16,7 @@
 **Update 2026-11-02:** **search by model**. Type an equipment model (for example 2325) in the search box to get every position with that model, listed last after routes, positions and parts (see the Search by model section below). The version number stays 1.30.
 **Update 2026-11-04:** **Ambient tick and blank readings**, **no duplicate jobs**, the **search suggestions close** when you tap elsewhere, and **photo zoom** follows your fingers (see the Ambient, blanks and duplicate jobs section below). The version number stays 1.30.
 **Update 2026-11-04 (later):** a **full code audit**: fixes for offline readings, editing and removing jobs, PM batches, admin renames that could overwrite another record, part lookup by APN, and sign-in, plus unused code removed (see the Full code audit fixes section below). The version number stays 1.30.
+**Update 2026-11-09:** admins can **reset a CBM alert** from Open Alerts: disregard a bad reading, start a new baseline (the next 3 readings set the median), or acknowledge a genuine reading. Every reset is logged, shown on the route and can be undone (see the Reset a CBM alert section below). The version number stays 1.30.
 
 ### Messages between users
 - **New 💬 chat button at the bottom right** of the main screens (also **Messages** in the menu under Tools). A red number shows how many messages you have not read.
@@ -186,6 +187,25 @@ A full check of the app and its code. Screens look the same; the changes are fix
 - **Photo zoom on the phone follows your fingers.** Pinching zooms in on the spot between your fingers (it used to zoom on the middle of the photo, so the part you wanted slid away), lifting one finger no longer makes the photo jump, panning stops at the edges of the photo, and double-tap zooms in on the spot you tapped (double-tap again to zoom back out).
 - **The X on a photo always closes it,** even when zoomed in (it could not be tapped while zoomed) or straight after tapping the photo. A second quick tap only counts as a double-tap when it lands near the first. Panning stops at the edges of the picture itself, not the black bars around a tall photo.
 
+### Reset a CBM alert (admins) - added 2026-11-09, still v1.30
+Admins can now clear an open thermal alert and say why. On **Open Alerts**, each route has a **Reset alert** button (admins only). It asks what happened:
+
+- **Bad reading: disregard it** (line stopped or lightly loaded, wrong point measured, faulty or misread reading). That reading is left out of the median. Monitoring carries on against the existing median, so if the next reading is again more than 10°C out, it alarms straight away.
+- **Something changed: new baseline** (motor replaced, gearbox replaced, repaired or adjusted, load or speed changed). Readings before the reset stop counting. The next 3 readings set the new median and alarms start again from the 4th. Until then the Record Readings form shows "new baseline since 9 Nov: 1 of 3 readings" next to that component.
+- **Genuine reading: being dealt with** (fault confirmed and job raised, checked and no fault found, known issue being monitored). The reading is real, so it stays in the median. The alert clears now and comes back at the next reading if it is still more than 10°C out.
+
+**How it works**
+- Pick a reason from the list (each choice has its own reasons, plus "Other", which needs a note) and an optional note.
+- **Apply to:** the flagged components are ticked. Untick any that should not be reset, or tick "Also the other N components on this route" (for example when the whole line was stopped). A new motor on one point does not wipe the history of the others.
+- **No reading is changed or deleted.** The reset is saved separately (`alertResets/{route}`), and every place that works out a median or an alarm applies it the same way: Open Alerts and its red count, the dashboard, the trend pop-up, the Thermal History chart, the Record Readings hints and colours, the check when a reading is saved, the route report, and the trend line colour.
+- **Visible to everyone:** the route's Thermal History shows an "Alert reset on this route" box (who, when, why, note). Disregarded values show as "(not counted)". In the trend pop-up they are grey on the chart and starred in the table. The route report lists the resets.
+- **Undo:** admins can undo any reset from the "Recent alert resets" list on Open Alerts or from the route's Thermal History. The readings then count exactly as before.
+- Every reset and undo is in the audit log (`alertReset`, `alertResetUndo`). Renaming a route carries its resets over to the new route number.
+
+**Help text**
+- The Help page and FAQ explain alert resets.
+- The Help page and FAQ also said you could only replace a screenshot you had added yourself. Since 2026-11-04 anyone can replace any screenshot, so that wording is corrected in 4 places.
+
 ### Small fixes
 - **Position Type and Notes were being wiped.** An old one-off clean-up from v1.02 ran again whenever an admin signed in on a browser it had not run on before, and blanked Type and Notes on every position. On 2026-10-27 no position in the database had a Type or Notes left (the 22 and 23 Oct backups are the same). It is now switched off, so Type and Notes typed from now on are kept.
 - Info messages (e.g. "You have been away for a while. Please re-enter your PIN.") were white text on no background, so they were unreadable. They now have a blue background.
@@ -196,6 +216,7 @@ A full check of the app and its code. Screens look the same; the changes are fix
 - When locking down, also check the sender on write: `newData.child('from').val()` must equal the signed-in user's login, so nobody can send as someone else.
 - `announcements`: read for any signed-in user; create / set `active` for admins only; each person may write only their own `announcements/$id/ack/$login`. `orderByKey` needs no index; the 12-month clean-up uses `orderByChild('sentAt')`, so add `".indexOn": ["sentAt"]` on `announcements` too.
 - `replaced`: read for any signed-in user; written only by the weekly job (admin/REST). Reads are one conveyor at a time (`replaced/$conveyor`), so no index is needed.
+- `alertResets`: read for any signed-in user; write for admins only. Read as one node (small), so no index is needed.
 
 
 ## v1.29 — 2026-10-22

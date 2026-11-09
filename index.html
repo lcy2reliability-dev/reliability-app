@@ -843,6 +843,12 @@
         input[type=number].rec-is-amb::placeholder{ color:#92400e; opacity:1; }
         .reading-chip.rc-amb{ background:#fef3c7; color:#92400e; }
         .reading-chip.rc-blank{ background:#f3f4f6; color:#6b7280; border:1px dashed #cbd5e1; }
+        .reading-chip.rc-nc{ background:#f3f4f6; color:#6b7280; }
+        .ar-box{ margin:0 0 12px; padding:10px 12px; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; font-size:13px; color:#374151; }
+        .ar-row + .ar-row{ margin-top:8px; padding-top:8px; border-top:1px solid #fde68a; }
+        .ar-opt{ display:flex; gap:10px; align-items:flex-start; padding:10px; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:8px; cursor:pointer; min-height:44px; box-sizing:border-box; }
+        .ar-opt input, .ar-tick input{ width:20px; height:20px; margin:2px 0 0; flex:0 0 auto; }
+        .ar-tick{ display:flex; gap:10px; align-items:center; min-height:44px; font-size:13px; color:#111827; cursor:pointer; }
         .th-sum{ font-size:12px; color:#92400e; font-weight:600; margin:2px 0 4px; }
         @media (max-width:640px){ .rec-point-row .rec-inwrap{ width:100%; } .rec-point-row .rec-inwrap input[type=number]{ flex:1; min-width:0; width:auto; } }
     </style>
@@ -2767,10 +2773,12 @@
         Promise.all([
             db.ref('routes/' + key).once('value'),
             db.ref('readings/' + key).limitToLast(ANOMALY_WINDOW).once('value'),
-            getEquipmentCache()
+            getEquipmentCache(),
+            getAlertResets()
         ]).then(function(res) {
             var route = res[0].val();
-            var histVal = res[1].val();
+            _recAr = _arList(key);
+            var histVal = _arFilter(_recAr, res[1].val());
             var _eqc = res[2] || {};
             if (!route || !route.motors || route.motors.length === 0) {
                 hideLoading();
@@ -2847,7 +2855,7 @@
     }
 
     // ---- Record-form helpers (v1.10) ----
-    var _recStats = {}, _recTotal = 0, _recRouteKey = '', _recRouteNum = '';
+    var _recStats = {}, _recTotal = 0, _recRouteKey = '', _recRouteNum = '', _recAr = [];
     var _stepMode = false, _stepIdx = 0, _stepActiveField = null, _stepFields = [];
     function _rtemp(n){ return Math.round(n * 10) / 10; }
     function componentStats(historyVal, compKey){
@@ -2871,6 +2879,8 @@
             hint += ' \u00b7 n=' + st.count;
             if (st.count < 3) hint += ' (3+ for alerts)';
         } else { hint = 'no history yet'; }
+        var _bl = st.count < 3 ? _arBaseline(_recAr, sanitizeKey(component)) : null;
+        if (_bl) hint = 'new baseline since ' + _arDay(_bl.at) + ': ' + st.count + ' of 3 readings' + (st.count ? ' \u00b7 last ' + _rtemp(st.last) + '\u00b0C' : '');
         var h = '<div class="rec-point" data-idx="' + idx + '">';
         h += '<div class="rec-point-row"><span class="rec-label">' + label + '</span>';
         h += '<span class="rec-inwrap"><input type="number" inputmode="decimal" id="rec-' + idx + '" data-component="' + escapeHtml(component) + '" placeholder="\u00b0C" step="0.1" oninput="recTint(this);saveDraft(\x27' + escapeAttrArg(routeKey) + '\x27);updateRecCounter();" onfocus="recFieldFocus(this)">';
@@ -2983,8 +2993,8 @@
     function _getSparkValues(rk){
         var c = _sparkCache[rk], now = Date.now();
         if (c && (now - c.ts) < 90000) return Promise.resolve(c.vals);
-        return db.ref('readings/' + rk).limitToLast(12).once('value').then(function(snap){
-            var hv = snap.val(), vals = [];
+        return Promise.all([db.ref('readings/' + rk).limitToLast(12).once('value'), getAlertResets()]).then(function(res){
+            var hv = _arFilter(_arList(rk), res[0].val()), vals = [];
             if (hv){
                 var entries = Object.keys(hv).map(function(k){ return hv[k]; });
                 entries.sort(function(a, b){ var ta = (a && a.timestamp) ? a.timestamp : ''; var tb = (b && b.timestamp) ? b.timestamp : ''; return ta < tb ? -1 : (ta > tb ? 1 : 0); });
@@ -3060,25 +3070,29 @@
         var seq = ++_trendSeq;
         showCustomModal('Trend \u2014 ' + rn, '<div id="trend-wrap" style="font-size:13px;color:#6b7280;padding:12px 0;">Loading readings\u2026</div>', [{ label: 'Close', class: 'btn-secondary', value: true }]);
         var mi = document.getElementById('modal-inner'); if (mi) mi.classList.add('modal-wide');
-        db.ref('readings/' + rk).limitToLast(TREND_MAX).once('value').then(function(snap){
+        Promise.all([db.ref('readings/' + rk).limitToLast(TREND_MAX).once('value'), getAlertResets()]).then(function(res){
             if (seq !== _trendSeq) return;
-            _renderTrend(seq, snap.val() || {});
+            _renderTrend(seq, res[0].val() || {}, rk);
         }).catch(function(){
             if (seq !== _trendSeq) return;
             var w = document.getElementById('trend-wrap');
             if (w) w.textContent = 'Could not load the readings. Check your connection and try again.';
         });
     }
-    function _renderTrend(seq, raw){
+    function _renderTrend(seq, raw, rk){
         var wrap = document.getElementById('trend-wrap'); if (!wrap) return;
-        var entries = [], _allT = [];
+        var entries = [], _allT = [], _fE = [], _arL = _arList(rk), _fr = _arFilter(_arL, raw) || {};
         Object.keys(raw).forEach(function(id){
             var e = raw[id]; if (!e) return;
             var t = Date.parse(e.timestamp); if (isNaN(t)) return;
             _allT.push(t); if (!_hasTemp(e)) return; // v1.30: all blank / Ambient = no new data (not plotted)
-            entries.push({ t: t, by: e.recordedBy || '', readings: e.readings, labels: e.labels || {} });
+            var fe = _fr[id] || e, ex = {};
+            Object.keys(e.readings).forEach(function(k){ if (!fe.readings || fe.readings[k] == null) ex[k] = 1; });
+            entries.push({ t: t, by: e.recordedBy || '', readings: e.readings, labels: e.labels || {}, ex: ex });
+            if (_hasTemp(fe)) _fE.push({ t: t, id: id, readings: fe.readings }); // v1.30 (11-09): what an alert reset leaves for the median and alarm
         });
         entries.sort(function(a, b){ return a.t - b.t; });
+        _fE.sort(function(a, b){ return a.t - b.t; });
         if (!entries.length){ wrap.style.cssText = 'font-size:14px;color:#374151;padding:12px 0;'; wrap.textContent = 'No readings recorded for this route yet.'; return; }
         var names = {};
         entries.forEach(function(e){ Object.keys(e.readings).forEach(function(k){ names[k] = (e.labels && e.labels[k]) || names[k] || k; }); });
@@ -3088,12 +3102,12 @@
         // v1.30: same window as Open Alerts and the report: the last 15 visits of any kind, then only those with a real number
         _allT.sort(function(a, b){ return a - b; });
         var _cutT = _allT.length > ANOMALY_WINDOW ? _allT[_allT.length - ANOMALY_WINDOW] : -Infinity;
-        var _winE = entries.filter(function(e){ return e.t >= _cutT; });
-        var alerts = {}, nAl = 0;
+        var _winE = _fE.filter(function(e){ return e.t >= _cutT; });
+        var alerts = {}, nAl = 0, _latT = null;
         if (_winE.length >= 4){
-            var win = _winE, latestE = win[win.length - 1];
+            var win = _winE, latestE = win[win.length - 1]; _latT = latestE.t;
             var prior = win.slice(0, -1).map(function(e){ return { readings: e.readings }; });
-            Object.keys(latestE.readings).forEach(function(k){ var a = _detectAnomaly(k, latestE.readings[k], prior, names[k]); if (a){ alerts[k] = a; nAl++; } });
+            Object.keys(latestE.readings).forEach(function(k){ var a = _detectAnomaly(k, latestE.readings[k], prior, names[k]); if (a && !_arAcked(_arL, latestE.id, k)){ alerts[k] = a; nAl++; } });
         }
         function bandFor(k){
             if (_winE.length < 4) return null;
@@ -3104,13 +3118,14 @@
         function seriesFor(sel){
             var pts = [];
             entries.forEach(function(e){
-                var v;
+                var v, ex;
                 if (sel === '__avg__'){
-                    var vs = Object.keys(e.readings).map(function(k){ return parseFloat(e.readings[k]); }).filter(function(x){ return isFinite(x) && x > TEMP_MIN; });
-                    if (!vs.length) return;
-                    v = vs.reduce(function(a, b){ return a + b; }, 0) / vs.length;
-                } else { v = parseFloat(e.readings[sel]); if (!isFinite(v) || !(v > TEMP_MIN)) return; }
-                pts.push({ x: e.t, y: v, by: e.by });
+                    var vk = Object.keys(e.readings).filter(function(k){ var x = parseFloat(e.readings[k]); return isFinite(x) && x > TEMP_MIN; });
+                    if (!vk.length) return;
+                    v = vk.reduce(function(a, k){ return a + parseFloat(e.readings[k]); }, 0) / vk.length;
+                    ex = vk.every(function(k){ return e.ex[k]; });
+                } else { v = parseFloat(e.readings[sel]); if (!isFinite(v) || !(v > TEMP_MIN)) return; ex = !!e.ex[sel]; }
+                pts.push({ x: e.t, y: v, by: e.by, ex: ex });
             });
             return pts;
         }
@@ -3144,7 +3159,7 @@
                 var datasets = [{
                     label: nm + ' (\u00b0C)', data: pts, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.10)', borderWidth: 2, tension: 0, fill: false, clip: 8,
                     pointRadius: pts.map(function(p, i){ return i === last ? 6 : 4; }), pointHoverRadius: 7,
-                    pointBackgroundColor: pts.map(function(p, i){ return (i === last && flagLatest) ? '#ef4444' : '#2563eb'; }), pointBorderColor: '#ffffff', pointBorderWidth: 1.5
+                    pointBackgroundColor: pts.map(function(p, i){ return (i === last && flagLatest) ? '#ef4444' : (p.ex ? '#9ca3af' : '#2563eb'); }), pointBorderColor: '#ffffff', pointBorderWidth: 1.5
                 }];
                 if (band !== null){
                     var ref = function(label, y, color, dash){ return { label: label, data: [{ x: xmin, y: y }, { x: xmax, y: y }], borderColor: color, borderDash: dash, borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0, clip: 0 }; };
@@ -3192,11 +3207,15 @@
             var mn = Math.min.apply(null, ys), mx = Math.max.apply(null, ys), md = _trendMedian(ys);
             var a = isAvg ? null : alerts[selVal];
             var band = isAvg ? null : bandFor(selVal);
+            var aL = !!a && lastP.x === _latT, _bl = isAvg ? null : _arBaseline(_arL, selVal);
+            var _rs = _arL.filter(function(r){ return isAvg || r.comps[selVal]; }).slice(-2).reverse().map(_arText).join(' ');
             var s = '<div style="font-size:13px;color:#374151;"><b style="font-size:22px;color:' + (a ? '#b91c1c' : '#111827') + ';">' + lastP.y.toFixed(1) + '\u00b0C</b> '
                 + (isAvg ? 'average on the latest visit, ' : 'latest, ') + escapeHtml(_trendFmt(lastP.x, true)) + (lastP.by ? ' by ' + escapeHtml(lastP.by) : '') + '</div>'
                 + '<div style="font-size:12px;color:#6b7280;margin-top:2px;">' + pts.length + ' reading' + (pts.length === 1 ? '' : 's') + ' \u00b7 lowest ' + mn.toFixed(1) + ' \u00b7 median ' + md.toFixed(1) + ' \u00b7 highest ' + mx.toFixed(1) + '</div>';
             if (a) s += '<div style="font-size:12px;font-weight:600;color:#b91c1c;margin-top:4px;">' + a.diff + '\u00b0C ' + a.dirWord + ' its median (' + a.avg.toFixed(1) + '\u00b0C): over the 10\u00b0C limit.</div>';
+            else if (_bl && band === null) s += '<div style="font-size:12px;color:#6b7280;margin-top:4px;">' + escapeHtml(_arBaselineMsg(_bl, _fE, selVal)) + '</div>';
             else if (!isAvg && band === null) s += '<div style="font-size:12px;color:#6b7280;margin-top:4px;">The median and 10\u00b0C limit lines appear once there are 4 readings.</div>';
+            if (_rs) s += '<div class="trend-ar" style="font-size:12px;color:#92400e;margin-top:4px;">' + escapeHtml(_rs) + '</div>';
             sum.innerHTML = s;
             if (al){
                 al.innerHTML = '';
@@ -3219,13 +3238,14 @@
                     al.appendChild(bx);
                 }
             }
-            drawChart(pts, nm, band, !!a);
+            drawChart(pts, nm, band, aL);
             var t = '<div class="trend-tbl-box"><table class="trend-tbl"><thead><tr><th>Date and time</th><th class="r">\u00b0C' + (isAvg ? ' (avg)' : '') + '</th><th>By</th></tr></thead><tbody>';
             pts.slice().reverse().forEach(function(p, i){
-                t += '<tr' + ((i === 0 && a) ? ' class="hot"' : '') + '><td>' + escapeHtml(_trendFmt(p.x, true)) + '</td><td class="r">' + p.y.toFixed(1) + '</td><td>' + escapeHtml(p.by) + '</td></tr>';
+                t += '<tr' + ((i === 0 && aL) ? ' class="hot"' : '') + '><td>' + escapeHtml(_trendFmt(p.x, true)) + '</td><td class="r">' + p.y.toFixed(1) + (p.ex ? '*' : '') + '</td><td>' + escapeHtml(p.by) + '</td></tr>';
             });
             tbl.innerHTML = t + '</tbody></table></div>';
             var nt = 'Tap or drag across the chart to read each temperature and date. ';
+            if (pts.some(function(p){ return p.ex; })) nt += '* Not counted in the median after an alert reset (grey on the chart). ';
             if (isAvg && multi) nt += 'The average is the mean of every component recorded on that visit. Pick a component above to see its median and the \u00b110\u00b0C limits. ';
             if (Object.keys(raw).length >= TREND_MAX) nt += 'Showing the latest ' + TREND_MAX + ' readings.';
             if (note) note.textContent = nt;
@@ -3237,6 +3257,90 @@
     // ============================================================
     // OPEN ALERTS (v1.10): routes whose latest reading breaches the 10 C median threshold
     // ============================================================
+    // v1.30 (2026-11-09): admin alert resets. alertResets/{routeKey}/{id} = {mode, at, by, reason, note?, readingKey, readingAt, comps:{key: label}}
+    // ignore = that visit's values leave the median; baseline = values recorded before the reset leave it (the next 3 set a new one);
+    // ack = the reading stays in the median, only its alert is cleared. Every median and alarm goes through _arFilter so they all agree.
+    var _arCache = null, _arTime = 0;
+    var _AR_MODES = [
+        ['ignore', 'Bad reading: disregard it', 'Line stopped, light load, wrong point or a misread. Left out of the median. Monitoring carries on against the existing median, so the next reading alarms if it is still more than 10\u00b0C out.'],
+        ['baseline', 'Something changed: new baseline', 'Motor or gearbox replaced, repaired, or the load or speed changed. Earlier readings stop counting. The next 3 readings set the new median; alarms start again from the 4th.'],
+        ['ack', 'Genuine reading: being dealt with', 'Fault found and a job raised, or checked and acceptable. The reading stays in the median. The alert clears now and comes back at the next reading if it is still more than 10\u00b0C out.']
+    ];
+    var _AR_REASONS = {
+        ignore: ['Line stopped or lightly loaded', 'Wrong point measured', 'Faulty or misread reading'],
+        baseline: ['Motor replaced', 'Gearbox replaced', 'Repaired or adjusted', 'Load or speed changed'],
+        ack: ['Fault confirmed, job raised', 'Checked, no fault found', 'Known issue, being monitored']
+    };
+    function invalidateAlertResetsCache(){ _arCache = null; _arTime = 0; }
+    function getAlertResets(){
+        if (!firebaseReady) return Promise.resolve({});
+        if (_arCache && (Date.now() - _arTime) < 60000) return Promise.resolve(_arCache);
+        return db.ref('alertResets').once('value').then(function(sn){ _arCache = sn.val() || {}; _arTime = Date.now(); return _arCache; }).catch(function(){ return _arCache || {}; });
+    }
+    function _arList(rk){
+        var o = (_arCache && rk && _arCache[rk]) || {};
+        return Object.keys(o).map(function(id){ return Object.assign({ _id: id }, o[id]); })
+            .filter(function(r){ return r.mode && r.comps && typeof r.comps === 'object'; })
+            .sort(function(a, b){ return String(a.at) < String(b.at) ? -1 : (String(a.at) > String(b.at) ? 1 : 0); });
+    }
+    function _arDropped(list, id, e){
+        var out = {}, t = e ? Date.parse(e.timestamp) : NaN;
+        (list || []).forEach(function(r){
+            if ((r.mode === 'ignore' && r.readingKey === id) || (r.mode === 'baseline' && !(t >= Date.parse(r.at)))) Object.keys(r.comps).forEach(function(k){ out[k] = r; });
+        });
+        return out;
+    }
+    function _arFilter(list, hv){
+        if (!hv || !list || !list.length) return hv;
+        var out = {};
+        Object.keys(hv).forEach(function(id){
+            var e = hv[id], dr = (e && e.readings) ? _arDropped(list, id, e) : {}, rd = null;
+            Object.keys(dr).forEach(function(k){ if (e.readings[k] != null){ if (!rd) rd = Object.assign({}, e.readings); delete rd[k]; } });
+            out[id] = rd ? Object.assign({}, e, { readings: rd }) : e;
+        });
+        return out;
+    }
+    function _arAcked(list, id, k){ return !!id && (list || []).some(function(r){ return r.mode === 'ack' && r.readingKey === id && !!r.comps[k]; }); }
+    function _arBaseline(list, k){ var b = null; (list || []).forEach(function(r){ if (r.mode === 'baseline' && r.comps[k]) b = r; }); return b; }
+    function _arDay(iso){ var dt = new Date(iso); return isNaN(dt.getTime()) ? '?' : dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+    function _arText(r){
+        var why = r.reason ? ' (' + r.reason + ')' : '', who = r.by || '?';
+        if (r.mode === 'baseline') return 'New baseline from ' + _arDay(r.at) + ', set by ' + who + why + ': the next 3 readings set the median.';
+        if (r.mode === 'ignore') return 'Reading of ' + _arDay(r.readingAt) + ' disregarded by ' + who + ' on ' + _arDay(r.at) + why + '.';
+        return 'Alert on the ' + _arDay(r.readingAt) + ' reading acknowledged by ' + who + ' on ' + _arDay(r.at) + why + '.';
+    }
+    function _arCompsText(r){
+        var n = Object.keys(r.comps).map(function(k){ return r.comps[k] || k; });
+        return 'Applies to: ' + n.slice(0, 3).join(', ') + (n.length > 3 ? ' + ' + (n.length - 3) + ' more' : '') + '.';
+    }
+    function _arRowHtml(rk, r, routeLabel){
+        var h = '<div class="ar-row">';
+        if (routeLabel) h += '<div style="font-weight:700;color:#111827;">Route ' + escapeHtml(String(routeLabel)) + '</div>';
+        h += '<div>' + escapeHtml(_arText(r)) + '</div><div style="color:#6b7280;">' + escapeHtml(_arCompsText(r)) + '</div>';
+        if (r.note) h += '<div style="color:#6b7280;font-style:italic;">' + escapeHtml(r.note) + '</div>';
+        if (isAdmin()) h += '<button class="btn btn-secondary btn-sm" style="margin-top:6px;" onclick="undoAlertReset(\x27' + escapeAttrArg(rk) + '\x27,\x27' + escapeAttrArg(r._id) + '\x27)">Undo reset</button>';
+        return h + '</div>';
+    }
+    function _arBoxHtml(rk, list){
+        return '<div class="ar-box"><div style="font-weight:700;color:#92400e;margin-bottom:4px;">Alert reset' + (list.length === 1 ? '' : 's') + ' on this route</div>' + list.slice(-3).reverse().map(function(r){ return _arRowHtml(rk, r, ''); }).join('') + '</div>';
+    }
+    function _arRecentHtml(routes){
+        var all = [];
+        Object.keys(_arCache || {}).forEach(function(rk){ _arList(rk).forEach(function(r){ all.push({ rk: rk, r: r }); }); });
+        if (!all.length) return '';
+        all.sort(function(a, b){ return String(a.r.at) < String(b.r.at) ? 1 : (String(a.r.at) > String(b.r.at) ? -1 : 0); });
+        return '<div class="ar-box" style="margin-top:16px;"><div style="font-weight:700;color:#92400e;margin-bottom:4px;">Recent alert resets</div>' + all.slice(0, 10).map(function(x){ var rt = routes[x.rk]; return _arRowHtml(x.rk, x.r, (rt && rt.routeNumber) || x.rk); }).join('') + '</div>';
+    }
+    function _arBaselineMsg(bl, fE, k){
+        var t0 = Date.parse(bl.at), n = fE.filter(function(e){ var v = parseFloat(e.readings[k]); return e.t >= t0 && isFinite(v) && v > TEMP_MIN; }).length;
+        return n < 3 ? 'New baseline from ' + _arDay(bl.at) + ': ' + n + ' of 3 readings so far. Alarms and the limit lines start again after 3.' : 'New baseline from ' + _arDay(bl.at) + ' is set. The next reading is checked against it.';
+    }
+    function _arAfterChange(rk){ invalidateAlertResetsCache(); invalidateAlertsCache(); if (typeof _sparkCache !== 'undefined') delete _sparkCache[rk]; }
+    function _arReasonOpts(mode){ return (_AR_REASONS[mode] || []).concat(['Other (add a note)']).map(function(t){ return '<option>' + escapeHtml(t) + '</option>'; }).join(''); }
+    function _arModeChange(){
+        var m = document.querySelector('#modal-body input[name="ar-mode"]:checked'), sl = document.getElementById('ar-reason');
+        if (m && sl) sl.innerHTML = _arReasonOpts(m.value);
+    }
     var _thermalScan = null, _thermalScanTime = 0, _ALERTS_TTL = 120000;
     function invalidateAlertsCache(){ _thermalScan = null; _thermalScanTime = 0; }
     async function _runThermalScan(force){
@@ -3249,16 +3353,18 @@
             var r = routes[k];
             if (r && r.active !== false && routeReadingRequired(r) && r.motors && r.motors.length) keys.push(k);
         });
+        var _arP = getAlertResets();
         var snaps = await Promise.all(keys.map(function(k){
             return db.ref('readings/' + k).limitToLast(ANOMALY_WINDOW).once('value')
                 .then(function(sn){ return {k: k, v: sn.val()}; })
                 .catch(function(){ return {k: k, v: null}; });
         }));
+        await _arP;
         var alerts = [];
         snaps.forEach(function(pair){
             var r = routes[pair.k]; if (!r || !r.motors) return;
-            var hv = pair.v;
-            var entries = hv ? Object.keys(hv).map(function(id){ return hv[id]; }) : [];
+            var _arL = _arList(pair.k), hv = _arFilter(_arL, pair.v);
+            var entries = hv ? Object.keys(hv).map(function(id){ return Object.assign({ _id: id }, hv[id]); }) : [];
             entries.sort(function(a, b){ var ta = (a && a.timestamp) ? a.timestamp : ''; var tb = (b && b.timestamp) ? b.timestamp : ''; return ta < tb ? -1 : (ta > tb ? 1 : 0); });
             entries = entries.filter(_hasTemp); // v1.30: same rule as the trend pop-up: an all-Ambient visit keeps the earlier verdict
             var latest = entries.length ? entries[entries.length - 1] : null;
@@ -3271,11 +3377,11 @@
                     var lv = latest.readings[sk];
                     if (lv == null) return;
                     var a = _detectAnomaly(sk, lv, prior, m);
-                    if (a) routeAlerts.push(a);
+                    if (a && !_arAcked(_arL, latest._id, sk)) routeAlerts.push(a);
                 });
                 if (routeAlerts.length){
                     var maxDiff = Math.max.apply(null, routeAlerts.map(function(a){ return parseFloat(a.diff); }));
-                    alerts.push({ routeKey: pair.k, routeNumber: r.routeNumber || pair.k, when: lastWhen || '', alerts: routeAlerts, maxDiff: maxDiff });
+                    alerts.push({ routeKey: pair.k, routeNumber: r.routeNumber || pair.k, when: lastWhen || '', alerts: routeAlerts, maxDiff: maxDiff, readingKey: latest._id });
                 }
             }
         });
@@ -3402,18 +3508,83 @@
                         var col = a.isHot ? '#b91c1c' : '#1d4ed8';
                         html += '<div style="margin-top:8px;font-size:13px;color:#374151;"><span style="color:' + col + ';font-weight:700;">' + (a.isHot ? '\u25b2' : '\u25bc') + '</span> ' + escapeHtml(a.disp) + ' \u2014 <strong>' + a.val + '\u00b0C</strong> vs median <strong>' + a.avg.toFixed(1) + '\u00b0C</strong> (<strong style="color:' + col + ';">' + a.dirSign + a.diff + '\u00b0C</strong>, n=' + a.count + ')</div>';
                     });
-                    html += '<div style="display:flex;gap:8px;margin-top:10px;">';
+                    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">';
                     html += '<button class="btn btn-secondary btn-sm" onclick="openDetail(\x27route\x27,\x27' + escapeAttrArg(rr.routeKey) + '\x27)">View route</button>';
                     html += '<button class="btn btn-primary btn-sm" onclick="goRecordThermal(\x27' + escapeAttrArg(rr.routeNumber) + '\x27)">&#127777; Record reading</button>';
+                    if (isAdmin()) html += '<button class="btn btn-secondary btn-sm" onclick="resetAlertDialog(\x27' + escapeAttrArg(rr.routeKey) + '\x27)">&#8634; Reset alert</button>';
                     html += '</div></div>';
                 });
             }
+            if (isAdmin()) html += _arRecentHtml(await getRoutesCache());
             html += '</div>';
             document.getElementById('detail-content').innerHTML = html;
             document.getElementById('detail-title').textContent = 'Open Alerts';
             document.getElementById('detail-overlay').classList.add('active');
         } catch(e){ showToast('Error scanning alerts: ' + e.message, 'error'); }
         hideLoading();
+    }
+
+    async function resetAlertDialog(rk){
+        if (!requireAdmin() || !checkFirebase()) return;
+        var rr = null;
+        (await _runThermalScan(false)).alerts.forEach(function(x){ if (x.routeKey === rk) rr = x; });
+        if (!rr){ showToast('That alert has already cleared.', 'success'); return openAlertsView(); }
+        var rt = (await getRoutesCache())[rk] || {}, flagged = {};
+        rr.alerts.forEach(function(a){ flagged[a.component] = a.disp; });
+        var others = (rt.motors || []).filter(function(m){ return !flagged[sanitizeKey(m)]; });
+        var LB = 'display:block;font-size:12px;font-weight:600;color:#374151;margin:12px 0 4px;';
+        var b = '<div style="font-size:13px;color:#374151;margin-bottom:10px;">Route <b>' + escapeHtml(String(rr.routeNumber)) + '</b>, reading of ' + escapeHtml(formatWorkTime(rr.when)) + '. What happened?</div>';
+        _AR_MODES.forEach(function(m, i){
+            b += '<label class="ar-opt"><input type="radio" name="ar-mode" value="' + m[0] + '"' + (i ? '' : ' checked') + ' onchange="_arModeChange()"><span><b style="font-size:14px;color:#111827;">' + escapeHtml(m[1]) + '</b><span style="display:block;font-size:12px;color:#6b7280;margin-top:2px;">' + escapeHtml(m[2]) + '</span></span></label>';
+        });
+        b += '<label for="ar-reason" style="' + LB + '">Reason</label><select id="ar-reason" style="width:100%;min-height:44px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;">' + _arReasonOpts('ignore') + '</select>';
+        b += '<div style="' + LB + '">Apply to</div>';
+        rr.alerts.forEach(function(a){ b += '<label class="ar-tick"><input type="checkbox" class="ar-comp" value="' + escapeHtml(a.component) + '" checked><span>' + escapeHtml(a.disp) + ' (' + a.dirSign + a.diff + '\u00b0C)</span></label>'; });
+        if (others.length) b += '<label class="ar-tick"><input type="checkbox" id="ar-all"><span>Also the other ' + others.length + ' component' + (others.length === 1 ? '' : 's') + ' on this route</span></label>';
+        b += '<label for="ar-note" style="' + LB + '">Note (optional)</label><textarea id="ar-note" rows="2" maxlength="300" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></textarea>';
+        b += '<div style="font-size:12px;color:#6b7280;margin-top:8px;">Logged with your name. No reading is changed or deleted, and an admin can undo this from Open Alerts or the route\x27s Thermal History.</div>';
+        var ok = await showCustomModal('Reset alert', b, [{ label: 'Cancel', class: 'btn-secondary', value: false }, { label: 'Reset alert', class: 'btn-primary', value: true }]);
+        if (!ok) return;
+        var mEl = document.querySelector('#modal-body input[name="ar-mode"]:checked'), mode = mEl ? mEl.value : '';
+        var reason = (document.getElementById('ar-reason') || {}).value || '', note = ((document.getElementById('ar-note') || {}).value || '').trim().slice(0, 300), comps = {};
+        document.querySelectorAll('#modal-body .ar-comp').forEach(function(cb){ if (cb.checked && flagged[cb.value] != null) comps[cb.value] = flagged[cb.value]; });
+        var allEl = document.getElementById('ar-all');
+        if (allEl && allEl.checked) others.forEach(function(m){ comps[sanitizeKey(m)] = m; });
+        if (!_AR_REASONS[mode]){ showToast('Choose what happened', 'error'); return; }
+        if (!Object.keys(comps).length){ showToast('Tick at least one component', 'error'); return; }
+        if (/^Other/.test(reason)){ if (!note){ showToast('Add a note to say what happened', 'error'); return; } reason = 'Other'; }
+        if (!requireAdmin()) return;
+        var rec = { mode: mode, at: new Date().toISOString(), by: currentUser || 'Unknown', reason: reason, readingKey: rr.readingKey || '', readingAt: rr.when || '', comps: comps };
+        if (note) rec.note = note;
+        showLoading();
+        try {
+            await db.ref('alertResets/' + rk).push(rec);
+            logAudit('alertReset', 'route', rr.routeNumber, { mode: mode, reason: reason, components: Object.keys(comps).length, readingAt: rec.readingAt });
+            _arAfterChange(rk);
+            hideLoading();
+            showToast('Alert reset for route ' + rr.routeNumber, 'success');
+            await openAlertsView();
+        } catch(e){ hideLoading(); showToast('Could not reset the alert: ' + e.message, 'error'); }
+    }
+    async function undoAlertReset(rk, id){
+        if (!requireAdmin() || !checkFirebase()) return;
+        var ok = await showCustomModal('Undo alert reset', '<div style="font-size:13px;color:#374151;">The readings count again exactly as they did before the reset, so the alert can come back.</div>', [{ label: 'Cancel', class: 'btn-secondary', value: false }, { label: 'Undo reset', class: 'btn-primary', value: true }]);
+        if (!ok) return;
+        showLoading();
+        try {
+            var ref = db.ref('alertResets/' + rk + '/' + id), r = (await ref.once('value')).val();
+            if (r){
+                await ref.remove();
+                var rt = (await getRoutesCache())[rk];
+                logAudit('alertResetUndo', 'route', (rt && rt.routeNumber) || rk, { mode: r.mode || '', reason: r.reason || '', resetBy: r.by || '', resetAt: r.at || '' });
+            }
+            _arAfterChange(rk);
+            hideLoading();
+            showToast(r ? 'Alert reset undone' : 'That reset was already undone', 'success');
+            var hist = document.getElementById('detail-thermal-history');
+            if (hist){ renderThermalHistory(rk, hist); refreshAlertsBadge(); }
+            else await openAlertsView();
+        } catch(e){ hideLoading(); showToast('Could not undo the reset: ' + e.message, 'error'); }
     }
 
     // ============================================================
@@ -3428,8 +3599,8 @@
             if (!data){ hideLoading(); showToast('Route not found', 'error'); return; }
             var _eqc = await getEquipmentCache();
             var isThermal = routeReadingRequired(data);
-            var histVal = null;
-            if (isThermal){ var hs = await db.ref('readings/' + routeKey).limitToLast(ANOMALY_WINDOW).once('value'); histVal = hs.val(); }
+            var histVal = null, fHist = null, _arL = [];
+            if (isThermal){ var hs = await db.ref('readings/' + routeKey).limitToLast(ANOMALY_WINDOW).once('value'); histVal = hs.val(); await getAlertResets(); _arL = _arList(routeKey); fHist = _arFilter(_arL, histVal); }
             var notesSnap = await db.ref('notes/routes/' + routeKey).once('value');
             var notesVal = notesSnap.val();
             var now = new Date();
@@ -3465,23 +3636,25 @@
                         var sk = sanitizeKey(c);
                         h += '<tr><td>' + escapeHtml(c) + '</td>';
                         recent.forEach(function(e){ var v = (e.readings && e.readings[sk] != null) ? parseFloat(e.readings[sk]) : null; h += '<td>' + ((v == null || isNaN(v)) ? ((e.ambient && e.ambient[sk]) ? 'Amb' : '\u2014') : (v + '\u00b0')) + '</td>'; });
-                        var st = componentStats(histVal, sk);
+                        var st = componentStats(fHist, sk);
                         h += '<td>' + (st.avg != null ? _rtemp(st.avg) + '\u00b0' : '\u2014') + '</td></tr>';
                     });
                     h += '</tbody></table>';
                 } else {
                     h += '<div class="pr-p">No readings recorded yet.</div>';
                 }
-                var _ve = entries.filter(_hasTemp); // v1.30: latest visit WITH a real number (same rule as Open Alerts + trend)
+                var _ve = Object.keys(fHist).map(function(id){ return Object.assign({ _id: id }, fHist[id]); }).filter(_hasTemp); // v1.30: latest visit WITH a real number (same rule as Open Alerts + trend)
+                _ve.sort(function(a, b){ var ta = a.timestamp || '', tb = b.timestamp || ''; return ta > tb ? -1 : (ta < tb ? 1 : 0); });
                 if (_ve.length >= 4){
                     var latest = _ve[0], prior = _ve.slice(1), al = [];
-                    comps.forEach(function(c){ var sk = sanitizeKey(c); var lv = latest.readings ? latest.readings[sk] : null; if (lv == null) return; var a = _detectAnomaly(sk, lv, prior, c); if (a) al.push(a); });
+                    comps.forEach(function(c){ var sk = sanitizeKey(c); var lv = latest.readings ? latest.readings[sk] : null; if (lv == null) return; var a = _detectAnomaly(sk, lv, prior, c); if (a && !_arAcked(_arL, latest._id, sk)) al.push(a); });
                     if (al.length){
                         h += '<div class="pr-alert"><strong>' + al.length + ' anomaly flag' + (al.length === 1 ? '' : 's') + ' on the latest reading (more than 10\u00b0C vs its median):</strong><ul>';
                         al.forEach(function(a){ h += '<li>' + escapeHtml(a.disp) + ': ' + a.val + '\u00b0C vs median ' + a.avg.toFixed(1) + '\u00b0C (' + a.dirSign + a.diff + '\u00b0C)</li>'; });
                         h += '</ul></div>';
                     }
                 }
+                if (_arL.length) h += '<div class="pr-p"><strong>Alert resets:</strong><br>' + _arL.slice(-3).reverse().map(function(r){ return escapeHtml(_arText(r) + ' ' + _arCompsText(r)); }).join('<br>') + '</div>';
                 h += '</div>';
             }
             if (notesVal){
@@ -4371,18 +4544,20 @@
     // ============================================================
     // THERMAL READINGS
     // ============================================================
-    let currentThermalRoute='',currentThermalItems=[],currentThermalApmOrder=[],thermalChart=null,thermalHistoryData=[];
+    let currentThermalRoute='',currentThermalItems=[],currentThermalApmOrder=[],thermalChart=null,thermalHistoryData=[],thermalHistoryFiltered=[];
 
     var _thToken=0;
     function renderThermalHistory(routeKey, containerEl) {
         if(!firebaseReady)return;
         var _tok=++_thToken;
-        Promise.all([db.ref('readings/'+routeKey).orderByChild('timestamp').limitToLast(50).once('value'), getEquipmentCache()]).then(function(_res){ if(_tok!==_thToken)return; var snap=_res[0]; var _eqc=_res[1]||{};
+        Promise.all([db.ref('readings/'+routeKey).orderByChild('timestamp').limitToLast(50).once('value'), getEquipmentCache(), getAlertResets()]).then(function(_res){ if(_tok!==_thToken)return; var snap=_res[0]; var _eqc=_res[1]||{};
             const data=snap.val();
             if(!data){containerEl.innerHTML='<div class="empty-state">No historical data yet</div>';return;}
             var entries=Object.entries(data).map(function(e){return Object.assign({_key:e[0]},e[1]);}).sort(function(a,b){return new Date(b.timestamp)-new Date(a.timestamp);});
             thermalHistoryData=entries.slice().reverse();
-            let html='';
+            var _arL=_arList(routeKey), _thF=_arFilter(_arL,data)||{};
+            thermalHistoryFiltered=thermalHistoryData.map(function(e){ return {timestamp:e.timestamp, readings:(_thF[e._key]||{}).readings}; });
+            let html=_arL.length?_arBoxHtml(routeKey,_arL):'';
             entries.slice(0,20).forEach(function(entry){
                 const dateStr=formatNoteTimestamp(entry.timestamp);
                 html+='<div class="history-entry"><div class="timestamp">'+dateStr+(entry.recordedBy?' \u2014 <strong>'+escapeHtml(entry.recordedBy)+'</strong>':'')+'</div>';
@@ -4393,8 +4568,9 @@
                 var _put=function(disp,k){ var isMotor=disp.endsWith(' Motor'), isGB=disp.endsWith(' Gearbox'); var pt=isMotor?disp.replace(' Motor',''):isGB?disp.replace(' Gearbox',''):disp; if(!points[pt])points[pt]={motor:null,gearbox:null}; if(isGB)points[pt].gearbox=k; else points[pt].motor=k; _seen[k]=1; };
                 _recPts(currentThermalItems).forEach(function(m){ _put(m, sanitizeKey(m)); });
                 Object.keys(_rd).concat(Object.keys(_am)).forEach(function(k){ if(!_seen[k]) _put(_lb[k]||k, k); });
+                var _dr=_arDropped(_arL,entry._key,entry), _ak=_arL.filter(function(r){ return r.mode==='ack'&&r.readingKey===entry._key; });
                 var _chip=function(what,k){
-                    if(_rd[k]!=null&&validTemp(_rd[k])!==null) return '<span class="reading-chip">'+what+' Temperature: '+escapeHtml(String(_rd[k]))+'\u00B0C</span>';
+                    if(_rd[k]!=null&&validTemp(_rd[k])!==null) return _dr[k] ? '<span class="reading-chip rc-nc" title="Not counted in the median (alert reset)">'+what+' Temperature: '+escapeHtml(String(_rd[k]))+'\u00B0C (not counted)</span>' : '<span class="reading-chip">'+what+' Temperature: '+escapeHtml(String(_rd[k]))+'\u00B0C</span>';
                     if(_am[k]){ _na++; return '<span class="reading-chip rc-amb">'+what+' Temperature: Ambient</span>'; }
                     _nb++; return '<span class="reading-chip rc-blank">'+what+' Temperature: blank</span>';
                 };
@@ -4408,6 +4584,7 @@
                     _ph+='</div>';
                 });
                 if(_nb||_na) html+='<div class="th-sum">'+[_nb?_nb+' blank':'',_na?_na+' Ambient':''].filter(Boolean).join(' \u00b7 ')+'</div>';
+                if(_ak.length) html+='<div class="th-sum">Alert acknowledged by '+escapeHtml(_ak[_ak.length-1].by||'?')+(_ak[_ak.length-1].reason?' ('+escapeHtml(_ak[_ak.length-1].reason)+')':'')+'</div>';
                 html+=_ph;
                 // Edit/Delete buttons (only for author)
                 if(entry.recordedBy && entry.recordedBy.toLowerCase()===currentUser){
@@ -4443,7 +4620,7 @@
         if(thermalChart)thermalChart.destroy();
         const ctx=document.getElementById('thermal-chart')?.getContext('2d');if(!ctx)return;
         var _sv = [];
-        thermalHistoryData.slice(-ANOMALY_WINDOW).forEach(function(entry){ var _wv = entry.readings ? parseFloat(entry.readings[sanitizeKey(component)]) : NaN; if (isFinite(_wv) && _wv > TEMP_MIN) _sv.push(_wv); });
+        (thermalHistoryFiltered.length === thermalHistoryData.length ? thermalHistoryFiltered : thermalHistoryData).slice(-ANOMALY_WINDOW).forEach(function(entry){ var _wv = entry.readings ? parseFloat(entry.readings[sanitizeKey(component)]) : NaN; if (isFinite(_wv) && _wv > TEMP_MIN) _sv.push(_wv); });
         _sv.sort(function(a,b){ return a - b; });
         var _median = null;
         if (_sv.length){ var _mn = _sv.length; _median = (_mn % 2) ? _sv[(_mn - 1) / 2] : (_sv[_mn / 2 - 1] + _sv[_mn / 2]) / 2; }
@@ -8265,7 +8442,8 @@ function liveSearchSuggest(query,scope){
             // Check anomalies BEFORE saving so the baseline average excludes this reading
             var _rk = Object.keys(readings);
             var _histSnap2 = await db.ref('readings/' + routeKey).limitToLast(ANOMALY_WINDOW).once('value');
-            var _histVal2 = _histSnap2.val();
+            await getAlertResets();
+            var _histVal2 = _arFilter(_arList(routeKey), _histSnap2.val());
             var _anoms = [];
             for (var _ri = 0; _ri < _rk.length; _ri++) {
                 var _a = _detectAnomaly(_rk[_ri], readings[_rk[_ri]], _histVal2, _labels[_rk[_ri]]);
@@ -8670,6 +8848,8 @@ function liveSearchSuggest(query,scope){
                 // Move readings
                 var readSnap = await db.ref('readings/' + key).once('value');
                 if (readSnap.val()) { await db.ref('readings/' + newKey).set(readSnap.val()); await db.ref('readings/' + key).remove(); }
+                var _arSnap = await db.ref('alertResets/' + key).once('value');
+                if (_arSnap.val()) { await db.ref('alertResets/' + newKey).set(_arSnap.val()); await db.ref('alertResets/' + key).remove(); invalidateAlertResetsCache(); }
                 var _rOldImg = _rEditImg || await getRouteImage(key);
                 if (_rOldImg) await db.ref('routeImages/' + newKey).set(_rOldImg);
                 var _rMeta = _rEditImg ? { addedBy: currentUser, addedAt: new Date().toISOString() } : await getImageMeta('route', key);
@@ -9798,7 +9978,7 @@ function liveSearchSuggest(query,scope){
         html += '<ul style="font-size:13px;line-height:2;color:#374151;padding-left:20px;">';
         html += '<li>The detail view shows the full name, criticality, linked parts, active CBM routes, photos and notes history</li>';
         html += '<li>Criticality is colour-coded: <span style="color:#dc2626;font-weight:600;">HIGH</span>, <span style="color:#d97706;font-weight:600;">MED</span>, <span style="color:#16a34a;font-weight:600;">LOW</span></li>';
-        html += '<li>Tap <strong>Edit</strong> to add a screenshot (if there isn\'t one, or to replace one you added yourself) and to add notes' + (admin ? '. As an admin you can also change the conveyor number, type and description' : '. The conveyor number, type and description are managed by admins') + '</li>';
+        html += '<li>Tap <strong>Edit</strong> to add or replace a screenshot and to add notes' + (admin ? '. As an admin you can also change the conveyor number, type and description' : '. The conveyor number, type and description are managed by admins') + '</li>';
         html += '<li><strong>Photos:</strong> paste a screenshot with Ctrl+V (the clipboard listener is always on) or upload one in Edit mode; tap any photo to view it fullscreen, pinch to zoom on mobile</li>';
         html += (admin ? '<li>Untick <strong>Active</strong> in Edit to mark a position inactive (decommissioned); reactivate it later from Manage Inactive Items</li>' : '<li>Decommissioning (marking inactive), deleting and reactivating positions are admin-only \u2014 ask an admin (Tittus / strtt or Alex / vladesca) if one is needed</li>');
         html += '</ul></div>';
@@ -9833,7 +10013,7 @@ function liveSearchSuggest(query,scope){
         html += '<li>Types: Thermal, Ultrasound, Air Leak, Oil, Ranger, Strobe, Vibration</li>';
         html += '<li><strong>Thermal routes:</strong> you can record readings directly in the app. <strong style="color:#b45309;">The readings still need to be entered into APM in the route\'s checklist</strong> \u2014 this app does not send anything to APM.</li>';
         html += '<li>Inactive routes are hidden from position detail views</li>';
-        html += '<li>' + (admin ? 'Tap <strong>Edit</strong> on a route to change its number, type, waypoints, the temperature-reading-required toggle or the screenshot, and to decommission or delete it' : 'On a route you can add a screenshot (or replace one you added yourself) and add notes; the number, type and waypoints are managed by admins') + '</li>';
+        html += '<li>' + (admin ? 'Tap <strong>Edit</strong> on a route to change its number, type, waypoints, the temperature-reading-required toggle or the screenshot, and to decommission or delete it' : 'On a route you can add or replace a screenshot and add notes; the number, type and waypoints are managed by admins') + '</li>';
         html += '</ul></div>';
 
         // Recording readings & alerts
@@ -9845,6 +10025,7 @@ function liveSearchSuggest(query,scope){
         html += '<li><strong>Can\'t get a true reading?</strong> Leave the box empty, or tick <strong>Ambient</strong> next to it. Never type 0 or an estimate. Blank and Ambient points are never used for the median, alarms or charts. The saved reading lists every point in APM order, showing <em>blank</em> or <em>Ambient</em> where there was no reading, so the lines match APM when you copy them across.</li>';
         html += '<li><strong>Anomaly flags:</strong> when you save a reading more than <strong>10\u00b0C</strong> above or below that component\'s own <strong>median</strong> (its typical reading, worked out from the last few, ISO 13373 \u2014 needs at least 3 past readings), the app flags it and asks you to note what you saw</li>';
         html += '<li><strong>Open Alerts:</strong> every open flag collects in the menu under Open Alerts and on your dashboard, with a red count</li>';
+        html += '<li><strong>Resetting an alert (admins):</strong> on Open Alerts tap <strong>Reset alert</strong> and pick what happened. <em>Bad reading</em> leaves that reading out of the median and keeps watching, so the next reading still alarms if it is out. <em>Something changed</em> (for example a new motor) starts a new baseline: the next 3 readings set the median. <em>Genuine reading</em> keeps the reading and clears the alert until the next one. Pick a reason and the components it applies to. Every reset is logged, shows on the route\'s Thermal History, and can be undone</li>';
         html += '<li>Median is used (not a plain average) so a single freak reading in the history cannot hide the next real fault</li>';
         html += '</ul></div>';
 
@@ -9932,13 +10113,14 @@ function liveSearchSuggest(query,scope){
             ['When do jobs leave my Job list?', 'Completed jobs are cleared automatically at the daily 4am sweep. Anything you leave unfinished carries over to the next day and shows in red as overdue until you complete it \u2014 then it clears at the next 4am sweep.'],
             ['How do I record thermal readings?', 'Go to the CBM tab, open a thermal route and tap Record New Readings. Enter the Motor and Gearbox temperature at each point (Step-by-step mode takes you one field at a time), add any notes and Save. Remember to also enter the readings into APM in the route\'s checklist \u2014 this app does not send them to APM.'],
             ['What is an anomaly flag / Open Alert?', 'When you save a reading more than 10\u00b0C above or below that component\'s own median \u2014 its typical reading, worked out from the last few (ISO 13373, needs at least 3 past readings) \u2014 the app flags it and asks you to note what you saw. Open flags collect under Open Alerts, in the menu and on your dashboard. Median is used rather than a plain average because a single past spike (the very thing you are looking for) would drag an average up and hide the next fault.'],
+            ['Can an alert be reset?', 'Yes, by an admin: open Open Alerts and tap Reset alert. Pick Bad reading (left out of the median; the next reading still alarms if it is more than 10\u00b0C out), Something changed (a new baseline: the next 3 readings set the median, then alarms start again) or Genuine reading (the reading is kept; the alert clears and comes back at the next reading if it is still out). Every reset is logged with a reason, shows on the route\'s Thermal History, and can be undone. Anyone can clear an alert by taking a new reading with the line running normally.'],
             ['Which part fields can I edit?', 'Bin Location and Repairable. APN and everything else (description, class, criticality, manufacturer, supplier) are managed by admins from the stores database. Changing an APN, an admin action, keeps the old one searchable as a "Previous APN".'],
             ['Why can\'t I change the ID, type or description?', 'Those descriptive fields are managed by admins so the data stays consistent with APM and the stores database. As a technician you can add a screenshot and notes on any position, route or part. If a descriptive field is wrong, ask an admin (Tittus / strtt or Alex / vladesca) to correct it.'],
             ['I made a mistake \u2014 can I fix it myself?', 'Yes, for anything you own: edit or delete your own notes, and replace a screenshot you added yourself. Decommissioning, deleting records and editing the descriptive fields are admin-only, so ask an admin if one of those needs putting right.'],
-            ['Can I change a screenshot someone else added?', 'You can add a screenshot when there isn\'t one yet, and replace one you added yourself. Only the person who added a screenshot, or an admin, can replace it, so nobody\'s photo is overwritten by accident. Older screenshots with no recorded owner can only be replaced by an admin.'],
+            ['Can I change a screenshot someone else added?', 'Yes. Anyone can add a screenshot when there isn\'t one, or replace the one that is there, whoever added it. The app records who added each screenshot.'],
             ['The position or part I need isn\'t in the app.', 'Adding brand-new positions, parts and routes is an admin job. Ask an admin (Tittus / strtt or Alex / vladesca) to add it and it will appear for everyone. If you try to add a FWO for a position that is not in the app, or link a part whose APN is not in the catalogue, the app will point you to an admin.'],
             ['What is the difference between "Linked Parts" and "Parts Associated"?', 'Linked Parts are parts you or a colleague have connected to that position in the app. Parts Associated is the reference list imported from APM. Linking or unlinking a part never deletes it \u2014 it only changes the connection.'],
-            ['How do I add a photo?', 'On a position, route or part, open Edit, then paste a screenshot with Ctrl+V (the clipboard listener is always on) or use the upload button. You can add a photo when there isn\'t one, and replace one you added yourself. Tap any photo to view it fullscreen; pinch to zoom on mobile.'],
+            ['How do I add a photo?', 'On a position, route or part, open Edit, then paste a screenshot with Ctrl+V (the clipboard listener is always on) or use the upload button. You can add a photo when there isn\'t one, or replace the one that is there. Tap any photo to view it fullscreen; pinch to zoom on mobile.'],
             ['How do I search faster?', 'Type any position number, APN, description, manufacturer reference or route number \u2014 multiple words all have to match. Use * as a wildcard on an ID, e.g. CB.SRT.01.*.01, to pin a middle or end segment.'],
             ['Do I stay signed in?', 'On your own device, yes. Tick "shared device" when you sign in and you will be logged out when you close the app. Either way, if your account is idle for more than 7 days you will be asked for your PIN again.'],
             ['I forgot my PIN, or want to change it.', 'Use Forgot PIN on the sign-in screen to get a reset email, or Change PIN under Account in the menu once you are signed in.'],
