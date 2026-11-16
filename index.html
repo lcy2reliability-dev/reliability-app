@@ -56,7 +56,7 @@
         .file-upload input { display: none; }
         .img-preview { width: 100%; height: 250px; object-fit: contain; background: #f8fafc; border-radius: 8px; margin-top: 12px; border: 1px solid #e2e8f0; padding: 4px; cursor: pointer; }
         .img-preview:hover { border-color: #00A8E1; }
-        .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; font-size: 14px; z-index: 10000; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
+        .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; font-size: 14px; z-index: 10000; transform: translateY(100px); opacity: 0; transition: all 0.3s, z-index 0s; }
         .toast.show { transform: translateY(0); opacity: 1; }
         .toast.success { background: #10b981; }
         .toast.error { background: #ef4444; }
@@ -100,6 +100,7 @@
         .detail-field label { font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:2px; }
         .detail-field .value { font-size:15px; color:#1a1a2e; font-weight:500; }
         .login-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:#232F3E; z-index:99999; display:flex; align-items:center; justify-content:center; }
+        body.login-on .loading { z-index:100003; } body.login-on .modal-overlay { z-index:100004; } body.login-on .toast { z-index:100005; }
         .login-card { background:white; border-radius:16px; padding:32px; max-width:380px; width:90%; text-align:center; }
         .login-card h2 { margin-bottom:8px; color:#1a1a2e; }
         .login-card p { color:#6b7280; font-size:14px; margin-bottom:20px; }
@@ -1534,6 +1535,7 @@
         if(typeof updateRoleReviewBadge === 'function') updateRoleReviewBadge();
     }
 
+    function _showLoginOverlay(on){ var ov = document.getElementById('login-overlay'); if(ov) ov.style.display = on ? 'flex' : 'none'; document.body.classList.toggle('login-on', !!on); }
     function initLogin() {
         var last = localStorage.getItem('reliability_app_user') || '';
         var ln = document.getElementById('login-new'); if(ln) ln.style.display = 'block';
@@ -1561,7 +1563,7 @@
             if(li) li.placeholder = 'Login ID (e.g. jeff)';
             setLoginMode('signin');
         }
-        var ov = document.getElementById('login-overlay'); if(ov) ov.style.display = 'flex';
+        _showLoginOverlay(true);
         if(li){ if(AUTH_ENABLED && last && lp){ lp.focus(); } else { li.focus(); } }
     }
 
@@ -1618,21 +1620,50 @@
             try { await cred.user.sendEmailVerification(); } catch(_e){}
             showToast('Account created. Check your Amazon inbox for a confirmation link to unlock editing.', 'success');
         } catch(e){
+            var c = e && e.code ? e.code : '';
+            if(c === 'auth/email-already-in-use'){ await _registerExistingLogin(credEmail, pin, alias, name, email, _regDone); return; }
             if (_regDone) _regDone();
             hideLoading();
-            var c = e && e.code ? e.code : '';
-            if(c === 'auth/email-already-in-use'){ showToast('That Login ID is already set up. Switch to Sign in and enter your PIN (use Forgot PIN if needed).', 'error'); setLoginMode('signin'); var li = document.getElementById('login-input'); if(li) li.value = alias; }
-            else if(c === 'auth/operation-not-allowed'){ showToast('Login not enabled yet - contact your admin', 'error'); }
+            if(c === 'auth/operation-not-allowed'){ showToast('Login not enabled yet - contact your admin', 'error'); }
             else if(c === 'auth/weak-password'){ showToast('PIN must be at least 6 digits', 'error'); }
             else if(c === 'auth/invalid-email'){ showToast('That email address is not valid', 'error'); }
             else { showToast('Could not set up your login. Please try again or contact your admin.', 'error'); }
+        }
+    }
+    // Removing a user deletes only their profile; their PIN login stays in Firebase Auth, so the same email + PIN rebuilds the profile.
+    async function _registerExistingLogin(credEmail, pin, alias, name, email, done){
+        var signedIn = false;
+        try {
+            var cred = await auth.signInWithEmailAndPassword(credEmail, pin);
+            signedIn = true;
+            _registeringUid = cred.user.uid;
+            try{ localStorage.setItem('reliability_last_active', String(Date.now())); }catch(_e){}
+            var ref = db.ref('users/' + cred.user.uid);
+            var u = (await ref.once('value')).val();
+            if(u && u.status !== 'removed'){ done(); showToast('You were already set up - signing you in.', 'success'); return; }
+            var now = new Date().toISOString();
+            await ref.set({ loginId: alias, name: name, email: email, role: 'technician', status: 'active', reviewed: false, createdAt: now, restoredAt: now, termsAccepted: true, termsVersion: TERMS_VERSION, termsAcceptedAt: now });
+            currentUser = alias;
+            logAudit('restoreUser', 'user', cred.user.uid, { loginId: alias });
+            done();
+            if(!cred.user.emailVerified){ try { await cred.user.sendEmailVerification(); } catch(_e){} }
+            showToast(cred.user.emailVerified ? 'Welcome back - your login is set up again.' : 'Welcome back - your login is set up again. Check your Amazon inbox for the link to unlock editing.', 'success');
+        } catch(e){
+            done();
+            hideLoading();
+            var c = e && e.code ? e.code : '';
+            if(signedIn){ showToast('Could not set up your login. Please try again or contact your admin.', 'error'); return; }
+            setLoginMode('signin'); var li = document.getElementById('login-input'); if(li) li.value = alias;
+            if(c === 'auth/too-many-requests'){ showToast('Too many tries. Wait a few minutes, or tap "Forgot PIN?" to reset your PIN by email.', 'error'); }
+            else if(c === 'auth/wrong-password' || c === 'auth/invalid-credential' || c === 'auth/invalid-login-credentials'){ showToast('That Login ID is already set up with a different PIN. Tap "Forgot PIN?" to get a reset link by email.', 'error'); }
+            else { showToast('That Login ID is already set up. Sign in with your PIN, or tap "Forgot PIN?".', 'error'); }
         }
     }
     function forgotPinPrompt(){
         if(!AUTH_ENABLED || !auth){ showToast('Not available right now', 'error'); return; }
         document.getElementById('modal-title').textContent = 'Forgot PIN';
         document.getElementById('modal-message').textContent = '';
-        document.getElementById('modal-body').innerHTML = '<div class="form-group"><label for="fp-id" style="display:block;font-size:13px;color:#374151;margin-bottom:6px;">Enter your Login ID. We will email a reset link to your Amazon inbox.</label><input type="text" id="fp-id" placeholder="Login ID (e.g. jeff)" maxlength="30" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;"></div>';
+        document.getElementById('modal-body').innerHTML = '<div class="form-group"><label for="fp-id" style="display:block;font-size:13px;color:#374151;margin-bottom:6px;">Enter your Login ID. We will email a reset link to your Amazon inbox. On the page it opens, choose a new PIN of 6+ digits (numbers only).</label><input type="text" id="fp-id" placeholder="Login ID (e.g. jeff)" maxlength="30" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;"></div>';
         document.getElementById('modal-actions').innerHTML = '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="doForgotPin()">Send reset link</button>';
         document.getElementById('modal').classList.add('active'); _openModalA11y();
         var pre = document.getElementById('login-input'); var fp = document.getElementById('fp-id');
@@ -1734,7 +1765,7 @@
             if (code === 'auth/operation-not-allowed') { hideLoading(); showToast('Login not enabled yet - contact your admin', 'error'); return; }
             if (code === 'auth/user-not-found' || code === 'auth/invalid-login-credentials' || code === 'auth/invalid-credential') {
                 hideLoading();
-                showToast('Login ID or PIN not recognised. New here? Tap "Set up your login" below.', 'error');
+                showToast('Login ID or PIN not recognised. Forgotten your PIN? Tap "Forgot PIN?". New here? Tap "Set up your login".', 'error');
                 return;
             }
             hideLoading();
@@ -1766,7 +1797,7 @@
                         // No profile: login was never set up here, or an admin removed it. Do NOT auto-create — lock out.
                         hideLoading();
                         try { await auth.signOut(); } catch(_e){}
-                        showToast('This login is not set up or was removed. Use "Set up your login" to register.', 'error');
+                        showToast('Your app profile was removed or never finished. Tap "Set up your login" and use the same Amazon email and PIN to get back in.', 'error');
                         return;
                     }
                     currentUid = user.uid;
@@ -1778,7 +1809,7 @@
                     if (currentRole === 'technician' && currentEmailVerified && u.reviewed !== true) { try { db.ref('users/' + user.uid + '/reviewed').set(true); currentReviewed = true; logAudit('emailVerified','user',user.uid,{}); } catch(_e){} }
                     if (localStorage.getItem('reliability_shared_device') === '1') { try{ localStorage.removeItem('reliability_app_user'); }catch(_e){} } else { localStorage.setItem('reliability_app_user', currentUser); }
                     try{ localStorage.setItem('reliability_last_active', String(Date.now())); }catch(_e){}
-                    var ov = document.getElementById('login-overlay'); if (ov) ov.style.display = 'none';
+                    _showLoginOverlay(false);
                     var bu = document.getElementById('burger-user');
                     if (bu) bu.innerHTML = '&#128100; ' + escapeHtml(currentUser) + ' <span style=\"font-size:11px;color:#6b7280;\">(' + escapeHtml(currentRole) + ')</span>';
                     applyRoleVisibility();
@@ -1804,7 +1835,7 @@
         else { initLogin(); }
     }
     function _enterAppOpen() {
-        var ov = document.getElementById('login-overlay'); if (ov) ov.style.display = 'none';
+        _showLoginOverlay(false);
         var bu = document.getElementById('burger-user');
         if (bu) bu.innerHTML = '&#128100; ' + escapeHtml(currentUser || 'user');
         applyRoleVisibility();
@@ -1828,7 +1859,8 @@
     // ============================================================
     // UTILITIES
     // ============================================================
-    function showToast(msg, type='success') { const t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+type+' show'; setTimeout(()=>t.className='toast',3000); }
+    var _toastTimer = null;
+    function showToast(msg, type='success') { const t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+type+' show'; clearTimeout(_toastTimer); _toastTimer=setTimeout(()=>t.className='toast', document.body.classList.contains('login-on') ? 6000 : 3000); }
     var _loadingTimer = null;
     function showLoading() { document.getElementById('loading').classList.add('active'); clearTimeout(_loadingTimer); _loadingTimer = setTimeout(hideLoading, 15000); }
     function hideLoading() { clearTimeout(_loadingTimer); document.getElementById('loading').classList.remove('active'); }
@@ -7513,7 +7545,7 @@ function liveSearchSuggest(query,scope){
         if(!checkFirebase())return;
         if(uid===currentUid){showToast('You cannot remove your own account','error');return;}
         var nm=lid||uid;
-        var ok=await showCustomModal('Remove user', '<p style="font-size:14px;color:#374151;line-height:1.5;">Remove <strong>'+escapeHtml(nm)+'</strong> from the app?</p><p style="font-size:13px;color:#6b7280;line-height:1.5;margin-top:8px;">They will be signed out and locked to look-only until they set up their login again. This removes their access here but does not delete their Firebase login account - do that in the Firebase console if a full removal is needed.</p>', [
+        var ok=await showCustomModal('Remove user', '<p style="font-size:14px;color:#374151;line-height:1.5;">Remove <strong>'+escapeHtml(nm)+'</strong> from the app?</p><p style="font-size:13px;color:#6b7280;line-height:1.5;margin-top:8px;">They will be locked out of the app. Their PIN login is kept, so they can come back by tapping "Set up your login" with the same Amazon email and PIN (they return as a technician). To block them for good, also delete their login in the Firebase console (Authentication &gt; Users).</p>', [
             {label:'Cancel',class:'btn-secondary',value:false},
             {label:'Remove',class:'btn-danger',value:true}
         ]);
@@ -10123,7 +10155,7 @@ function liveSearchSuggest(query,scope){
             ['How do I add a photo?', 'On a position, route or part, open Edit, then paste a screenshot with Ctrl+V (the clipboard listener is always on) or use the upload button. You can add a photo when there isn\'t one, or replace the one that is there. Tap any photo to view it fullscreen; pinch to zoom on mobile.'],
             ['How do I search faster?', 'Type any position number, APN, description, manufacturer reference or route number \u2014 multiple words all have to match. Use * as a wildcard on an ID, e.g. CB.SRT.01.*.01, to pin a middle or end segment.'],
             ['Do I stay signed in?', 'On your own device, yes. Tick "shared device" when you sign in and you will be logged out when you close the app. Either way, if your account is idle for more than 7 days you will be asked for your PIN again.'],
-            ['I forgot my PIN, or want to change it.', 'Use Forgot PIN on the sign-in screen to get a reset email, or Change PIN under Account in the menu once you are signed in.'],
+            ['I forgot my PIN, or want to change it.', 'Use Forgot PIN on the sign-in screen to get a reset email (the new PIN must be 6+ digits, numbers only), or Change PIN under Account in the menu once you are signed in.'],
             ['Something looks out of date.', 'Reload the page \u2014 the app updates live from the database. If a number looks stuck, a hard refresh clears it.'],
             ['Who can read my messages?', 'The person you send it to, and the app admins: a copy of every message is kept in an admin-only Message Log for 12 months. Messages stay inside the app; nothing is sent by email or to APM.'],
             ['Why did my messages disappear?', 'Read messages clear at the daily 4am sweep, the same as completed jobs. Unread messages stay until they are read.'],

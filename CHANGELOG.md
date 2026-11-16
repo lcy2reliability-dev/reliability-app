@@ -17,6 +17,7 @@
 **Update 2026-11-04:** **Ambient tick and blank readings**, **no duplicate jobs**, the **search suggestions close** when you tap elsewhere, and **photo zoom** follows your fingers (see the Ambient, blanks and duplicate jobs section below). The version number stays 1.30.
 **Update 2026-11-04 (later):** a **full code audit**: fixes for offline readings, editing and removing jobs, PM batches, admin renames that could overwrite another record, part lookup by APN, and sign-in, plus unused code removed (see the Full code audit fixes section below). The version number stays 1.30.
 **Update 2026-11-09:** admins can **reset a CBM alert** from Open Alerts: disregard a bad reading, start a new baseline (the next 3 readings set the median), or acknowledge a genuine reading. Every reset is logged, shown on the route and can be undone (see the Reset a CBM alert section below). The version number stays 1.30.
+**Update 2026-11-16:** **sign-in fixes**. Messages, the Forgot PIN box and the spinner now show on the sign-in screen (they were hidden behind it), and a removed user can come back with Set up your login using the same email and PIN (see the Sign-in fixes section below). The version number stays 1.30.
 
 ### Messages between users
 - **New 💬 chat button at the bottom right** of the main screens (also **Messages** in the menu under Tools). A red number shows how many messages you have not read.
@@ -206,6 +207,21 @@ Admins can now clear an open thermal alert and say why. On **Open Alerts**, each
 - The Help page and FAQ explain alert resets.
 - The Help page and FAQ also said you could only replace a screenshot you had added yourself. Since 2026-11-04 anyone can replace any screenshot, so that wording is corrected in 4 places.
 
+### Sign-in fixes: messages, Forgot PIN and coming back after removal - added 2026-11-16, still v1.30
+A technician who forgot his PIN couldn't get back in, and the app never said why. There were two causes:
+
+- **The sign-in screen hid its own messages.** Error and success messages, the **Forgot PIN** box and the loading spinner all opened *behind* the sign-in screen, so tapping **Forgot PIN?** or **Create account** seemed to do nothing. It had been like this since sign-in was added. They now show on top. Messages on the sign-in screen stay up for 6 seconds instead of 3, so the longer ones can be read. Inside the app they still clear after 3 seconds.
+- **A removed user couldn't set up again.** Remove user deletes only the app profile. Their PIN login stays in Firebase, so signing up again failed with "already set up", and that message was hidden too.
+
+**What happens now**
+- **Set up your login with the same Amazon email and PIN** rebuilds a removed user's profile and signs them in. They come back as a technician (an admin can make them admin again). If their email was confirmed before, editing works straight away; if not, a new confirmation link is sent. It is in the audit log (`restoreUser`).
+- If they are still set up and use Set up your login again, the app just signs them in. Their profile is not changed.
+- **Same email, different PIN:** the app says the Login ID is already set up with a different PIN, switches to Sign in with the Login ID filled in, and points to **Forgot PIN?**.
+- **Signing in with a removed login** now says: tap Set up your login and use the same Amazon email and PIN.
+- **Wrong PIN on Sign in** now also points to Forgot PIN.
+- The **Forgot PIN** box and the FAQ say the new PIN chosen on the reset page must be 6+ digits, numbers only. The reset page accepts letters, but the app's sign-in does not.
+- The **Remove user** box now says what really happens: they are locked out, their PIN login is kept so they can come back with the same email and PIN, and to block them for good you also delete their login in the Firebase console (Authentication > Users).
+
 ### Small fixes
 - **Position Type and Notes were being wiped.** An old one-off clean-up from v1.02 ran again whenever an admin signed in on a browser it had not run on before, and blanked Type and Notes on every position. On 2026-10-27 no position in the database had a Type or Notes left (the 22 and 23 Oct backups are the same). It is now switched off, so Type and Notes typed from now on are kept.
 - Info messages (e.g. "You have been away for a while. Please re-enter your PIN.") were white text on no background, so they were unreadable. They now have a blue background.
@@ -217,6 +233,7 @@ Admins can now clear an open thermal alert and say why. On **Open Alerts**, each
 - `announcements`: read for any signed-in user; create / set `active` for admins only; each person may write only their own `announcements/$id/ack/$login`. `orderByKey` needs no index; the 12-month clean-up uses `orderByChild('sentAt')`, so add `".indexOn": ["sentAt"]` on `announcements` too.
 - `replaced`: read for any signed-in user; written only by the weekly job (admin/REST). Reads are one conveyor at a time (`replaced/$conveyor`), so no index is needed.
 - `alertResets`: read for any signed-in user; write for admins only. Read as one node (small), so no index is needed.
+- `users`: a returning user's profile is written exactly like a new sign-up (only when none exists; technician, active, reviewed false), so the planned rule already covers it.
 
 
 ## v1.29 — 2026-10-22
